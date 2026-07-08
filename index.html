@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>hsmts2 GitHub Pages Test</title>
+  <meta name="description" content="GitHub Pages deployment test for hsmts2.">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --text: #1f2328;
+      --muted: #59636e;
+      --line: #d0d7de;
+      --accent: #0969da;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(880px, calc(100% - 40px));
+      padding: 40px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .profile {
+      display: grid;
+      grid-template-columns: 128px 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    img {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      object-fit: cover;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      font-size: 15px;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        padding: 28px;
+      }
+
+      .profile {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="profile" aria-label="Profile">
+      <img src="assets/hashimoto-icon-inverted.jpg" alt="橋本アイコンの反転配色版">
+      <div>
+        <h1>hsmts2 GitHub Pages Test</h1>
+        <p>
+          GitHub Pages の公開確認用ページです。静的HTML、画像配置、公開URLの確認を目的にしています。
+        </p>
+        <nav class="links" aria-label="Links">
+          <a href="https://github.com/hsmts2">GitHub Profile</a>
+          <a href="https://github.com/hsmts2/github-pages-test">Repository</a>
+        </nav>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
