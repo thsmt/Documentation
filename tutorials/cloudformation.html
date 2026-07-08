@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloudFormation 運用手順集 | Cloud Docs</title>
+  <meta name="description" content="CloudFormation operation guide for stack creation, update, rollback, drift detection, and deletion.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">
+      <img src="../assets/hashimoto-icon-inverted.jpg" alt="">
+      <span>Cloud Docs</span>
+    </a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Tutorials</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Tutorials</h2>
+      <a class="active" href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb">
+        <a href="../">Home</a>
+        <span>&gt;</span>
+        <span>Tutorials</span>
+      </div>
+
+      <p class="meta">IaC / AWS / Operations</p>
+      <h1>CloudFormation 運用手順集</h1>
+
+      <p class="lead">
+        CloudFormationテンプレートを書くことだけでなく、スタック作成後の更新、変更差分の確認、ロールバック、削除、ドリフト検出までを運用手順として整理します。
+      </p>
+
+      <div class="notice">
+        <strong>目的</strong>
+        本ページでは、各リポジトリ固有のテンプレート説明ではなく、CloudFormationを安全に扱うための共通手順と確認観点をまとめます。
+      </div>
+
+      <h2 id="policy">基本方針</h2>
+      <ul>
+        <li>環境差分はテンプレート直書きではなく、Parametersとパラメータファイルで管理します。</li>
+        <li>機密値はテンプレートやGitに含めず、NoEcho、Secrets Manager、SSM Parameter Storeを検討します。</li>
+        <li>本番更新前は変更セットを作成し、作成・変更・削除されるリソースを確認します。</li>
+        <li>スタック削除前は依存リソース、保持すべきデータ、削除保護の有無を確認します。</li>
+      </ul>
+
+      <h2 id="validate">テンプレート検証</h2>
+      <p>
+        構文レベルの確認として、`validate-template` を実行します。リソース間の依存関係やIAM権限までは完全には検出できないため、変更セットや実デプロイ前確認と組み合わせます。
+      </p>
+
+      <div class="code">
+        <div class="code-header">
+          <span>powershell</span>
+          <button class="copy" type="button">Copy</button>
+        </div>
+        <pre><code>aws cloudformation validate-template `
+  --template-body file://templates/example.yml</code></pre>
+      </div>
+
+      <h2 id="parameters">パラメータ設計</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>観点</th>
+            <th>記載する内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>環境差分</td>
+            <td>ProjectName、EnvironmentName、CIDR、AZ、InstanceTypeなどをパラメータ化します。</td>
+          </tr>
+          <tr>
+            <td>入力制約</td>
+            <td>AllowedValues、AllowedPattern、MinLength、MaxLengthを使い、誤入力を減らします。</td>
+          </tr>
+          <tr>
+            <td>機密値</td>
+            <td>DBパスワードなどはNoEchoを設定します。ただしNoEchoだけで完全な秘匿にはならないため、Secrets Managerも検討します。</td>
+          </tr>
+          <tr>
+            <td>命名</td>
+            <td>リソース名はProjectNameとEnvironmentNameを組み合わせ、長さ制限に注意します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="create">スタック作成</h2>
+      <p>
+        IAMリソースを作成する場合は `CAPABILITY_NAMED_IAM` または `CAPABILITY_IAM` が必要です。必要な場合だけ指定します。
+      </p>
+
+      <div class="code">
+        <div class="code-header">
+          <span>powershell</span>
+          <button class="copy" type="button">Copy</button>
+        </div>
+        <pre><code>aws cloudformation create-stack `
+  --stack-name sample-stack `
+  --template-body file://templates/example.yml `
+  --parameters file://parameters/example.json `
+  --capabilities CAPABILITY_NAMED_IAM</code></pre>
+      </div>
+
+      <h2 id="change-set">変更セット</h2>
+      <p>
+        本番更新では、直接 `update-stack` する前に変更セットを作成し、置換、削除、IAM変更の有無を確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header">
+          <span>powershell</span>
+          <button class="copy" type="button">Copy</button>
+        </div>
+        <pre><code>aws cloudformation create-change-set `
+  --stack-name sample-stack `
+  --change-set-name update-20260708 `
+  --template-body file://templates/example.yml `
+  --parameters file://parameters/example.json `
+  --capabilities CAPABILITY_NAMED_IAM</code></pre>
+      </div>
+
+      <div class="code">
+        <div class="code-header">
+          <span>powershell</span>
+          <button class="copy" type="button">Copy</button>
+        </div>
+        <pre><code>aws cloudformation describe-change-set `
+  --stack-name sample-stack `
+  --change-set-name update-20260708</code></pre>
+      </div>
+
+      <h2 id="rollback">ロールバック対応</h2>
+      <p>
+        `ROLLBACK_COMPLETE` や `UPDATE_ROLLBACK_FAILED` は、イベントタブで失敗したリソースと理由を確認します。原因を特定するまでは、同じテンプレートで再実行しないことを基本とします。
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>状態</th>
+            <th>初動</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ROLLBACK_COMPLETE</td>
+            <td>作成失敗です。イベントを確認し、必要に応じてスタックを削除してから再作成します。</td>
+          </tr>
+          <tr>
+            <td>UPDATE_ROLLBACK_COMPLETE</td>
+            <td>更新失敗後に元の状態へ戻っています。差分と失敗理由を確認してから再更新します。</td>
+          </tr>
+          <tr>
+            <td>UPDATE_ROLLBACK_FAILED</td>
+            <td>手動変更や削除済みリソースが影響している可能性があります。対象リソースを確認し、continue-update-rollbackを検討します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="drift">ドリフト検出</h2>
+      <p>
+        マネジメントコンソールで手動変更したリソースがある場合、テンプレートとの差分を確認します。すべてのリソースタイプがドリフト検出に対応しているわけではありません。
+      </p>
+
+      <div class="code">
+        <div class="code-header">
+          <span>powershell</span>
+          <button class="copy" type="button">Copy</button>
+        </div>
+        <pre><code>aws cloudformation detect-stack-drift `
+  --stack-name sample-stack</code></pre>
+      </div>
+
+      <h2 id="delete">削除前チェック</h2>
+      <ul>
+        <li>S3バケットにオブジェクトが残っていないか確認します。</li>
+        <li>RDSの削除保護、スナップショット要否を確認します。</li>
+        <li>ENI、NAT Gateway、VPC Endpointなど依存関係で削除が詰まるリソースを確認します。</li>
+        <li>検証完了後、課金リソースが残っていないか確認します。</li>
+      </ul>
+
+      <h2 id="checklist">実務チェックリスト</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>タイミング</th>
+            <th>確認項目</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>作成前</td>
+            <td>リージョン、アカウント、パラメータ、IAM権限、コスト影響を確認します。</td>
+          </tr>
+          <tr>
+            <td>更新前</td>
+            <td>変更セット、置換リソース、削除リソース、停止影響を確認します。</td>
+          </tr>
+          <tr>
+            <td>削除前</td>
+            <td>バックアップ要否、保持データ、手動作成リソース、課金影響を確認します。</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#policy">基本方針</a>
+      <a href="#validate">テンプレート検証</a>
+      <a href="#parameters">パラメータ設計</a>
+      <a href="#create">スタック作成</a>
+      <a href="#change-set">変更セット</a>
+      <a href="#rollback">ロールバック対応</a>
+      <a href="#drift">ドリフト検出</a>
+      <a href="#delete">削除前チェック</a>
+      <a href="#checklist">実務チェックリスト</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

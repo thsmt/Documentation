@@ -1,14 +1,15 @@
-# GitHub Pages Test
+# cloud-docs
 
-GitHub Pages の公開確認用リポジトリです。
+AWS / Infrastructure / IaC / Operations に関する横断的な手順集です。
 
 ## 公開URL
 
-https://hsmtth.github.io/github-pages-test/
+https://thsmt.github.io/cloud-docs/
 
 ## 目的
 
-- GitHub Pages のデプロイ確認
-- ドキュメントサイト風レイアウトの表示確認
-- 画像アセットの表示確認
-- タブUIとコードブロックの表示確認
+- CloudFormation 運用手順の整理
+- AWS CLI 実務手順の整理
+- Terraform 入門から運用までの整理
+- AWX / Ansible 手順の整理
+- GitHub Pages の公開確認

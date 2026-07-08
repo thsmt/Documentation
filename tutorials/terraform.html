@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terraform 入門から運用まで | Cloud Docs</title>
+  <meta name="description" content="Terraform guide from basics to operations.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><img src="../assets/hashimoto-icon-inverted.jpg" alt=""><span>Cloud Docs</span></a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Tutorials</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Tutorials</h2>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI</a>
+      <a class="active" href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Tutorials</span></div>
+      <p class="meta">IaC / Terraform / Operations</p>
+      <h1>Terraform 入門から運用まで</h1>
+      <p class="lead">Terraformの基本コマンド、状態管理、backend、variables、planレビューの観点を整理します。</p>
+
+      <h2 id="workflow">基本ワークフロー</h2>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>terraform fmt
+terraform init
+terraform validate
+terraform plan
+terraform apply</code></pre>
+      </div>
+
+      <h2 id="state">tfstate</h2>
+      <p>tfstateは実環境とコードの対応関係を管理する重要ファイルです。個人PCだけに置かず、S3 backendとDynamoDBロックなどを検討します。</p>
+
+      <h2 id="variables">variables</h2>
+      <p>環境差分は `variables.tf` と `terraform.tfvars` に分けます。機密値はGitに含めず、Secret管理サービスや環境変数を検討します。</p>
+
+      <h2 id="review">planレビュー</h2>
+      <table>
+        <thead><tr><th>観点</th><th>確認内容</th></tr></thead>
+        <tbody>
+          <tr><td>create</td><td>想定外のリソース作成がないか確認します。</td></tr>
+          <tr><td>update</td><td>停止影響や設定変更の範囲を確認します。</td></tr>
+          <tr><td>replace</td><td>リソース再作成が発生するため、影響を重点確認します。</td></tr>
+          <tr><td>destroy</td><td>削除対象が本当に不要か確認します。</td></tr>
+        </tbody>
+      </table>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#workflow">基本ワークフロー</a>
+      <a href="#state">tfstate</a>
+      <a href="#variables">variables</a>
+      <a href="#review">planレビュー</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

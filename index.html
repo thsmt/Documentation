@@ -3,518 +3,112 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HS Docs | GitHub Pages Test</title>
-  <meta name="description" content="GitHub Pages documentation style test site.">
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0d1117;
-      --header: #161b22;
-      --panel: #111827;
-      --panel-soft: #1f2937;
-      --text: #e6edf3;
-      --muted: #9da7b3;
-      --line: #30363d;
-      --accent: #58a6ff;
-      --accent-strong: #7dd3fc;
-      --success: #2ea043;
-      --code: #0b1220;
-      --warning-bg: rgba(125, 211, 252, 0.08);
-      --warning-line: #22d3ee;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.75;
-    }
-
-    a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 64px;
-      padding: 0 36px;
-      background: rgba(22, 27, 34, 0.94);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(12px);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 700;
-    }
-
-    .brand img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid var(--line);
-      object-fit: cover;
-    }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(160px, 220px) minmax(0, 760px) minmax(180px, 260px);
-      gap: 36px;
-      width: min(1180px, calc(100% - 48px));
-      margin: 0 auto;
-      padding: 56px 0 88px;
-    }
-
-    .sidebar,
-    .toc {
-      position: sticky;
-      top: 92px;
-      align-self: start;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .sidebar h2,
-    .toc h2 {
-      margin: 0 0 14px;
-      color: var(--text);
-      font-size: 14px;
-      letter-spacing: 0;
-    }
-
-    .sidebar a,
-    .toc a {
-      display: block;
-      padding: 4px 0;
-      color: var(--muted);
-    }
-
-    .sidebar a.active,
-    .toc a.active {
-      color: var(--accent-strong);
-      font-weight: 700;
-    }
-
-    main {
-      min-width: 0;
-    }
-
-    .breadcrumb {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 18px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .meta {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin: 0 0 8px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    h1 {
-      margin: 0 0 28px;
-      font-size: clamp(34px, 5vw, 56px);
-      line-height: 1.08;
-      letter-spacing: 0;
-    }
-
-    h2 {
-      margin: 52px 0 16px;
-      padding-top: 6px;
-      color: var(--text);
-      font-size: 28px;
-      line-height: 1.25;
-      letter-spacing: 0;
-    }
-
-    h3 {
-      margin: 32px 0 12px;
-      color: var(--text);
-      font-size: 21px;
-      line-height: 1.35;
-      letter-spacing: 0;
-    }
-
-    p,
-    li {
-      color: var(--text);
-      font-size: 16px;
-    }
-
-    .lead {
-      margin: 0 0 22px;
-      font-size: 17px;
-    }
-
-    .notice {
-      margin: 28px 0;
-      padding: 14px 16px;
-      background: var(--warning-bg);
-      border: 1px solid var(--warning-line);
-      border-radius: 6px;
-    }
-
-    .notice strong {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--accent-strong);
-    }
-
-    .tabs {
-      display: flex;
-      gap: 24px;
-      margin: 22px 0 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .tab {
-      appearance: none;
-      padding: 0 0 10px;
-      background: transparent;
-      border: 0;
-      color: var(--muted);
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .tab[aria-selected="true"] {
-      color: var(--text);
-      border-bottom: 2px solid var(--text);
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    .code {
-      margin: 16px 0 22px;
-      overflow: hidden;
-      background: var(--code);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-    }
-
-    .code-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      min-height: 40px;
-      padding: 0 14px;
-      background: var(--panel-soft);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 700;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .copy {
-      appearance: none;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: #161b22;
-      color: var(--muted);
-      font-size: 12px;
-      padding: 5px 9px;
-      cursor: pointer;
-    }
-
-    pre {
-      margin: 0;
-      padding: 18px;
-      overflow-x: auto;
-    }
-
-    code {
-      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
-      font-size: 14px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 20px;
-    }
-
-    .card {
-      padding: 16px;
-      background: rgba(17, 24, 39, 0.72);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }
-
-    .card strong {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .repo-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 24px;
-      font-weight: 700;
-    }
-
-    @media (max-width: 980px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar,
-      .toc {
-        position: static;
-      }
-
-      .sidebar {
-        display: none;
-      }
-
-      .toc {
-        padding: 16px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .topbar {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 12px;
-        padding: 16px 22px;
-      }
-
-      .nav {
-        flex-wrap: wrap;
-        gap: 14px;
-      }
-
-      .layout {
-        width: min(100% - 32px, 1180px);
-        padding-top: 32px;
-      }
-
-      .cards {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <title>Cloud Docs | thsmt</title>
+  <meta name="description" content="AWS and infrastructure operation documents by thsmt.">
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="./">
       <img src="assets/hashimoto-icon-inverted.jpg" alt="">
-      <span>HS Docs</span>
+      <span>Cloud Docs</span>
     </a>
     <nav class="nav" aria-label="Global navigation">
       <a href="./">Home</a>
-      <a href="#install">Tutorials</a>
-      <a href="https://github.com/hsmtth">Repositories</a>
-      <a href="https://github.com/hsmtth/github-pages-test">GitHub</a>
+      <a href="tutorials/cloudformation.html">Tutorials</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
     </nav>
   </header>
 
   <div class="layout">
     <aside class="sidebar" aria-label="Tutorial navigation">
       <h2>Tutorials</h2>
-      <a href="#overview">aws-tool guide</a>
-      <a class="active" href="#install">GitHub Pages</a>
-      <a href="#repositories">Portfolio</a>
-      <a href="#publish">Deployment</a>
+      <a class="active" href="tutorials/cloudformation.html">CloudFormation</a>
+      <a href="tutorials/aws-cli.html">AWS CLI</a>
+      <a href="tutorials/terraform.html">Terraform</a>
+      <a href="tutorials/awx-ansible.html">AWX / Ansible</a>
     </aside>
 
     <main>
       <div class="breadcrumb">
         <a href="./">Home</a>
         <span>&gt;</span>
-        <span>Tutorials</span>
+        <span>Cloud Docs</span>
       </div>
 
-      <p class="meta">35 min / GitHub Pages test</p>
-      <h1>GitHub Pages</h1>
+      <p class="meta">AWS / Infrastructure / IaC / Operations</p>
+      <h1>Cloud Docs</h1>
 
-      <p class="lead" id="overview">
-        GitHub Pages は、GitHub リポジトリ内の静的ファイルをそのまま公開できるホスティング機能です。
-        HTML、CSS、画像、Markdown を使って、ポートフォリオ、技術メモ、ハンズオン資料を軽量に公開できます。
+      <p class="lead">
+        CloudFormation、AWS CLI、Terraform、AWX / Ansible など、クラウドエンジニアの実務で使う手順を横断的に整理するためのドキュメントサイトです。
       </p>
 
       <p>
-        このページは、GitHub Pages の公開確認と、今後のドキュメントサイト化を想定したテストページです。
-        左側にチュートリアル一覧、中央に本文、右側に目次を配置し、AWS や IaC の学習資料を整理しやすい構成にしています。
+        各GitHubリポジトリには構成図、CloudFormationテンプレート、パラメータ例を置き、このサイトにはリポジトリをまたいで使う運用手順や確認観点をまとめます。
       </p>
 
       <div class="notice">
-        <strong>補足</strong>
-        現在のGitHubログイン名は hsmtth として公開されています。GitHub IDを変更した場合、Pages URLも新しいIDに追従します。
+        <strong>運用方針</strong>
+        リポジトリは実装本体、Cloud Docs は横断手順集として分けます。READMEやdocsと重複させすぎず、変更作業、障害時の確認、ツール操作の手順を中心に整理します。
       </div>
 
-      <h2 id="install">インストール</h2>
-      <p>
-        GitHub Pages 自体に追加インストールは不要です。ローカル確認を行う場合のみ、任意で簡易HTTPサーバーを起動します。
-      </p>
-
-      <div class="tabs" role="tablist" aria-label="Operating system">
-        <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="windows">Windows</button>
-        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="macos">macOS</button>
-        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="linux">Linux</button>
-      </div>
-
-      <section class="tab-panel active" id="windows" role="tabpanel">
-        <h3>Windows</h3>
-        <p>PowerShell でローカル確認用の簡易サーバーを起動します。</p>
-        <div class="code">
-          <div class="code-header">
-            <span>powershell</span>
-            <button class="copy" type="button">Copy</button>
-          </div>
-          <pre><code>cd .\github-pages-test
-python -m http.server 8000</code></pre>
-        </div>
-        <p>ブラウザで <a href="http://localhost:8000">http://localhost:8000</a> を開きます。</p>
-      </section>
-
-      <section class="tab-panel" id="macos" role="tabpanel">
-        <h3>macOS</h3>
-        <p>zsh でローカル確認用の簡易サーバーを起動します。</p>
-        <div class="code">
-          <div class="code-header">
-            <span>zsh</span>
-            <button class="copy" type="button">Copy</button>
-          </div>
-          <pre><code>cd github-pages-test
-python3 -m http.server 8000</code></pre>
-        </div>
-      </section>
-
-      <section class="tab-panel" id="linux" role="tabpanel">
-        <h3>Linux</h3>
-        <p>任意のターミナルでローカル確認用の簡易サーバーを起動します。</p>
-        <div class="code">
-          <div class="code-header">
-            <span>bash</span>
-            <button class="copy" type="button">Copy</button>
-          </div>
-          <pre><code>cd github-pages-test
-python3 -m http.server 8000</code></pre>
-        </div>
-      </section>
-
-      <h2 id="repositories">リポジトリ構成</h2>
-      <p>
-        本番のポートフォリオサイトでは、学習用 lab と業務検証に近い poc を分けて掲載すると、採用担当者が意図を読み取りやすくなります。
-      </p>
-
+      <h2 id="tutorials">Tutorials</h2>
       <div class="cards">
         <article class="card">
-          <strong>lab repositories</strong>
-          <p>AWS学習、書籍ベースの検証、CloudFormationテンプレートを整理します。</p>
+          <strong><a href="tutorials/cloudformation.html">CloudFormation 運用手順集</a></strong>
+          <p>変更セット、ロールバック、ドリフト検出、削除前確認など、運用時の事故を減らすための確認観点を整理します。</p>
         </article>
         <article class="card">
-          <strong>poc repositories</strong>
-          <p>業務に近い要件、設計判断、運用観点、手動手順を整理します。</p>
+          <strong><a href="tutorials/aws-cli.html">AWS CLI 実務手順集</a></strong>
+          <p>プロファイル切替、認証確認、CloudFormation操作、ログ確認などの基本操作をまとめます。</p>
+        </article>
+        <article class="card">
+          <strong><a href="tutorials/terraform.html">Terraform 入門から運用まで</a></strong>
+          <p>init、plan、apply、destroy、tfstate、backend、variables などを実務目線で整理します。</p>
+        </article>
+        <article class="card">
+          <strong><a href="tutorials/awx-ansible.html">AWX / Ansible 手順</a></strong>
+          <p>Inventory、Credential、Project、Job Template、Playbook実行ログの確認観点を整理します。</p>
         </article>
       </div>
 
-      <h2 id="publish">デプロイ</h2>
-      <p>
-        GitHub Pages は main ブランチのルートを公開元に設定しています。
-        `index.html` と `assets/` を更新して push すると、自動的に公開ページへ反映されます。
-      </p>
-
-      <div class="code">
-        <div class="code-header">
-          <span>git</span>
-          <button class="copy" type="button">Copy</button>
-        </div>
-        <pre><code>git add -A
-git commit -m "Update GitHub Pages test site"
-git push</code></pre>
-      </div>
-
-      <a class="repo-link" href="https://github.com/hsmtth/github-pages-test">
-        Repository: hsmtth/github-pages-test
-      </a>
+      <h2 id="repository-policy">Repositoryとの使い分け</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>場所</th>
+            <th>役割</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Profile README</td>
+            <td>自己紹介、代表リポジトリ、スキル概要を掲載します。</td>
+          </tr>
+          <tr>
+            <td>各リポジトリ README</td>
+            <td>対象構成、作成リソース、デプロイ方法を掲載します。</td>
+          </tr>
+          <tr>
+            <td>各リポジトリ docs</td>
+            <td>構成固有の設計方針、手動作業、削除手順を掲載します。</td>
+          </tr>
+          <tr>
+            <td>Cloud Docs</td>
+            <td>ツール操作、横断的な運用手順、チェックリストを掲載します。</td>
+          </tr>
+        </tbody>
+      </table>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
-      <a class="active" href="#overview">概要</a>
-      <a href="#install">インストール</a>
-      <a href="#repositories">リポジトリ構成</a>
-      <a href="#publish">デプロイ</a>
+      <a class="active" href="#tutorials">Tutorials</a>
+      <a href="#repository-policy">Repositoryとの使い分け</a>
     </aside>
   </div>
 
-  <script>
-    const tabs = document.querySelectorAll(".tab");
-    const panels = document.querySelectorAll(".tab-panel");
-
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        tabs.forEach((item) => item.setAttribute("aria-selected", "false"));
-        panels.forEach((panel) => panel.classList.remove("active"));
-        tab.setAttribute("aria-selected", "true");
-        document.getElementById(tab.getAttribute("aria-controls")).classList.add("active");
-      });
-    });
-
-    document.querySelectorAll(".copy").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const code = button.closest(".code").querySelector("code").innerText;
-        await navigator.clipboard.writeText(code);
-        button.innerText = "Copied";
-        setTimeout(() => {
-          button.innerText = "Copy";
-        }, 1400);
-      });
-    });
-  </script>
+  <script src="assets/app.js"></script>
 </body>
 </html>

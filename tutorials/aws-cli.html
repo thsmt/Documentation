@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS CLI 実務手順集 | Cloud Docs</title>
+  <meta name="description" content="AWS CLI operation guide.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><img src="../assets/hashimoto-icon-inverted.jpg" alt=""><span>Cloud Docs</span></a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Tutorials</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Tutorials</h2>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a class="active" href="aws-cli.html">AWS CLI</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Tutorials</span></div>
+      <p class="meta">AWS / CLI / Operations</p>
+      <h1>AWS CLI 実務手順集</h1>
+      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、CloudFormation操作、ログ確認の基本手順を整理します。</p>
+
+      <h2 id="identity">認証情報の確認</h2>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws sts get-caller-identity</code></pre>
+      </div>
+
+      <h2 id="profile">プロファイルの使い分け</h2>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws configure --profile dev
+aws sts get-caller-identity --profile dev</code></pre>
+      </div>
+
+      <h2 id="region">リージョン確認</h2>
+      <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は `ap-northeast-1` を指定します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws configure set region ap-northeast-1 --profile dev</code></pre>
+      </div>
+
+      <h2 id="logs">CloudWatch Logs確認</h2>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws logs describe-log-groups --profile dev
+aws logs tail /aws/lambda/example-function --follow --profile dev</code></pre>
+      </div>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#identity">認証情報の確認</a>
+      <a href="#profile">プロファイル</a>
+      <a href="#region">リージョン確認</a>
+      <a href="#logs">CloudWatch Logs</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

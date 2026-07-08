@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWX / Ansible 手順 | Cloud Docs</title>
+  <meta name="description" content="AWX and Ansible operation guide.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><img src="../assets/hashimoto-icon-inverted.jpg" alt=""><span>Cloud Docs</span></a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Tutorials</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Tutorials</h2>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI</a>
+      <a href="terraform.html">Terraform</a>
+      <a class="active" href="awx-ansible.html">AWX / Ansible</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Tutorials</span></div>
+      <p class="meta">Automation / Configuration Management</p>
+      <h1>AWX / Ansible 手順</h1>
+      <p class="lead">AWXでAnsible Playbookを実行するための基本要素と、ジョブ実行時の確認観点を整理します。</p>
+
+      <h2 id="components">主要コンポーネント</h2>
+      <table>
+        <thead><tr><th>項目</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td>Inventory</td><td>管理対象ホストを定義します。</td></tr>
+          <tr><td>Credential</td><td>SSH鍵、ユーザー、Vault Passwordなどの認証情報を管理します。</td></tr>
+          <tr><td>Project</td><td>Gitリポジトリ上のPlaybookを同期します。</td></tr>
+          <tr><td>Job Template</td><td>Inventory、Credential、Playbook、Variablesを組み合わせて実行単位を定義します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="playbook">Playbook実行</h2>
+      <div class="code">
+        <div class="code-header"><span>yaml</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>- name: Check Linux uptime
+  hosts: linux
+  gather_facts: false
+  tasks:
+    - name: Run uptime
+      ansible.builtin.command: uptime
+      changed_when: false</code></pre>
+      </div>
+
+      <h2 id="review">実行ログ確認</h2>
+      <ul>
+        <li>`ok`、`changed`、`failed`、`skipped` の件数を確認します。</li>
+        <li>変更を伴わない確認タスクは `changed_when: false` を設定します。</li>
+        <li>失敗時は対象ホスト、モジュール、戻り値、標準エラーを確認します。</li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#components">主要コンポーネント</a>
+      <a href="#playbook">Playbook実行</a>
+      <a href="#review">実行ログ確認</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
