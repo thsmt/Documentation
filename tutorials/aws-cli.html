@@ -14,7 +14,7 @@
       <a href="../">Home</a>
       <a href="cloudformation.html">Guides</a>
       <a href="https://github.com/thsmt">Repositories</a>
-      <a href="https://github.com/thsmt/cloud-docs">GitHub</a>
+      <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
   </header>
 
@@ -25,7 +25,6 @@
       <a class="active" href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
       <a href="awx-ansible.html">AWX / Ansible</a>
-      <a href="notation.html">記法</a>
     </aside>
 
     <main>
@@ -33,6 +32,48 @@
       <p class="meta">AWS / CLI / Operations</p>
       <h1>AWS CLI 実務手順集</h1>
       <p class="lead">AWS CLIを使った認証確認、プロファイル切替、CloudFormation操作、ログ確認の基本手順を整理します。</p>
+
+      <div class="callout">
+        <strong>補足</strong>
+        AWS CLIの作業前には、利用者、アカウントID、リージョンを確認します。複数アカウントを扱う場合は、プロファイル名を明示して操作対象を取り違えないようにします。
+      </div>
+
+      <h2 id="install">インストール</h2>
+      <p>作業端末のOSに合わせてAWS CLIをインストールします。</p>
+
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="AWS CLI install commands">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="awscli-windows">Windows</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="awscli-macos">macOS</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="awscli-linux">Linux</button>
+        </div>
+
+        <section class="tab-panel active" id="awscli-windows" role="tabpanel">
+          <div class="code">
+            <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>winget install --id Amazon.AWSCLI -e --source winget
+aws --version</code></pre>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="awscli-macos" role="tabpanel">
+          <div class="code">
+            <div class="code-header"><span>zsh</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>brew install awscli
+aws --version</code></pre>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="awscli-linux" role="tabpanel">
+          <div class="code">
+            <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+aws --version</code></pre>
+          </div>
+        </section>
+      </div>
 
       <h2 id="identity">認証情報の確認</h2>
       <div class="code">
@@ -48,7 +89,7 @@ aws sts get-caller-identity --profile dev</code></pre>
       </div>
 
       <h2 id="region">リージョン確認</h2>
-      <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は `ap-northeast-1` を指定します。</p>
+      <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure set region ap-northeast-1 --profile dev</code></pre>
@@ -64,7 +105,8 @@ aws logs tail /aws/lambda/example-function --follow --profile dev</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
-      <a class="active" href="#identity">認証情報の確認</a>
+      <a class="active" href="#install">インストール</a>
+      <a href="#identity">認証情報の確認</a>
       <a href="#profile">プロファイル</a>
       <a href="#region">リージョン確認</a>
       <a href="#logs">CloudWatch Logs</a>

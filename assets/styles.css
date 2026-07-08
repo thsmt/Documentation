@@ -173,7 +173,8 @@ li {
   font-size: 17px;
 }
 
-.notice {
+.notice,
+.callout {
   margin: 28px 0;
   padding: 14px 16px;
   background: var(--notice-bg);
@@ -181,10 +182,47 @@ li {
   border-radius: 6px;
 }
 
-.notice strong {
+.notice strong,
+.callout strong {
   display: block;
   margin-bottom: 4px;
   color: var(--accent-strong);
+}
+
+.tab-group {
+  margin: 22px 0 28px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  appearance: none;
+  padding: 0 0 10px;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  color: var(--text);
+  border-bottom: 2px solid var(--text);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
 }
 
 .cards {
