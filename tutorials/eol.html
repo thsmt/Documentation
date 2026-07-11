@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EOL / ライフサイクル確認表 | Knowledge</title>
+  <meta name="description" content="EOL and lifecycle reference for OS, AWS services, middleware, and agents.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="">
+      <span>Knowledge</span>
+    </a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Guides</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/Knowledge">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Guides</h2>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="rhel9-ops.html">RHEL9 Build</a>
+      <a href="zabbix-ops.html">Zabbix</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a class="active" href="eol.html">EOL / Lifecycle</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb">
+        <a href="../">Home</a>
+        <span>&gt;</span>
+        <span>Guides</span>
+      </div>
+
+      <p class="meta">Operations / Lifecycle / EOL</p>
+      <h1>EOL / ライフサイクル確認表</h1>
+
+      <p class="lead">
+        OS、AWSマネージドサービス、ミドルウェア、監視エージェントのサポート期限を棚卸しし、更新計画、変更管理、リスク説明に使うための確認表です。
+      </p>
+
+      <div class="notice">
+        <strong>最終確認日: 2026/07/11</strong>
+        EOLやサポート期限はベンダーにより変更される可能性があります。作業前には必ず公式ドキュメントを再確認します。
+      </div>
+
+      <h2 id="policy">確認方針</h2>
+      <ul>
+        <li>本番環境、検証環境、運用端末で利用しているOS、DBエンジン、ランタイム、エージェントを一覧化します。</li>
+        <li>EOLが近いものは、アップグレード方式、影響範囲、バックアップ、切り戻し、作業ウィンドウを確認します。</li>
+        <li>AWSマネージドサービスは、サービス全体ではなくエンジンバージョンやランタイム単位で確認します。</li>
+        <li>OS同梱パッケージと外部リポジトリ導入パッケージは、サポート元が異なるため分けて確認します。</li>
+      </ul>
+
+      <h2 id="os">OS</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>対象</th>
+            <th>リリース</th>
+            <th>主なサポート期限</th>
+            <th>運用メモ</th>
+            <th>公式情報</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Red Hat Enterprise Linux 8</td>
+            <td>2019/05/07</td>
+            <td>Full Support: 2024/05/31<br>Maintenance Support: 2029/05/31</td>
+            <td>RHEL 8系を継続する場合は、RHEL 9移行可否、アプリケーション互換性、リポジトリ、監視エージェント対応を確認します。</td>
+            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+          </tr>
+          <tr>
+            <td>Red Hat Enterprise Linux 9</td>
+            <td>2022/05/18</td>
+            <td>Full Support: 2027/05/31<br>Maintenance Support: 2032/05/31</td>
+            <td>新規構築では優先候補にします。Application Streamsや外部リポジトリの期限は別途確認します。</td>
+            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+          </tr>
+          <tr>
+            <td>Windows Server 2019</td>
+            <td>2018/11/13</td>
+            <td>Mainstream End: 2024/01/09<br>Extended End: 2029/01/09</td>
+            <td>延長サポート期間中のため、新規構築ではWindows Server 2022以降を検討します。</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2019">Microsoft Lifecycle</a></td>
+          </tr>
+          <tr>
+            <td>Windows Server 2022</td>
+            <td>2021/08/18</td>
+            <td>Mainstream End: 2026/10/13<br>Extended End: 2031/10/14</td>
+            <td>既存業務システムでは標準候補にします。Windows Server 2025への更新計画も中期で確認します。</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2022">Microsoft Lifecycle</a></td>
+          </tr>
+          <tr>
+            <td>Windows Server 2025</td>
+            <td>2024/11/01</td>
+            <td>Mainstream End: 2029/11/13<br>Extended End: 2034/11/14</td>
+            <td>新規構築候補です。利用ソフトウェア、監視エージェント、バックアップ製品の対応状況を先に確認します。</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025">Microsoft Lifecycle</a></td>
+          </tr>
+          <tr>
+            <td>Amazon Linux 2</td>
+            <td>2017/12/13</td>
+            <td>Support End: 2026/06/30</td>
+            <td>Amazon Linux 2023への移行を計画します。起動テンプレート、AMI、UserData、監視エージェントをまとめて確認します。</td>
+            <td><a href="https://aws.amazon.com/amazon-linux-2/faqs/">Amazon Linux 2 FAQs</a></td>
+          </tr>
+          <tr>
+            <td>Amazon Linux 2023</td>
+            <td>2023/03/15</td>
+            <td>Support End: 2029/06/30</td>
+            <td>Amazon Linux 2とはパッケージ、dnf、OpenSSL、Pythonなどに差分があるため、移行時は手順検証を行います。</td>
+            <td><a href="https://docs.aws.amazon.com/linux/al2023/ug/release-cadence.html">Amazon Linux 2023 release cadence</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="aws-services">AWSマネージドサービス</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>対象</th>
+            <th>確認するもの</th>
+            <th>運用メモ</th>
+            <th>公式情報</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Amazon RDS for MariaDB</td>
+            <td>DBエンジンのメジャー/マイナーバージョン、Extended Support、アップグレードパス</td>
+            <td>RDSはエンジンごとに期限が異なります。パラメータグループ、クライアント互換性、メンテナンスウィンドウも確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">English</a></td>
+          </tr>
+          <tr>
+            <td>Amazon RDS for MySQL</td>
+            <td>DBエンジンのメジャー/マイナーバージョン、Extended Support、アップグレードパス</td>
+            <td>アプリケーション接続、文字コード、SQLモード、メンテナンス適用タイミングを事前に確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">English</a></td>
+          </tr>
+          <tr>
+            <td>Amazon RDS for PostgreSQL</td>
+            <td>DBエンジンのメジャー/マイナーバージョン、リリースカレンダー、拡張機能互換性</td>
+            <td>PostgreSQLは拡張機能、クライアントドライバ、メジャーバージョン差分の影響を確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">English</a></td>
+          </tr>
+          <tr>
+            <td>Amazon Aurora MySQL</td>
+            <td>Aurora MySQLのバージョン、互換MySQLバージョン、リリースノート</td>
+            <td>クラスター構成、Reader、メンテナンス適用順序、フェイルオーバー影響を確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">English</a></td>
+          </tr>
+          <tr>
+            <td>Amazon Aurora PostgreSQL</td>
+            <td>Aurora PostgreSQLのバージョン、リリースカレンダー、拡張機能互換性</td>
+            <td>RDS for PostgreSQLとはリリースタイミングが異なるため、Aurora専用カレンダーを確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">English</a></td>
+          </tr>
+          <tr>
+            <td>AWS Lambda runtime</td>
+            <td>Python、Node.js、Ruby、Java、.NETなどのランタイムサポート期限</td>
+            <td>ランタイムEOL前に、コード互換性、レイヤー、依存ライブラリ、CI/CD、EventBridge連携を確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/lambda-runtimes.html">日本語</a> / <a href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">English</a></td>
+          </tr>
+          <tr>
+            <td>Amazon EKS / Kubernetes</td>
+            <td>Kubernetesバージョン、標準サポート、延長サポート、アドオン互換性</td>
+            <td>コンテナ基盤ではクラスター、ノード、アドオン、Helm Chart、アプリケーション互換性をセットで確認します。</td>
+            <td><a href="https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/kubernetes-versions.html">日本語</a> / <a href="https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html">English</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="middleware">ミドルウェア・エージェント</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>対象</th>
+            <th>確認するもの</th>
+            <th>運用メモ</th>
+            <th>公式情報</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Postfix / OpenSSH / OpenSSL</td>
+            <td>OS標準リポジトリ由来か、外部リポジトリ由来か</td>
+            <td>RHEL標準パッケージとして利用する場合は、基本的にRHELライフサイクルに従います。AppStreamや外部リポジトリ導入時は個別期限を確認します。</td>
+            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+          </tr>
+          <tr>
+            <td>Apache / NGINX / PHP / Python / Node.js</td>
+            <td>OS同梱版、AppStream、外部リポジトリ、公式バイナリのどれを使っているか</td>
+            <td>同じ製品名でも配布元によりサポート期限が変わります。脆弱性対応、モジュール互換性、アプリケーション要件を確認します。</td>
+            <td><a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">Red Hat Application Streams Life Cycle</a></td>
+          </tr>
+          <tr>
+            <td>Zabbix Server / Proxy / Agent</td>
+            <td>Zabbix本体バージョン、LTS/Standard、監視対象OS対応</td>
+            <td>Zabbix 6.0 LTS、7.0 LTSなど、LTSごとにFull SupportとLimited Supportが異なります。AgentだけでなくServer/Proxyの対応OSも確認します。</td>
+            <td><a href="https://www.zabbix.com/life_cycle_and_release_policy">Zabbix Lifecycle and Release Policy</a></td>
+          </tr>
+          <tr>
+            <td>Trend Micro Workload Security / Deep Security Agent</td>
+            <td>Agentバージョン、OS対応、LTS期間、管理コンソールとの互換性</td>
+            <td>セキュリティエージェントはOS更新時の影響が大きいため、OS EOLとエージェントEOLを同じ表で確認します。利用中バージョンの期限はベンダー公式情報で再確認します。</td>
+            <td><a href="https://help.deepsecurity.trendmicro.com/">Trend Micro Deep Security Help Center</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="checklist">棚卸しチェックリスト</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>分類</th>
+            <th>確認項目</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OS</td>
+            <td>OS名、メジャーバージョン、AMI ID、カーネル、パッケージリポジトリ、監視/バックアップ/セキュリティエージェント対応</td>
+          </tr>
+          <tr>
+            <td>Database</td>
+            <td>DBエンジン、メジャー/マイナーバージョン、パラメータグループ、拡張機能、バックアップ、メンテナンスウィンドウ</td>
+          </tr>
+          <tr>
+            <td>Runtime</td>
+            <td>Lambdaランタイム、アプリケーションのPython/Node.js/PHP/Javaバージョン、依存ライブラリ、ビルド環境</td>
+          </tr>
+          <tr>
+            <td>Container</td>
+            <td>EKS/Kubernetesバージョン、Node AMI、アドオン、Ingress Controller、Helm Chart、コンテナベースイメージ</td>
+          </tr>
+          <tr>
+            <td>Operations</td>
+            <td>バックアップ取得、復旧手順、監視設定、通知先、切り戻し手順、作業後の正常性確認</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="update-plan">更新時の確認観点</h2>
+      <ul>
+        <li>更新前にスナップショット、AMI、設定ファイル、パラメータグループ、現行バージョンを記録します。</li>
+        <li>本番適用前に検証環境で起動、ログイン、アプリケーション疎通、監視、バックアップ、通知を確認します。</li>
+        <li>自動更新ではなく、メンテナンスウィンドウ、作業影響、停止可否、担当者の連絡経路を決めます。</li>
+        <li>更新後はバージョン、サービス起動状態、ログ、アプリケーション疎通、監視アラート、バックアップジョブを確認します。</li>
+        <li>切り戻し条件、切り戻し手順、切り戻し後の確認項目を作業前に明文化します。</li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#policy">確認方針</a>
+      <a href="#os">OS</a>
+      <a href="#aws-services">AWSマネージドサービス</a>
+      <a href="#middleware">ミドルウェア・エージェント</a>
+      <a href="#checklist">棚卸しチェックリスト</a>
+      <a href="#update-plan">更新時の確認観点</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
