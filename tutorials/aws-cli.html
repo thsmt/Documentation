@@ -24,7 +24,7 @@
       <a href="cloudformation.html">CloudFormation</a>
       <a class="active" href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
-      <a href="rhel9-ops.html">RHEL9 Operations</a>
+      <a href="rhel9-ops.html">RHEL9 Build</a>
       <a href="zabbix-ops.html">Zabbix</a>
       <a href="awx-ansible.html">AWX / Ansible</a>
     </aside>
@@ -33,7 +33,7 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
       <p class="meta">AWS / CLI / Operations</p>
       <h1>AWS CLI 実務手順集</h1>
-      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、CloudFormation操作、ログ確認の基本手順を整理します。</p>
+      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、IAM、Security Group、SNS、Route 53の基本手順を整理します。</p>
 
       <div class="callout">
         <strong>補足</strong>
@@ -104,19 +104,6 @@ aws --version</code></pre>
         <pre><code>aws configure set region ap-northeast-1 --profile &lt;PROFILE&gt;</code></pre>
       </div>
 
-      <h2 id="logs">CloudWatch Logs確認</h2>
-      <p>ロググループ名を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws logs describe-log-groups --profile &lt;PROFILE&gt;</code></pre>
-      </div>
-
-      <p>対象ロググループのログを追跡します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws logs tail &lt;LOG_GROUP_NAME&gt; --follow --profile &lt;PROFILE&gt;</code></pre>
-      </div>
-
       <h2 id="iam">IAMユーザー・グループ操作</h2>
       <p>原則として人のログイン用途はIAM Identity Centerを優先します。IAMユーザーを作成する場合は、用途、権限、利用期限、アクセスキーの有無を事前に確認します。</p>
       <table>
@@ -153,6 +140,7 @@ aws --version</code></pre>
 
       <h2 id="security-group">Security Group ルール追加・削除</h2>
       <p>Security Group変更は影響範囲が広いため、対象SG、方向、プロトコル、ポート、送信元/宛先、説明欄を事前に確定します。</p>
+      <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用します。</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -177,7 +165,7 @@ aws --version</code></pre>
       <p>全プロトコル・全ポートを許可する例です。検証や一時作業以外では原則として避け、作業後に必ず削除します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol all --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
       </div>
 
       <p>80/tcpの許可ルールを削除する例です。</p>
@@ -189,7 +177,7 @@ aws --version</code></pre>
       <p>全プロトコル・全ポートの許可ルールを削除する例です。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol all --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
       </div>
 
       <h2 id="sns">SNS Topic・Subscription作成</h2>
@@ -233,7 +221,6 @@ aws --version</code></pre>
       <a href="#identity">認証情報の確認</a>
       <a href="#profile">プロファイル</a>
       <a href="#region">リージョン確認</a>
-      <a href="#logs">CloudWatch Logs</a>
       <a href="#iam">IAM操作</a>
       <a href="#security-group">Security Group</a>
       <a href="#sns">SNS</a>

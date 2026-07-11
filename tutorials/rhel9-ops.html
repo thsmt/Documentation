@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RHEL9 運用手順 | Knowledge</title>
+  <title>RHEL9 手動構築手順 | Knowledge</title>
   <meta name="description" content="RHEL9 operation guide for AWS EC2.">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -24,20 +24,20 @@
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
-      <a class="active" href="rhel9-ops.html">RHEL9 Operations</a>
+      <a class="active" href="rhel9-ops.html">RHEL9 Build</a>
       <a href="zabbix-ops.html">Zabbix</a>
       <a href="awx-ansible.html">AWX / Ansible</a>
     </aside>
 
     <main>
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
-      <p class="meta">Linux / RHEL9 / Operations</p>
-      <h1>RHEL9 運用手順</h1>
-      <p class="lead">AWS EC2上のRHEL9を手動構築・保守する際の確認観点を整理します。実環境名、IPアドレス、顧客固有値は扱わず、再利用できる作業パターンだけをまとめます。</p>
+      <p class="meta">Linux / RHEL9 / Manual Build</p>
+      <h1>RHEL9 手動構築手順</h1>
+      <p class="lead">AWS EC2上のRHEL9を手動構築する際の初期パッケージ導入とlogrotate設定を整理します。実環境名、IPアドレス、顧客固有値は扱わず、手順だけを再利用できる形にまとめます。</p>
 
       <div class="callout">
-        <strong>方針</strong>
-        手動手順はAnsible化する前の確認用として扱います。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。コピーしやすさを優先し、プロンプト記号の <code>#</code> はコードブロックに含めません。
+        <strong>前提</strong>
+        PDFの手動構築手順をもとに、公開できる範囲で一般化しています。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。コピーしやすさを優先し、プロンプト記号の <code>#</code> はコードブロックに含めません。
       </div>
 
       <h2 id="precheck">作業前確認</h2>
@@ -51,50 +51,23 @@
         </tbody>
       </table>
 
-      <h2 id="baseline">基本パッケージと確認コマンド</h2>
-      <p>OSバージョンを確認します。</p>
+      <h2 id="package-install">基本パッケージのインストール</h2>
+      <p>タブ補完、疎通確認、ファイル取得、ネットワーク調査、端末操作で利用する基本パッケージをインストールします。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>cat /etc/redhat-release</code></pre>
+        <pre><code>yum install -y telnet lftp mlocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
       </div>
 
-      <p>ホスト名とOS情報を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>hostnamectl</code></pre>
-      </div>
-
-      <p>ネットワークインターフェイスとIPアドレスを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>ip addr</code></pre>
-      </div>
-
-      <p>ディスク容量とメモリ使用状況を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>df -h
-free -m</code></pre>
-      </div>
-
-      <p>更新可能なパッケージを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf check-update</code></pre>
-      </div>
-
-      <p>運用確認で利用する基本パッケージをインストールします。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y telnet lftp mlocate wget mtr tcpdump tmux bash-completion net-tools</code></pre>
+      <div class="callout">
+        <strong>補足</strong>
+        <code>bash-completion</code> 導入後、タブ補完がオプションまで補完されない場合があります。その場合は再ログイン、または必要に応じてOS再起動後に確認します。
       </div>
 
       <h2 id="logrotate">logrotate設定</h2>
-      <p>ログ保持期間や圧縮有無は環境ごとに差が出ます。変更前に既存設定を退避し、変更後に構文とローテーション対象を確認します。</p>
-      <p>既存のlogrotate設定を日付付きで退避します。</p>
+      <p>既存のlogrotate設定を退避します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>cp -pi /etc/logrotate.conf /etc/logrotate.conf.$(date +%Y%m%d)</code></pre>
+        <pre><code>cp -pi /etc/logrotate.conf /etc/logrotate.conf.org</code></pre>
       </div>
 
       <p>logrotate設定を編集します。</p>
@@ -103,99 +76,71 @@ free -m</code></pre>
         <pre><code>vi /etc/logrotate.conf</code></pre>
       </div>
 
-      <p>dry runでlogrotateの実行内容を確認します。</p>
+      <p><code>/etc/logrotate.conf</code> を以下の内容で上書きします。</p>
+      <div class="code">
+        <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
+        <pre><code># see "man logrotate" for details
+# rotate log files weekly
+weekly
+
+# keep 4 weeks worth of backlogs
+rotate 54
+
+# create new (empty) log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# uncomment this if you want your log files compressed
+compress
+
+# RPM packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# system-specific logs may be also be configured here.</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>確認観点</strong>
+        上記のコメントは標準設定由来の文言を含みます。<code>rotate 54</code> は保持世代数を54にする設定のため、実環境でコメントと設定値の整合性を重視する場合はコメントもあわせて修正します。
+      </div>
+
+      <h2 id="middleware-logrotate">ミドルウェア別logrotate設定</h2>
+      <p>ミドルウェアに合わせて、<code>/etc/logrotate.d/</code> 配下の設定ファイルを適宜変更します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>ls -l /etc/logrotate.d/</code></pre>
+      </div>
+
+      <p>対象ミドルウェアのlogrotate設定を編集します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>vi /etc/logrotate.d/&lt;SERVICE_NAME&gt;</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>注意</strong>
+        <code>/etc/logrotate.d/</code> 配下にバックアップファイルを置くと、バックアップファイル内の記述もlogrotateの対象として読み込まれる可能性があります。退避ファイルは別ディレクトリに置くか、logrotateが読み込まない名前・場所で管理します。
+      </div>
+
+      <h2 id="post-check">作業後確認</h2>
+      <p>logrotateのdry runで、構文と対象ファイルを確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>logrotate -d /etc/logrotate.conf</code></pre>
       </div>
 
-      <h2 id="ssm">SSM Agent確認</h2>
-      <p>Session ManagerやPatch Managerを使う場合は、SSM Agent、IAM Role、VPC Endpointまたはインターネット経路を確認します。</p>
-      <p>SSM Agentの状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status amazon-ssm-agent</code></pre>
-      </div>
-
-      <p>SSM Agentを自動起動に設定し、再起動します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl enable amazon-ssm-agent
-systemctl restart amazon-ssm-agent</code></pre>
-      </div>
-
-      <h2 id="cloudwatch-agent">CloudWatch Agent更新</h2>
-      <p>Agent更新では、更新前バージョン、設定ファイル、更新後のサービス状態、CloudWatch Logsへの到達を確認します。</p>
-      <p>CloudWatch Agentのインストール済みバージョンを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>rpm -qa | grep amazon-cloudwatch-agent</code></pre>
-      </div>
-
-      <p>CloudWatch Agentを更新します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf update -y amazon-cloudwatch-agent</code></pre>
-      </div>
-
-      <p>更新後のサービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status amazon-cloudwatch-agent</code></pre>
-      </div>
-
-      <h2 id="apache">Apache更新・設定変更</h2>
-      <p>Apacheの脆弱性対応や設定変更では、更新前後のRPM、構文確認、プロセス確認、ステータス確認を残します。</p>
-      <p>Apacheのインストール済みパッケージを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>rpm -qa | grep httpd</code></pre>
-      </div>
-
-      <p>変更前にApache設定の構文を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>apachectl configtest</code></pre>
-      </div>
-
-      <p>変更前のApacheサービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status httpd</code></pre>
-      </div>
-
-      <p>Apacheを更新します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf update -y httpd</code></pre>
-      </div>
-
-      <p>更新後に設定構文を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>apachectl configtest</code></pre>
-      </div>
-
-      <p>Apacheを再起動し、サービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl restart httpd
-systemctl status httpd</code></pre>
-      </div>
-
-      <h2 id="evidence">作業前後エビデンス</h2>
-      <p>作業前後で同じ観点を比較します。コマンド結果、AWSコンソールの状態、サービス応答、ログ出力を同じ順序で残すとレビューしやすくなります。</p>
+      <p>タブ補完やシェル設定の反映に問題がある場合は、再ログインまたは再起動後に確認します。</p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
       <a class="active" href="#precheck">作業前確認</a>
-      <a href="#baseline">基本パッケージ</a>
+      <a href="#package-install">基本パッケージ</a>
       <a href="#logrotate">logrotate</a>
-      <a href="#ssm">SSM Agent</a>
-      <a href="#cloudwatch-agent">CloudWatch Agent</a>
-      <a href="#apache">Apache</a>
-      <a href="#evidence">エビデンス</a>
+      <a href="#middleware-logrotate">ミドルウェア別設定</a>
+      <a href="#post-check">作業後確認</a>
     </aside>
   </div>
 
