@@ -33,7 +33,7 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
       <p class="meta">AWS / CLI / Operations</p>
       <h1>AWS CLI 実務手順集</h1>
-      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、IAM、Security Group、SNS、Route 53の基本手順を整理します。</p>
+      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、IAM、Security Group、SNS、Elastic IP、Compute Optimizerの基本手順を整理します。</p>
 
       <div class="callout">
         <strong>補足</strong>
@@ -200,18 +200,58 @@ aws --version</code></pre>
         <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test" --profile &lt;PROFILE&gt;</code></pre>
       </div>
 
-      <h2 id="route53">Route 53 レコード確認</h2>
-      <p>DNS変更はTTL、現在値、変更後の値、切り戻し値を事前に控えます。TXT/SPFレコードでは引用符、空白、includeの重複に注意します。</p>
-      <p>Hosted Zone内のレコード一覧を確認します。</p>
+      <h2 id="elastic-ip">Elastic IP 解放後の再取得</h2>
+      <p>Elastic IPを誤って解放した場合でも、他のAWSアカウントに割り当てられていなければ、AWS CLIで同じPublic IPv4アドレスを指定して再取得できる場合があります。詳細は <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Amazon EC2 User Guide</a> を確認します。</p>
+      <table>
+        <thead><tr><th>値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;PUBLIC_IP&gt;</code></td><td>再取得したいElastic IPアドレス</td></tr>
+          <tr><td><code>&lt;REGION&gt;</code></td><td>Elastic IPを利用していたリージョン</td></tr>
+          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
+        </tbody>
+      </table>
+
+      <p>解放済みのElastic IPを同じアドレスで再取得します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws route53 list-resource-record-sets --hosted-zone-id &lt;HOSTED_ZONE_ID&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 allocate-address --domain vpc --address &lt;PUBLIC_IP&gt; --region &lt;REGION&gt; --profile &lt;PROFILE&gt;</code></pre>
       </div>
 
-      <p>端末側からTXTレコードを名前解決して確認します。</p>
+      <p>再取得したElastic IPをEC2インスタンスへ関連付ける場合は、払い出されたAllocation IDを指定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Resolve-DnsName -Name &lt;RECORD_NAME&gt; -Type TXT</code></pre>
+        <pre><code>aws ec2 associate-address --allocation-id &lt;ALLOCATION_ID&gt; --instance-id &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; --profile &lt;PROFILE&gt;</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>注意</strong>
+        解放済みのElastic IPが他のAWSアカウントに割り当てられている場合は再取得できません。作業前に対象リージョン、対象IP、現在の割り当て状況を確認します。
+      </div>
+
+      <h2 id="compute-optimizer">Compute Optimizer オプトアウト</h2>
+      <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新します。詳細は <a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a> を確認します。</p>
+      <table>
+        <thead><tr><th>値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
+        </tbody>
+      </table>
+
+      <p>現在のCompute Optimizer登録状態を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws compute-optimizer get-enrollment-status --profile &lt;PROFILE&gt;</code></pre>
+      </div>
+
+      <p>Compute Optimizerからアカウントをオプトアウトします。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws compute-optimizer update-enrollment-status --status Inactive --profile &lt;PROFILE&gt;</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>注意</strong>
+        オプトアウト時に <code>--include-member-accounts</code> を指定するとエラーになります。また、オプトアウトすると対象アカウントのレコメンデーションと関連メトリクスデータはCompute Optimizerから削除されます。
       </div>
     </main>
 
@@ -224,7 +264,8 @@ aws --version</code></pre>
       <a href="#iam">IAM操作</a>
       <a href="#security-group">Security Group</a>
       <a href="#sns">SNS</a>
-      <a href="#route53">Route 53</a>
+      <a href="#elastic-ip">Elastic IP</a>
+      <a href="#compute-optimizer">Compute Optimizer</a>
     </aside>
   </div>
 
