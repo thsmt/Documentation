@@ -33,11 +33,11 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
       <p class="meta">AWS / CLI / Operations</p>
       <h1>AWS CLI 実務手順集</h1>
-      <p class="lead">AWS CLIを使った認証確認、プロファイル切替、IAM、Security Group、SNS、Elastic IP、Compute Optimizerの基本手順を整理します。</p>
+      <p class="lead">AWS CLIを使った認証確認、リージョン設定、IAM、Security Group、SNS、Elastic IP、Compute Optimizerの基本手順を整理します。</p>
 
       <div class="callout">
         <strong>補足</strong>
-        AWS CLIの作業前には、利用者、アカウントID、リージョンを確認します。複数アカウントを扱う場合は、プロファイル名を明示して操作対象を取り違えないようにします。
+        AWS CLIの作業前には、利用者、アカウントID、リージョンを確認します。CloudShellや作業端末にデフォルト認証情報が設定済みであれば、以降のコマンドに <code>--profile</code> は不要です。
       </div>
 
       <h2 id="install">インストール</h2>
@@ -84,24 +84,23 @@ aws --version</code></pre>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
 
-      <h2 id="profile">プロファイルの使い分け</h2>
-      <p>作業用のプロファイルを作成します。複数アカウントを扱う場合は、以降のコマンドで <code>--profile &lt;PROFILE&gt;</code> を明示します。</p>
+      <h2 id="credentials">認証情報の設定</h2>
+      <p>作業端末で初めてAWS CLIを使う場合は、デフォルト認証情報を設定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws configure</code></pre>
       </div>
 
-      <p>作成したプロファイルで認証先を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sts get-caller-identity --profile &lt;PROFILE&gt;</code></pre>
+      <div class="callout">
+        <strong>補足</strong>
+        <code>--profile</code> は、複数のAWSアカウントやIAMユーザーを名前付きプロファイルで切り替える場合だけ指定します。このページでは、デフォルト認証情報を使う前提で記載します。
       </div>
 
       <h2 id="region">リージョン確認</h2>
       <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure set region ap-northeast-1 --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws configure set region ap-northeast-1</code></pre>
       </div>
 
       <h2 id="iam">IAMユーザー・グループ操作</h2>
@@ -111,31 +110,25 @@ aws --version</code></pre>
         <tbody>
           <tr><td><code>&lt;USER_NAME&gt;</code></td><td>作成または確認するIAMユーザー名</td></tr>
           <tr><td><code>&lt;GROUP_NAME&gt;</code></td><td>ユーザーを所属させるIAMグループ名</td></tr>
-          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
         </tbody>
       </table>
 
       <p>IAMユーザーを作成します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam create-user --user-name &lt;USER_NAME&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws iam create-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <p>作成したIAMユーザーを既存グループに追加します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>ユーザーの所属グループを確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam list-groups-for-user --user-name &lt;USER_NAME&gt; --profile &lt;PROFILE&gt;</code></pre>
-      </div>
-
-      <div class="callout">
-        <strong>確認観点</strong>
-        作業前後でユーザー数、所属グループ、付与ポリシーを比較します。アクセスキーを作成する場合は、保管方法、ローテーション、削除予定日を作業記録に残します。
+        <pre><code>aws iam list-groups-for-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <h2 id="security-group">Security Group ルール追加・削除</h2>
@@ -146,38 +139,37 @@ aws --version</code></pre>
         <tbody>
           <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>変更対象のSecurity Group ID</td></tr>
           <tr><td><code>&lt;CIDR&gt;</code></td><td>許可または削除する送信元CIDR。例: <code>203.0.113.10/32</code></td></tr>
-          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
         </tbody>
       </table>
 
       <p>作業前に、対象Security Groupの現在のルールを確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt;</code></pre>
       </div>
 
       <p>HTTPの80/tcpだけを許可する例です。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>全プロトコル・全ポートを許可する例です。検証や一時作業以外では原則として避け、作業後に必ず削除します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>80/tcpの許可ルールを削除する例です。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>全プロトコル・全ポートの許可ルールを削除する例です。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <h2 id="sns">SNS Topic・Subscription作成</h2>
@@ -185,19 +177,19 @@ aws --version</code></pre>
       <p>SNS Topicを作成します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns create-topic --name &lt;TOPIC_NAME&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws sns create-topic --name &lt;TOPIC_NAME&gt;</code></pre>
       </div>
 
       <p>メール通知先をSubscriptionとして登録します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns subscribe --topic-arn &lt;TOPIC_ARN&gt; --protocol email --notification-endpoint &lt;MAIL_ADDRESS&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws sns subscribe --topic-arn &lt;TOPIC_ARN&gt; --protocol email --notification-endpoint &lt;MAIL_ADDRESS&gt;</code></pre>
       </div>
 
       <p>通知テストを実行します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test" --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test"</code></pre>
       </div>
 
       <h2 id="elastic-ip">Elastic IP 解放後の再取得</h2>
@@ -207,20 +199,21 @@ aws --version</code></pre>
         <tbody>
           <tr><td><code>&lt;PUBLIC_IP&gt;</code></td><td>再取得したいElastic IPアドレス</td></tr>
           <tr><td><code>&lt;REGION&gt;</code></td><td>Elastic IPを利用していたリージョン</td></tr>
-          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
+          <tr><td><code>&lt;ALLOCATION_ID&gt;</code></td><td>再取得後に払い出されたElastic IPのAllocation ID</td></tr>
+          <tr><td><code>&lt;INSTANCE_ID&gt;</code></td><td>Elastic IPを関連付けるEC2インスタンスID</td></tr>
         </tbody>
       </table>
 
       <p>解放済みのElastic IPを同じアドレスで再取得します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 allocate-address --domain vpc --address &lt;PUBLIC_IP&gt; --region &lt;REGION&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 allocate-address --domain vpc --address &lt;PUBLIC_IP&gt; --region &lt;REGION&gt;</code></pre>
       </div>
 
       <p>再取得したElastic IPをEC2インスタンスへ関連付ける場合は、払い出されたAllocation IDを指定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 associate-address --allocation-id &lt;ALLOCATION_ID&gt; --instance-id &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws ec2 associate-address --allocation-id &lt;ALLOCATION_ID&gt; --instance-id &lt;INSTANCE_ID&gt; --region &lt;REGION&gt;</code></pre>
       </div>
 
       <div class="callout">
@@ -230,23 +223,17 @@ aws --version</code></pre>
 
       <h2 id="compute-optimizer">Compute Optimizer オプトアウト</h2>
       <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新します。詳細は <a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a> を確認します。</p>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;PROFILE&gt;</code></td><td>AWS CLIの作業用プロファイル名</td></tr>
-        </tbody>
-      </table>
 
       <p>現在のCompute Optimizer登録状態を確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws compute-optimizer get-enrollment-status --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws compute-optimizer get-enrollment-status</code></pre>
       </div>
 
       <p>Compute Optimizerからアカウントをオプトアウトします。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws compute-optimizer update-enrollment-status --status Inactive --profile &lt;PROFILE&gt;</code></pre>
+        <pre><code>aws compute-optimizer update-enrollment-status --status Inactive</code></pre>
       </div>
 
       <div class="callout">
@@ -259,7 +246,7 @@ aws --version</code></pre>
       <h2>目次</h2>
       <a class="active" href="#install">インストール</a>
       <a href="#identity">認証情報の確認</a>
-      <a href="#profile">プロファイル</a>
+      <a href="#credentials">認証情報の設定</a>
       <a href="#region">リージョン確認</a>
       <a href="#iam">IAM操作</a>
       <a href="#security-group">Security Group</a>
