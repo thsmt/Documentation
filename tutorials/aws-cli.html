@@ -40,7 +40,8 @@
         AWS CLIの作業前には、利用者、アカウントID、リージョンを確認します。CloudShellや作業端末にデフォルト認証情報が設定済みであれば、以降のコマンドに <code>--profile</code> は不要です。
       </div>
 
-      <h2 id="install">インストール</h2>
+      <h2 id="setup">AWS CLIの初期設定</h2>
+      <h3 id="install">インストール</h3>
       <p>作業端末のOSに合わせてAWS CLIをインストールします。</p>
 
       <div class="tab-group" data-tabs>
@@ -77,14 +78,14 @@ aws --version</code></pre>
         </section>
       </div>
 
-      <h2 id="identity">認証情報の確認</h2>
+      <h3 id="identity">認証情報の確認</h3>
       <p>現在の認証情報が、想定しているAWSアカウントとIAMユーザー/ロールを向いているか確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
 
-      <h2 id="credentials">認証情報の設定</h2>
+      <h3 id="credentials">認証情報の設定</h3>
       <p>作業端末で初めてAWS CLIを使う場合は、デフォルト認証情報を設定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
@@ -96,7 +97,7 @@ aws --version</code></pre>
         <code>--profile</code> は、複数のAWSアカウントやIAMユーザーを名前付きプロファイルで切り替える場合だけ指定します。このページでは、デフォルト認証情報を使う前提で記載します。
       </div>
 
-      <h2 id="region">リージョン確認</h2>
+      <h3 id="region">リージョン確認</h3>
       <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
@@ -244,10 +245,7 @@ aws --version</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
-      <a class="active" href="#install">インストール</a>
-      <a href="#identity">認証情報の確認</a>
-      <a href="#credentials">認証情報の設定</a>
-      <a href="#region">リージョン確認</a>
+      <a class="active" href="#setup">AWS CLIの初期設定</a>
       <a href="#iam">IAM操作</a>
       <a href="#security-group">Security Group</a>
       <a href="#sns">SNS</a>
