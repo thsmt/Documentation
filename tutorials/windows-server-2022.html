@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Windows Server 2022 手動構築手順 | Knowledge</title>
+  <meta name="description" content="Windows Server 2022 manual build guide for AWS EC2.">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Knowledge</span></a>
+    <nav class="nav" aria-label="Global navigation">
+      <a href="../">Home</a>
+      <a href="cloudformation.html">Guides</a>
+      <a href="https://github.com/thsmt">Repositories</a>
+      <a href="https://github.com/thsmt/Knowledge">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Tutorial navigation">
+      <h2>Guides</h2>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="rhel9-ops.html">RHEL9 Build</a>
+      <a class="active" href="windows-server-2022.html">Windows Server</a>
+      <a href="zabbix-ops.html">Zabbix</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="eol.html">EOL / Lifecycle</a>
+    </aside>
+
+    <main>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
+      <p class="meta">Windows Server / EC2 / Manual Build</p>
+      <h1>Windows Server 2022 手動構築手順</h1>
+      <p class="lead">AWS EC2上にWindows Server 2022を手動構築する際の、インスタンス起動、接続、ローカルユーザー作成、OS初期設定、Windows Updateまでの確認観点を整理します。</p>
+
+      <div class="callout">
+        <strong>前提</strong>
+        実環境名、顧客名、社内共有パス、実IPアドレスは扱わず、再利用できる手順として一般化しています。<code>&lt;INSTANCE_NAME&gt;</code>、<code>&lt;HOSTNAME&gt;</code>、<code>&lt;WINDOWS_PRIVATE_IP&gt;</code> などは環境に合わせて置き換えます。
+      </div>
+
+      <h2 id="overview">1. 基本情報</h2>
+      <p>Windows ServerはOSバージョンごとにメインストリームサポートと延長サポートの期限が異なるため、構築時点で利用するAMIとサポート期限を確認します。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>OS</th>
+            <th>メインストリーム終了</th>
+            <th>延長サポート終了</th>
+            <th>参考</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Windows Server 2019</td>
+            <td>2024/01/09</td>
+            <td>2029/01/09</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2019">Microsoft Lifecycle</a></td>
+          </tr>
+          <tr>
+            <td>Windows Server 2022</td>
+            <td>2026/10/13</td>
+            <td>2031/10/14</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2022">Microsoft Lifecycle</a></td>
+          </tr>
+          <tr>
+            <td>Windows Server 2025</td>
+            <td>2029/10/09</td>
+            <td>2034/10/10</td>
+            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025">Microsoft Lifecycle</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="parameters">2. 作業前に決める値</h2>
+      <p>インスタンス起動前に、以下の値をヒアリングシートや設計書で確認します。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>値</th>
+            <th>用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>&lt;REGION&gt;</code></td><td>構築リージョン。例: <code>ap-northeast-1</code></td></tr>
+          <tr><td><code>&lt;INSTANCE_NAME&gt;</code></td><td>EC2 Nameタグ。インスタンス、ボリューム、ENIへ同じ文脈で付与します。</td></tr>
+          <tr><td><code>&lt;AMI_NAME&gt;</code> / <code>&lt;AMI_ID&gt;</code></td><td>Windows Server 2022 Japanese Full Baseなど、構築時点の対象AMI。</td></tr>
+          <tr><td><code>&lt;INSTANCE_TYPE&gt;</code></td><td>要件に応じたEC2インスタンスタイプ。</td></tr>
+          <tr><td><code>&lt;KEY_PAIR_NAME&gt;</code></td><td>Windows初期パスワード復号に使用するキーペア。</td></tr>
+          <tr><td><code>&lt;VPC_ID&gt;</code> / <code>&lt;SUBNET_ID&gt;</code></td><td>配置先VPCとサブネット。</td></tr>
+          <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>RDP、踏み台、管理経路の要件に合わせたSecurity Group。</td></tr>
+          <tr><td><code>&lt;IAM_INSTANCE_PROFILE&gt;</code></td><td>SSM、CloudWatch Agentなどに必要なIAMインスタンスプロファイル。</td></tr>
+          <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>OS上に設定するコンピューター名。</td></tr>
+          <tr><td><code>&lt;ADMIN_USER&gt;</code> / <code>&lt;CUSTOMER_USER&gt;</code></td><td>管理用・利用者用のローカルユーザー名。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="launch">3. EC2インスタンス作成</h2>
+      <h3 id="launch-name">3.1 名前とタグ</h3>
+      <ol>
+        <li>AWS Management Consoleへ管理者権限でサインインします。</li>
+        <li>画面右上で対象リージョンを確認します。</li>
+        <li>EC2ダッシュボードを開き、「インスタンスを起動」を選択します。</li>
+        <li>「さらにタグを追加」を選択します。</li>
+        <li><code>Name</code> キーに <code>&lt;INSTANCE_NAME&gt;</code> を設定し、リソースタイプはインスタンス、ボリューム、ネットワークインターフェイスを対象にします。</li>
+      </ol>
+
+      <h3 id="launch-ami">3.2 アプリケーションおよびOSイメージ</h3>
+      <ol>
+        <li>「その他のAMIを閲覧する」を選択します。</li>
+        <li>「コミュニティAMI」または利用するAMI提供元のタブを選択します。</li>
+        <li>検索欄に <code>Windows_Server-2022-Japanese-Full-Base</code> を入力します。</li>
+        <li>構築日時点で最新のWindows Server 2022日本語AMIを選択します。</li>
+        <li>検証環境と本番環境で同一AMIを使う場合は、AMI IDを作業記録に控えます。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>確認</strong>
+        AWS提供のWindows AMIは定期的に更新されます。構築後に差分が追えるよう、AMI名とAMI IDを作業記録に残します。
+      </div>
+
+      <h3 id="launch-instance-type">3.3 インスタンスタイプ</h3>
+      <p>設計値に合わせて <code>&lt;INSTANCE_TYPE&gt;</code> を選択します。T系インスタンスを利用する場合は、後続の高度な詳細でクレジット仕様も確認します。</p>
+
+      <h3 id="launch-keypair">3.4 キーペア</h3>
+      <p>Windowsインスタンスの初期Administratorパスワード復号に使用するキーペアを選択します。Windows Serverの接続方式ではRSAキーペアを利用する運用になる場合があるため、環境の標準とAWSドキュメントを確認します。</p>
+      <ol>
+        <li>既存の <code>&lt;KEY_PAIR_NAME&gt;</code> を選択、または新規作成します。</li>
+        <li>新規作成時は秘密鍵を安全な保管場所に保存します。</li>
+        <li>秘密鍵の保存場所、利用者、削除・ローテーション方針を作業記録に残します。</li>
+      </ol>
+
+      <h3 id="launch-network">3.5 ネットワーク設定</h3>
+      <ol>
+        <li>設計値に合わせて <code>&lt;VPC_ID&gt;</code> と <code>&lt;SUBNET_ID&gt;</code> を選択します。</li>
+        <li>Security Groupは <code>&lt;SECURITY_GROUP_ID&gt;</code> を選択します。</li>
+        <li>Private Subnet配置の場合は、パブリックIPの自動割り当てを無効にします。</li>
+      </ol>
+
+      <h3 id="launch-storage">3.6 ストレージ</h3>
+      <ol>
+        <li>画面右側の「アドバンスト」を開き、ボリュームの詳細を展開します。</li>
+        <li>ルートボリュームのサイズ、ボリュームタイプ、暗号化有無を確認します。</li>
+        <li>検証環境や一時サーバーでは、終了時に削除を「はい」に設定します。</li>
+        <li>追加ボリュームを作成する場合も、サイズ、タイプ、暗号化有無、終了時削除を確認します。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>EBSの終了時削除</strong>
+        EC2起動後にEBSの <code>DeleteOnTermination</code> 属性を変更する場合は、AWS CLIの <a href="aws-cli.html#ec2-ebs-delete-on-termination">EC2 EBS終了時削除属性の変更</a> を利用します。
+      </div>
+
+      <h3 id="launch-advanced">3.7 高度な詳細</h3>
+      <ol>
+        <li>IAMインスタンスプロフィールに <code>&lt;IAM_INSTANCE_PROFILE&gt;</code> を選択します。</li>
+        <li>要件に応じて終了保護を有効化します。</li>
+        <li>T2 / T3 / T3aを利用する場合は、クレジット仕様を確認します。</li>
+        <li>設定値を確認し、インスタンスを起動します。</li>
+      </ol>
+
+      <h2 id="connect">4. Windowsインスタンス接続</h2>
+      <p>接続方法は、踏み台経由のRDP、またはAWS Systems Manager Fleet Manager Remote Desktopを利用します。環境に応じて接続経路、IAM権限、ルート、Security Groupを確認します。</p>
+
+      <h3 id="connect-bastion">4.1 踏み台経由での接続</h3>
+      <ol>
+        <li>踏み台サーバーへSSHログインします。</li>
+        <li>Tera TermなどのSSHクライアントで、SSHポートフォワード設定を開きます。</li>
+        <li>ローカルポートに、他と重複しない任意のポートを設定します。例: <code>65001</code></li>
+        <li>リモート側ホストに <code>&lt;WINDOWS_PRIVATE_IP&gt;</code> を指定します。</li>
+        <li>リモート側ポートに <code>3389</code> を指定します。</li>
+        <li>RDPクライアントで <code>127.0.0.1:65001</code> に接続します。</li>
+        <li>ユーザー名 <code>Administrator</code> と、キーペアから復号したパスワードでログインします。</li>
+      </ol>
+
+      <table>
+        <thead><tr><th>項目</th><th>設定例</th></tr></thead>
+        <tbody>
+          <tr><td>ローカルポート</td><td><code>65001</code></td></tr>
+          <tr><td>リッスン</td><td>未入力</td></tr>
+          <tr><td>リモート側ホスト</td><td><code>&lt;WINDOWS_PRIVATE_IP&gt;</code></td></tr>
+          <tr><td>リモート側ポート</td><td><code>3389</code></td></tr>
+          <tr><td>RDP接続先</td><td><code>127.0.0.1:65001</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="connect-fleet-manager">4.2 Fleet Manager Remote Desktopでの接続</h3>
+      <ol>
+        <li>EC2ダッシュボードで対象インスタンスを選択します。</li>
+        <li>「接続」から「RDPクライアント」を開きます。</li>
+        <li>接続タイプで「Fleet Managerを使用して接続する」を選択します。</li>
+        <li>認証種類にユーザー認証情報を選択します。</li>
+        <li>ユーザー名 <code>Administrator</code> と、キーペアから復号したパスワードを入力します。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>接続できない場合</strong>
+        パスワード未復号、SSM Agent未起動、IAMインスタンスプロファイルの権限不足、NAT GatewayまたはSSM関連VPCエンドポイントへの経路不足を確認します。IAMには <code>AmazonSSMManagedInstanceCore</code> 相当の権限が必要です。
+      </div>
+
+      <h3 id="windows-password">4.3 Windowsパスワード取得</h3>
+      <ol>
+        <li>起動したWindowsインスタンスを選択します。</li>
+        <li>「アクション」から「セキュリティ」へ進み、「Windowsパスワードを取得」を選択します。</li>
+        <li>プライベートキーファイルをアップロードします。</li>
+        <li>「パスワードを復号化」を選択します。</li>
+        <li>表示されたAdministratorパスワードを、認証情報管理ルールに従って安全に保管します。</li>
+      </ol>
+
+      <h2 id="local-users">5. ローカルユーザー作成</h2>
+      <h3 id="admin-user">5.1 管理用ローカルユーザー</h3>
+      <p>パスワードをコマンド履歴に残さないため、管理用ユーザーはGUIで作成します。</p>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>compmgmt.msc</code> を実行します。</li>
+        <li>「ローカル ユーザーとグループ」から「ユーザー」を開きます。</li>
+        <li>「新しいユーザー」を選択します。</li>
+        <li>ユーザー名、フルネーム、説明に <code>&lt;ADMIN_USER&gt;</code> を設定します。</li>
+        <li>「ユーザーは次回ログオン時にパスワードの変更が必要」のチェックを外します。</li>
+        <li>「パスワードを無期限にする」を選択します。</li>
+        <li>作成後、対象ユーザーの所属グループに <code>Administrators</code> を追加します。</li>
+        <li><code>Administrators</code> と <code>Users</code> に所属していることを確認します。</li>
+      </ol>
+
+      <h3 id="customer-user">5.2 利用者用ローカルユーザー</h3>
+      <p>利用者用ユーザーをPowerShellで作成する場合は、パスワードを平文で直接書かず、入力プロンプトからSecureStringとして受け取ります。</p>
+
+      <p>管理者権限でPowerShellを起動します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>net user</code></pre>
+      </div>
+
+      <p>パスワードを対話入力で受け取り、ローカルユーザーを作成します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString
+New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;" -PasswordNeverExpires</code></pre>
+      </div>
+
+      <p>必要なローカルグループへ追加します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"
+Add-LocalGroupMember -Group "Users" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
+      </div>
+
+      <p>作成結果を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>net user &lt;CUSTOMER_USER&gt;</code></pre>
+      </div>
+
+      <p>PowerShell履歴を削除します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Clear-History
+Remove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue</code></pre>
+      </div>
+
+      <h2 id="os-settings">6. Windows OS初期設定</h2>
+      <h3 id="hostname">6.1 ホスト名設定</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>sysdm.cpl</code> を実行します。</li>
+        <li>「コンピューター名」タブの「変更」を選択します。</li>
+        <li>コンピューター名に <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
+        <li>ドメイン参加が必要な場合は、要件に応じてドメイン設定を行います。</li>
+        <li>再起動確認が表示された場合は、他の設定完了後に再起動します。</li>
+      </ol>
+
+      <h3 id="timezone">6.2 タイムゾーン設定</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>timedate.cpl</code> を実行します。</li>
+        <li>「タイムゾーンの変更」を選択します。</li>
+        <li><code>(UTC+09:00) 大阪、札幌、東京</code> を選択します。</li>
+        <li>現在時刻が日本時間になっていることを確認します。</li>
+      </ol>
+
+      <h3 id="windows-update-policy">6.3 Windows Update自動更新の無効化</h3>
+      <p>運用上のメンテナンスウィンドウに合わせるため、自動更新を無効化し、更新は計画作業として実施します。</p>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>gpedit.msc</code> を実行します。</li>
+        <li>「コンピューターの構成」から「管理用テンプレート」へ進みます。</li>
+        <li>「Windowsコンポーネント」から「Windows Update」を開きます。</li>
+        <li>「自動更新を構成する」を開きます。</li>
+        <li>「無効」を選択し、設定が無効になっていることを確認します。</li>
+      </ol>
+
+      <h3 id="rdp-limit">6.4 RDP接続数の制限設定</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>gpedit.msc</code> を実行します。</li>
+        <li>「管理用テンプレート」から「Windowsコンポーネント」を開きます。</li>
+        <li>「リモート デスクトップ サービス」から「リモート デスクトップ セッション ホスト」へ進みます。</li>
+        <li>「接続」を開き、「接続数を制限する」を無効にします。</li>
+        <li>「リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する」も要件に応じて無効化します。</li>
+      </ol>
+
+      <h3 id="windows-firewall">6.5 Windows Firewall設定</h3>
+      <p>OS標準のWindows Firewallを無効化する場合は、Security Group、Network ACL、EDR、社内ポリシーで必要な制御が担保されていることを確認します。</p>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>firewall.cpl</code> を実行します。</li>
+        <li>「Windows Defender ファイアウォールの有効化または無効化」を開きます。</li>
+        <li>プライベート、パブリックの両方で無効化します。</li>
+        <li>「詳細設定」からプロパティを開きます。</li>
+        <li>ドメイン、プライベート、パブリックの各プロファイルでファイアウォール状態を確認します。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>注意</strong>
+        Windows Firewallの無効化は標準化された運用要件がある場合のみ実施します。公開サーバーや不特定経路から到達可能なサーバーでは、原則としてOS側ファイアウォールも含めて防御層を確認します。
+      </div>
+
+      <h3 id="additional-volume">6.6 追加ボリュームの初期化</h3>
+      <p>ルートボリューム以外の追加ディスクをアタッチしている場合のみ実施します。</p>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>diskmgmt.msc</code> を実行します。</li>
+        <li>未初期化ディスクが表示された場合、対象ディスクを確認します。</li>
+        <li>パーティションスタイルは <code>GPT</code> を選択します。</li>
+        <li>未割り当て領域を右クリックし、「新しいシンプルボリューム」を選択します。</li>
+        <li>ボリュームサイズは最大値、ドライブ文字は要件に応じて割り当てます。例: <code>D:</code></li>
+        <li>ファイルシステムは <code>NTFS</code>、アロケーションユニットサイズは既定値、クイックフォーマットを選択します。</li>
+        <li>ディスクの状態が「正常」となり、エクスプローラーに対象ドライブが表示されることを確認します。</li>
+      </ol>
+
+      <h3 id="windows-update">6.7 Windows Updateの実施</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>ms-settings:windowsupdate</code> を実行します。</li>
+        <li>「更新プログラムのチェック」を選択します。</li>
+        <li>更新プログラムが検出された場合は、ダウンロードとインストールを実施します。</li>
+        <li>再起動が必要な場合は、作業影響を確認して再起動します。</li>
+        <li>再ログイン後、再度更新チェックを行い、「最新の状態です」と表示されるまで繰り返します。</li>
+      </ol>
+
+      <h2 id="cloudwatch-agent">7. CloudWatch Agent</h2>
+      <p>EC2インスタンス作成後、要件に応じてCloudWatch Agentを導入し、メトリクスとログの収集設定を行います。</p>
+      <table>
+        <thead><tr><th>確認項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>IAM権限</td><td>CloudWatch Agentがメトリクスとログを送信できる権限をIAMインスタンスプロファイルに付与します。</td></tr>
+          <tr><td>ログ収集</td><td>Windows Event Log、アプリケーションログ、任意ログファイルの収集対象を確認します。</td></tr>
+          <tr><td>KMS</td><td>ロググループ暗号化が必要な場合は、CloudWatch LogsとKMSキーの設定を確認します。</td></tr>
+          <tr><td>再起動後確認</td><td>サービス起動状態とCloudWatch側の取り込み状況を確認します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="post-check">8. 作業後確認</h2>
+      <table>
+        <thead><tr><th>観点</th><th>確認内容</th></tr></thead>
+        <tbody>
+          <tr><td>EC2</td><td>インスタンス名、AMI、インスタンスタイプ、サブネット、Security Group、IAMロールが設計値と一致していること。</td></tr>
+          <tr><td>接続</td><td>踏み台経由またはFleet Manager経由でRDP接続できること。</td></tr>
+          <tr><td>ユーザー</td><td>管理用・利用者用ローカルユーザーが作成され、必要なグループに所属していること。</td></tr>
+          <tr><td>OS</td><td>ホスト名、タイムゾーン、Windows Update、RDP設定、Firewall設定、追加ボリュームが要件通りであること。</td></tr>
+          <tr><td>監視</td><td>CloudWatch Agentなどの監視・ログ収集設定が必要な場合、正常に送信されていること。</td></tr>
+          <tr><td>証跡</td><td>設定値、スクリーンショット、実施日時、実施者、確認者を作業記録に残すこと。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="references">9. 参考</h2>
+      <ul>
+        <li><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2022">Windows Server 2022 - Microsoft Lifecycle</a></li>
+        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/launching-instance.html">Launch an instance using the new launch instance wizard - Amazon EC2</a></li>
+        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-to-windows-instance.html">Connect to your Windows instance - Amazon EC2</a></li>
+        <li><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/fleet-rdp.html">Connect to a managed node using Remote Desktop - AWS Systems Manager</a></li>
+        <li><a href="https://docs.aws.amazon.com/ja_jp/ec2/latest/devguide/example_ec2_ModifyInstanceAttribute_section.html">ModifyInstanceAttribute のAWS公式例 - Amazon EC2</a></li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>目次</h2>
+      <a class="active" href="#overview">1. 基本情報</a>
+      <a href="#parameters">2. 作業前に決める値</a>
+      <a href="#launch">3. EC2作成</a>
+      <a href="#connect">4. 接続</a>
+      <a href="#local-users">5. ローカルユーザー</a>
+      <a href="#os-settings">6. OS初期設定</a>
+      <a href="#cloudwatch-agent">7. CloudWatch Agent</a>
+      <a href="#post-check">8. 作業後確認</a>
+      <a href="#references">9. 参考</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
