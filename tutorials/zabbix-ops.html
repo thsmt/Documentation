@@ -35,7 +35,7 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
       <p class="meta">Monitoring / Zabbix / Operations</p>
       <h1>Zabbix 運用手順</h1>
-      <p class="lead">Zabbix 6.0を想定し、Linux / RHEL9とWindows ServerのZabbix Agent 2導入、ホストグループ作成、メンテナンス設定、ホスト登録、最新データ確認を整理します。</p>
+      <p class="lead">Zabbix 6.0を想定し、Linux / RHEL9とWindows ServerのZabbix Agent 2導入、ホストグループ作成、メンテナンス設定、ホスト登録、最新データ確認を整理します。OSごとに差分が出る手順はタブで切り替えます。</p>
 
       <div class="callout">
         <strong>前提</strong>
@@ -54,79 +54,111 @@
         </tbody>
       </table>
 
-      <h2 id="agent-install-rhel">2. Zabbix Agent 2インストール（RHEL9）</h2>
-      <p>Zabbix 6.0のRHEL9向け公式リポジトリを追加します。<code>dnf install</code> だけでは通常Zabbix Agent 2を導入できないため、先に <code>zabbix-release</code> パッケージを導入します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/9/x86_64/zabbix-release-6.0-5.el9.noarch.rpm</code></pre>
-      </div>
+      <h2 id="agent-setup">2. Zabbix Agent 2導入・設定</h2>
+      <p>Agent導入はOSごとに手順が異なります。RHEL9では公式リポジトリ追加と設定ファイル編集、Windows ServerではMSIインストーラーとウィザード設定を行います。</p>
 
-      <p>dnfのキャッシュを削除し、追加したリポジトリ情報を読み直します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf clean all</code></pre>
-      </div>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Zabbix Agent 2 setup">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="zabbix-agent-rhel">RHEL9</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-agent-windows">Windows Server</button>
+        </div>
 
-      <p>Zabbix Agent 2をインストールします。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y zabbix-agent2</code></pre>
-      </div>
+        <section class="tab-panel active" id="zabbix-agent-rhel" role="tabpanel">
+          <h3>RHEL9</h3>
+          <p>Zabbix 6.0のRHEL9向け公式リポジトリを追加します。<code>dnf install</code> だけでは通常Zabbix Agent 2を導入できないため、先に <code>zabbix-release</code> パッケージを導入します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/9/x86_64/zabbix-release-6.0-5.el9.noarch.rpm</code></pre>
+          </div>
 
-      <h2 id="agent-config-rhel">3. Zabbix Agent 2設定（RHEL9）</h2>
-      <p>Agent設定ファイルを編集します。環境ごとにZabbix ServerまたはProxyのIPアドレス、監視対象ホスト名を置き換えます。</p>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;ZABBIX_SERVER_IP&gt;</code></td><td>Zabbix ServerまたはProxyのIPアドレス。</td></tr>
-          <tr><td><code>&lt;ZABBIX_SERVER_FQDN&gt;</code></td><td>Zabbix ServerまたはProxyのFQDN。IPで指定する場合は不要です。</td></tr>
-          <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Zabbixに登録するHost名。管理画面側のHost名と一致させます。</td></tr>
-        </tbody>
-      </table>
+          <p>dnfのキャッシュを削除し、追加したリポジトリ情報を読み直します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>dnf clean all</code></pre>
+          </div>
 
-      <p>設定ファイルを編集します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>vi /etc/zabbix/zabbix_agent2.conf</code></pre>
-      </div>
+          <p>Zabbix Agent 2をインストールします。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>dnf install -y zabbix-agent2</code></pre>
+          </div>
 
-      <p>主な設定例です。パッシブチェックでは <code>Server</code>、アクティブチェックでは <code>ServerActive</code> を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Server=&lt;ZABBIX_SERVER_IP&gt;
+          <p>Agent設定ファイルを編集します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>vi /etc/zabbix/zabbix_agent2.conf</code></pre>
+          </div>
+
+          <p>主な設定例です。パッシブチェックでは <code>Server</code>、アクティブチェックでは <code>ServerActive</code> を確認します。</p>
+          <div class="code">
+            <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>Server=&lt;ZABBIX_SERVER_IP&gt;
 ServerActive=&lt;ZABBIX_SERVER_IP&gt;
 Hostname=&lt;HOSTNAME&gt;</code></pre>
-      </div>
+          </div>
 
-      <p>設定値を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>grep -E '^(Server|ServerActive|Hostname)=' /etc/zabbix/zabbix_agent2.conf</code></pre>
-      </div>
+          <p>設定値を確認します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>grep -E '^(Server|ServerActive|Hostname)=' /etc/zabbix/zabbix_agent2.conf</code></pre>
+          </div>
 
-      <h2 id="agent-check-rhel">4. Zabbix Agent 2確認（RHEL9）</h2>
-      <p>Zabbix Agent 2のバージョンを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>zabbix_agent2 -V</code></pre>
-      </div>
+          <p>Zabbix Agent 2のバージョンを確認します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>zabbix_agent2 -V</code></pre>
+          </div>
 
-      <p>Zabbix Agent 2を自動起動に設定し、起動します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl enable --now zabbix-agent2</code></pre>
-      </div>
+          <p>Zabbix Agent 2を自動起動に設定し、起動します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>systemctl enable --now zabbix-agent2</code></pre>
+          </div>
 
-      <p>サービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status zabbix-agent2</code></pre>
-      </div>
+          <p>サービス状態を確認します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>systemctl status zabbix-agent2</code></pre>
+          </div>
 
-      <p>パッシブチェックを利用する場合は、Agentが10050/tcpで待ち受けていることを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>ss -lntp | grep 10050</code></pre>
+          <p>パッシブチェックを利用する場合は、Agentが10050/tcpで待ち受けていることを確認します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>ss -lntp | grep 10050</code></pre>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="zabbix-agent-windows" role="tabpanel">
+          <h3>Windows Server</h3>
+          <p>Windows ServerへZabbix Agent 2を導入する場合は、Zabbix公式ダウンロードページからWindows向けMSIを取得し、ウィザードでServer、Host名、PSKを設定します。</p>
+          <table>
+            <thead><tr><th>値</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code></td><td>Zabbix ServerまたはProxyのIPアドレス、またはFQDN。複数ある場合はカンマ区切りで指定します。</td></tr>
+              <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Zabbixに登録するHost名。Windowsのホスト名と運用上の管理名を合わせます。</td></tr>
+              <tr><td><code>&lt;ZABBIX_PSK_IDENTITY&gt;</code></td><td>PSK identity。例: <code>&lt;HOSTNAME&gt;</code></td></tr>
+              <tr><td><code>&lt;ZABBIX_PSK_VALUE&gt;</code></td><td>PSK値。安全な場所で生成し、認証情報管理ルールに従って保管します。</td></tr>
+            </tbody>
+          </table>
+
+          <ol>
+            <li><a href="https://www.zabbix.com/download_agents">Zabbix公式のAgentダウンロードページ</a>を開きます。</li>
+            <li>OS Distributionに <code>Windows</code>、OS Versionに対象Windowsバージョン、Hardwareに <code>amd64</code> を選択します。</li>
+            <li>Zabbix Versionに <code>6.0 LTS</code>、Encryptionに <code>OpenSSL</code>、Packagingに <code>MSI</code> を選択します。</li>
+            <li>表示された6.0系の最新MSIをダウンロードし、対象サーバーで実行します。</li>
+            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
+            <li>Zabbix server IP / DNS、Server or Proxy for active checksに <code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code> を入力します。</li>
+            <li>Agent listen portは <code>10050</code> を指定します。</li>
+            <li>PSKを利用する場合はEnable PSKを有効化し、PSK identityとPSK valueを入力します。</li>
+            <li>インストール後、<code>services.msc</code> を開き、<code>Zabbix Agent 2</code> のスタートアップ種類が自動、サービス状態が実行中であることを確認します。</li>
+          </ol>
+
+          <p>PSK値を作成する例です。作業端末にOpenSSLがある場合に実行します。</p>
+          <div class="code">
+            <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>openssl rand -hex 64</code></pre>
+          </div>
+        </section>
       </div>
 
       <div class="callout">
@@ -134,37 +166,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         パッシブチェックではZabbix ServerからAgentの10050/tcpへ到達できる必要があります。アクティブチェックではAgentからZabbix Serverへ接続します。Security Group、OS Firewall、Network ACL、経路をあわせて確認します。
       </div>
 
-      <h2 id="agent-install-windows">5. Windows向けZabbix Agent 2インストール</h2>
-      <p>Windows ServerへZabbix Agent 2を導入する場合は、Zabbix公式ダウンロードページからWindows向けMSIを取得し、ウィザードでServer、Host名、PSKを設定します。</p>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code></td><td>Zabbix ServerまたはProxyのIPアドレス、またはFQDN。複数ある場合はカンマ区切りで指定します。</td></tr>
-          <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Zabbixに登録するHost名。Windowsのホスト名と運用上の管理名を合わせます。</td></tr>
-          <tr><td><code>&lt;ZABBIX_PSK_IDENTITY&gt;</code></td><td>PSK identity。例: <code>&lt;HOSTNAME&gt;</code></td></tr>
-          <tr><td><code>&lt;ZABBIX_PSK_VALUE&gt;</code></td><td>PSK値。安全な場所で生成し、認証情報管理ルールに従って保管します。</td></tr>
-        </tbody>
-      </table>
-
-      <ol>
-        <li><a href="https://www.zabbix.com/download_agents">Zabbix公式のAgentダウンロードページ</a>を開きます。</li>
-        <li>OS Distributionに <code>Windows</code>、OS Versionに対象Windowsバージョン、Hardwareに <code>amd64</code> を選択します。</li>
-        <li>Zabbix Versionに <code>6.0 LTS</code>、Encryptionに <code>OpenSSL</code>、Packagingに <code>MSI</code> を選択します。</li>
-        <li>表示された6.0系の最新MSIをダウンロードし、対象サーバーで実行します。</li>
-        <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
-        <li>Zabbix server IP / DNS、Server or Proxy for active checksに <code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code> を入力します。</li>
-        <li>Agent listen portは <code>10050</code> を指定します。</li>
-        <li>PSKを利用する場合はEnable PSKを有効化し、PSK identityとPSK valueを入力します。</li>
-        <li>インストール後、<code>services.msc</code> を開き、<code>Zabbix Agent 2</code> のスタートアップ種類が自動、サービス状態が実行中であることを確認します。</li>
-      </ol>
-
-      <p>PSK値を作成する例です。作業端末にOpenSSLがある場合に実行します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>openssl rand -hex 64</code></pre>
-      </div>
-
-      <h2 id="host-group">6. ホストグループ作成</h2>
+      <h2 id="host-group">3. ホストグループ作成</h2>
       <p>Zabbix管理画面で、監視対象をまとめるホストグループを作成します。</p>
       <ol>
         <li>Zabbix管理画面にサインインします。</li>
@@ -182,7 +184,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         </tbody>
       </table>
 
-      <h2 id="maintenance">7. メンテナンス設定</h2>
+      <h2 id="maintenance">4. メンテナンス設定</h2>
       <p>構築中や運用開始前に不要な通知が出ないよう、対象ホストグループにメンテナンス期間を設定します。</p>
       <ol>
         <li>「設定」から「メンテナンス」を開きます。</li>
@@ -201,20 +203,45 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         </tbody>
       </table>
 
-      <h2 id="host-registration">8. ホスト登録</h2>
-      <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録します。</p>
-      <ol>
-        <li>「設定」から「ホスト」を開きます。</li>
-        <li>「ホストの作成」を選択します。</li>
-        <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
-        <li>Templatesに対象OSや監視方式に合うテンプレートを追加します。例: <code>基本監視 Linux/Windows (Activeエージェント2)</code></li>
-        <li>Groupsに作成済みのホストグループを追加します。</li>
-        <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します。</li>
-        <li>PSKを利用する場合は、暗号化設定でPSK identityとPSK valueを設定します。</li>
-        <li>保存後、ホスト一覧でStatusが有効になっていることを確認します。</li>
-      </ol>
+      <h2 id="host-registration">5. ホスト登録</h2>
+      <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録します。OSごとに選択するテンプレートやPSKの扱いを確認します。</p>
 
-      <h2 id="latest-data">9. 最新データ確認</h2>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Zabbix host registration">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="zabbix-register-rhel">RHEL9</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-register-windows">Windows Server</button>
+        </div>
+
+        <section class="tab-panel active" id="zabbix-register-rhel" role="tabpanel">
+          <h3>RHEL9</h3>
+          <ol>
+            <li>「設定」から「ホスト」を開きます。</li>
+            <li>「ホストの作成」を選択します。</li>
+            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
+            <li>TemplatesにLinux向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Linux (Activeエージェント2)</code></li>
+            <li>Groupsに作成済みのホストグループを追加します。</li>
+            <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します。</li>
+            <li>暗号化を利用する場合は、PSK identityとPSK valueを設定します。</li>
+            <li>保存後、ホスト一覧でStatusが有効になっていることを確認します。</li>
+          </ol>
+        </section>
+
+        <section class="tab-panel" id="zabbix-register-windows" role="tabpanel">
+          <h3>Windows Server</h3>
+          <ol>
+            <li>「設定」から「ホスト」を開きます。</li>
+            <li>「ホストの作成」を選択します。</li>
+            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
+            <li>TemplatesにWindows向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Windows (Activeエージェント2)</code></li>
+            <li>Groupsに作成済みのホストグループを追加します。</li>
+            <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します。</li>
+            <li>MSIインストール時に設定したPSK identityとPSK valueを、ホスト側の暗号化設定にも登録します。</li>
+            <li>保存後、ホスト一覧でStatusが有効になっていることを確認します。</li>
+          </ol>
+        </section>
+      </div>
+
+      <h2 id="latest-data">6. 最新データ確認</h2>
       <p>ホスト登録後、最新データが取得されるまで1から5分程度待ってから確認します。</p>
       <ol>
         <li>「監視データ」から「最新データ」を開きます。</li>
@@ -223,7 +250,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         <li>Latest checkの時刻が更新され、値が取得されていることを確認します。</li>
       </ol>
 
-      <h2 id="media">10. 通知先変更</h2>
+      <h2 id="media">7. 通知先変更</h2>
       <p>通知先変更では、対象ユーザー、メディア種別、送信先、通知時間帯、有効/無効を作業前後で比較します。</p>
       <ol>
         <li>Zabbix管理画面にサインインします。</li>
@@ -233,7 +260,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         <li>更新後の設定と通知テスト結果を確認します。</li>
       </ol>
 
-      <h2 id="evidence">11. エビデンス取得</h2>
+      <h2 id="evidence">8. エビデンス取得</h2>
       <table>
         <thead><tr><th>タイミング</th><th>取得対象</th></tr></thead>
         <tbody>
@@ -247,16 +274,13 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
       <a class="active" href="#scope">1. 対象作業</a>
-      <a href="#agent-install-rhel">2. Agent導入（RHEL9）</a>
-      <a href="#agent-config-rhel">3. Agent設定（RHEL9）</a>
-      <a href="#agent-check-rhel">4. Agent確認（RHEL9）</a>
-      <a href="#agent-install-windows">5. Agent導入（Windows）</a>
-      <a href="#host-group">6. ホストグループ</a>
-      <a href="#maintenance">7. メンテナンス</a>
-      <a href="#host-registration">8. ホスト登録</a>
-      <a href="#latest-data">9. 最新データ確認</a>
-      <a href="#media">10. 通知先変更</a>
-      <a href="#evidence">11. エビデンス</a>
+      <a href="#agent-setup">2. Agent導入・設定</a>
+      <a href="#host-group">3. ホストグループ</a>
+      <a href="#maintenance">4. メンテナンス</a>
+      <a href="#host-registration">5. ホスト登録</a>
+      <a href="#latest-data">6. 最新データ確認</a>
+      <a href="#media">7. 通知先変更</a>
+      <a href="#evidence">8. エビデンス</a>
     </aside>
   </div>
 
