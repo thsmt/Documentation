@@ -316,6 +316,48 @@ td {
   color: var(--text);
 }
 
+details.example-details {
+  margin: 24px 0;
+  overflow: hidden;
+  background: rgba(17, 24, 39, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+details.example-details summary {
+  padding: 14px 16px;
+  background: var(--panel);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+details.example-details > p,
+details.example-details > .code,
+details.example-details > figure {
+  margin-right: 16px;
+  margin-left: 16px;
+}
+
+figure {
+  margin: 18px 0 24px;
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .repo-link {
   display: inline-flex;
   align-items: center;

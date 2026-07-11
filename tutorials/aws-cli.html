@@ -221,8 +221,8 @@ aws --version</code></pre>
         <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test"</code></pre>
       </div>
 
-      <h2 id="rds-pending-maintenance">RDS 保留中の変更確認・取り消し</h2>
-      <p>RDSのエンジンバージョン変更を「次回のメンテナンスウィンドウで適用」として保存した後、コンソール上で保留中の変更を取り消せない場合があります。その場合は、AWS CLIで現在稼働中の値を再指定して、保留中の変更を打ち消します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a> を確認します。</p>
+      <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
+      <p>Amazon RDSのエンジンバージョン変更を「次回のメンテナンスウィンドウで適用」として保存した後、コンソール上で保留中の変更を取り消せない場合があります。その場合は、AWS CLIで現在稼働中の値を再指定して、保留中の変更を打ち消します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a> を確認します。</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -234,7 +234,7 @@ aws --version</code></pre>
       <p>対象DBインスタンスの現在のエンジンバージョンと、保留中の変更を確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[*].[DBInstanceIdentifier,EngineVersion,PendingModifiedValues]" --output table</code></pre>
+        <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json</code></pre>
       </div>
 
       <p>保留中のエンジンバージョン変更を取り消すため、現在稼働中のエンジンバージョンを再指定します。</p>
@@ -243,15 +243,51 @@ aws --version</code></pre>
         <pre><code>aws rds modify-db-instance --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --engine-version &lt;CURRENT_ENGINE_VERSION&gt; --apply-immediately</code></pre>
       </div>
 
-      <p>変更後に、PendingModifiedValuesが空になっていることを確認します。</p>
+      <p>変更後に、<code>PendingModifiedValues</code> が <code>{}</code> になっていることを確認します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[*].[DBInstanceIdentifier,EngineVersion,PendingModifiedValues]" --output table</code></pre>
+        <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json</code></pre>
       </div>
+
+      <details class="example-details">
+        <summary>実行例を展開する</summary>
+        <p>検証では、Amazon RDS for PostgreSQLの保留中のエンジンバージョン変更を、現在稼働中の <code>17.8</code> を再指定して取り消しました。</p>
+
+        <figure>
+          <img src="../assets/amazon-rds-pending-change-before.png" alt="Amazon RDS console showing a pending engine version change before cancellation">
+          <figcaption>取消前: 「メンテナンスとバックアップ」で、エンジンバージョン変更が保留中になっている状態。</figcaption>
+        </figure>
+
+        <div class="code">
+          <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>aws rds describe-db-instances --db-instance-identifier database-1 --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json
+{
+  "DBInstanceIdentifier": "database-1",
+  "EngineVersion": "17.8",
+  "PendingModifiedValues": {
+    "EngineVersion": "17.9"
+  }
+}
+
+aws rds modify-db-instance --db-instance-identifier database-1 --engine-version 17.8 --apply-immediately
+
+aws rds describe-db-instances --db-instance-identifier database-1 --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json
+{
+  "DBInstanceIdentifier": "database-1",
+  "EngineVersion": "17.8",
+  "PendingModifiedValues": {}
+}</code></pre>
+        </div>
+
+        <figure>
+          <img src="../assets/amazon-rds-pending-change-after.png" alt="Amazon RDS console showing no pending engine version change after cancellation">
+          <figcaption>取消後: 「保留中の変更」が空になり、メンテナンスの保留が残っていない状態。</figcaption>
+        </figure>
+      </details>
 
       <div class="callout">
         <strong>注意</strong>
-        エンジンバージョン変更は停止を伴う場合があります。作業前にメンテナンスウィンドウ、バックアップ、スナップショット、対象バージョン、保留中の変更内容を確認します。エンジンバージョン以外の保留中変更は、対象パラメータごとに現在値を再指定します。
+        エンジンバージョン変更は停止を伴う場合があります。作業前にメンテナンスウィンドウ、バックアップ、スナップショット、対象バージョン、保留中の変更内容を確認します。エンジンバージョン以外の保留中変更は、対象パラメータごとに現在値を再指定します。<code>PendingModifiedValues</code> が空になった後も確認しやすいように、この手順では <code>--output json</code> を使用します。
       </div>
 
       <h2 id="elastic-ip">Elastic IP 解放後の再取得</h2>
@@ -311,7 +347,7 @@ aws --version</code></pre>
       <a href="#security-group">Security Group</a>
       <a href="#prefix-list">Prefix List</a>
       <a href="#sns">SNS</a>
-      <a href="#rds-pending-maintenance">RDS保留変更</a>
+      <a href="#rds-pending-maintenance">Amazon RDS保留変更</a>
       <a href="#elastic-ip">Elastic IP</a>
       <a href="#compute-optimizer">Compute Optimizer</a>
     </aside>
