@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>障害切り分けチェックリスト | Knowledge</title>
-  <meta name="description" content="Linux troubleshooting checklist for RHEL and Amazon Linux operations.">
+  <meta name="description" content="Linux and EC2 troubleshooting checklist for operations.">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -43,233 +43,657 @@
     </aside>
 
     <main class="content aws-cli-guide">
-      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>手順一覧</span></div>
-      <p class="meta">Linux / Troubleshooting / Operations</p>
+      <div class="breadcrumb">
+        <a href="../">Home</a>
+        <span>&gt;</span>
+        <span>障害切り分けチェックリスト</span>
+      </div>
+
+      <p class="meta">Linux / EC2 / Troubleshooting / Operations</p>
       <h1>障害切り分けチェックリスト</h1>
-      <p class="lead">Red Hat Enterprise Linux 9 / 10、Amazon Linux 2023で障害が発生した際に、原因を体系的に切り分けるための確認手順を整理します。</p>
+      <p class="lead">
+        Red Hat Enterprise Linux 9 / 10、Amazon Linux 2023、EC2上のLinuxサーバーで障害が発生したときに、
+        何を確認し、出力をどう読み、次にどのレイヤーを確認するかを整理します。
+      </p>
 
       <div class="callout">
-        <strong>📍 掲載方針</strong>
-        <p>確認コマンドと復旧コマンドを混在させず、まずは参照系コマンドで事実を集めます。事実、仮説、実施内容、結果を分けて記録し、設定変更や復旧操作は影響範囲とロールバック方法を確認してから実行します。</p>
+        <strong>ℹ️ 情報</strong>
+        <p>
+          このページは確認コマンドを中心に整理しています。
+          復旧コマンドは原因と影響範囲を確認したあとに実行する前提で、各セクションの末尾または「復旧操作の扱い」に分けて記載します。
+        </p>
       </div>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        <p>原因が判明する前にサービス再起動、プロセス強制終了、OS再起動、ログ削除などを実施すると、障害発生時の情報が失われる場合があります。</p>
-        <p>緊急復旧が必要な場合も、実行前後の時刻、コマンド、結果を作業記録に残します。</p>
+        <p>
+          原因が見えていない段階で、サービス再起動、プロセス強制終了、OS再起動、ログ削除、SELinux無効化を先に行うと、
+          障害発生時の証跡が失われる場合があります。
+        </p>
+        <p>
+          緊急復旧が必要な場合も、実行前後の時刻、コマンド、結果、判断理由を作業記録に残します。
+        </p>
       </div>
 
       <h2 id="initial-record">1. 初動で記録する情報</h2>
-      <p>技術的なコマンドを実行する前に、発生状況を整理します。障害対応では「何が起きたか」だけでなく、「いつから、誰に、どこまで発生しているか」を分けて記録します。</p>
+      <p>
+        先に技術的なコマンドを実行するのではなく、発生状況を短く整理します。
+        以降の調査では、この情報を基準に「対象が1台か複数台か」「OS内かAWS側か」「変更起因か」を切り分けます。
+      </p>
 
       <table>
         <thead>
-          <tr><th>項目</th><th>確認内容</th></tr>
+          <tr><th>項目</th><th>記録内容</th></tr>
         </thead>
         <tbody>
-          <tr><td>発生・検知時刻</td><td>タイムゾーンを含めた正確な時刻。</td></tr>
-          <tr><td>対象サーバー</td><td>ホスト名、IPアドレス、EC2 Instance ID。</td></tr>
-          <tr><td>対象OS</td><td>Red Hat Enterprise Linux 9 / 10、Amazon Linux 2023など。</td></tr>
-          <tr><td>事象</td><td>エラー全文、画面表示、応答状況、ユーザー影響。</td></tr>
-          <tr><td>影響範囲</td><td>1ユーザー、1サーバー、複数サーバー、システム全体。</td></tr>
-          <tr><td>最終正常時刻</td><td>最後に正常動作を確認できた時刻。</td></tr>
-          <tr><td>直前変更</td><td>パッチ、設定変更、証明書更新、デプロイ、再起動。</td></tr>
-          <tr><td>再現性</td><td>常時、断続的、特定ユーザーのみ、特定時間帯のみ。</td></tr>
+          <tr><td>発生時刻</td><td>タイムゾーンを含めて記録します。例: 2026-07-13 10:15 JST。</td></tr>
+          <tr><td>対象</td><td>ホスト名、IPアドレス、EC2 Instance ID、サービス名を記録します。</td></tr>
+          <tr><td>OS</td><td>Red Hat Enterprise Linux 9 / 10、Amazon Linux 2023などを確認します。</td></tr>
+          <tr><td>事象</td><td>エラーメッセージ、HTTPステータス、画面表示、ユーザー影響を記録します。</td></tr>
+          <tr><td>影響範囲</td><td>1ユーザーのみ、1台のみ、複数台、システム全体などを分けます。</td></tr>
+          <tr><td>直前変更</td><td>パッチ、設定変更、デプロイ、証明書更新、再起動、監視設定変更を確認します。</td></tr>
+          <tr><td>再現性</td><td>常時発生、断続的、特定時間帯のみ、特定経路のみなどを記録します。</td></tr>
         </tbody>
       </table>
 
-      <h2 id="basic-status">2. 基本状態の確認</h2>
-      <p>OS、起動時刻、負荷、時刻同期の状態を最初に確認します。出力は障害発生時刻と照合できるように残します。</p>
+      <h2 id="quick-check">2. 60秒で行う基本状態確認</h2>
+      <p>
+        まずOSの稼働時間、時刻、負荷、メモリ、ディスク、失敗中のsystemdユニットを確認します。
+        ここでは復旧操作を行わず、全体像をつかみます。
+      </p>
 
-      <p>OSバージョンを確認します。</p>
       <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>cat /etc/os-release</code></pre>
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>date
+hostnamectl
+uptime
+free -h
+df -hT
+df -ih
+systemctl --failed
+sudo journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise</code></pre>
       </div>
 
-      <p>起動時刻と稼働時間を確認します。直近で意図しない再起動が発生していないかを確認します。</p>
+      <table>
+        <thead>
+          <tr><th>確認結果</th><th>読み方</th><th>次に見る項目</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>uptime</code> のLoad Averageが高い</td><td>CPUだけでなく、I/O待ちやプロセス滞留でも上がります。</td><td><a href="#cpu">CPU・Load Average</a>、<a href="#disk">ディスク・inode・I/O</a></td></tr>
+          <tr><td><code>df -hT</code> が100%に近い</td><td>ログ肥大化、バックアップ残骸、一時ファイルの滞留を疑います。</td><td><a href="#disk">ディスク・inode・I/O</a></td></tr>
+          <tr><td><code>systemctl --failed</code> に対象サービスが出る</td><td>systemd管理のサービス起動失敗です。</td><td><a href="#systemd">プロセス・systemd</a></td></tr>
+          <tr><td><code>journalctl -p err</code> に同時刻のエラーがある</td><td>OS、カーネル、systemd、サービスの異常が時系列で確認できます。</td><td><a href="#logs">ログ確認</a></td></tr>
+        </tbody>
+      </table>
+
+      <details class="example-details">
+        <summary>正常時・異常時の出力例</summary>
+        <p>以下はサンプルです。実環境のホスト名、IPアドレス、Instance IDは記載していません。</p>
+        <div class="code">
+          <div class="code-header"><span>sample</span><button class="copy" type="button">Copy</button></div>
+          <pre><code># 正常例
+$ uptime
+ 10:15:00 up 12 days,  2:10,  1 user,  load average: 0.12, 0.08, 0.04
+
+$ systemctl --failed
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+0 loaded units listed.
+
+# 異常例
+$ systemctl --failed
+  UNIT          LOAD   ACTIVE SUB    DESCRIPTION
+● httpd.service loaded failed failed The Apache HTTP Server</code></pre>
+        </div>
+      </details>
+
+      <h2 id="logs">3. rsyslog / systemd-journal のログ確認</h2>
+      <p>
+        RHEL系とAmazon Linux 2023では、systemd-journalとrsyslogの使い方が環境により異なります。
+        まずjournalを時刻と重大度で確認し、必要に応じて <code>/var/log/messages</code> や <code>/var/log/secure</code> を確認します。
+      </p>
+
       <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>sudo journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise
+
+if [ -f /var/log/messages ]; then
+  sudo grep -Ei 'error|fail|warn|oom|denied|read-only|no space' /var/log/messages | tail -n 100
+fi
+
+if [ -f /var/log/secure ]; then
+  sudo grep -Ei 'failed|invalid|denied|authentication|pam|sudo|sshd' /var/log/secure | tail -n 100
+fi</code></pre>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>確認方法</th><th>役割</th><th>補足</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>journalctl -p err</code></td><td>systemd-journalから重大度で抽出します。</td><td><code>err</code> を指定すると、emerg、alert、crit、errも対象になります。</td></tr>
+          <tr><td><code>grep</code></td><td>テキストログを文字列で検索します。</td><td>severityではなく文字列検索のため、検索語を変えながら確認します。</td></tr>
+          <tr><td><code>/var/log/secure</code></td><td>SSH、sudo、PAMなど認証系ログを確認します。</td><td>存在しない環境ではjournal側を確認します。</td></tr>
+        </tbody>
+      </table>
+
+      <details class="example-details">
+        <summary>ログ出力の読み方</summary>
+        <div class="code">
+          <div class="code-header"><span>sample</span><button class="copy" type="button">Copy</button></div>
+          <pre><code># 異常例: ディスク枯渇
+2026-07-13T10:22:10+09:00 host.example systemd[1]: Failed to start The Apache HTTP Server.
+2026-07-13T10:22:10+09:00 host.example httpd[1234]: No space left on device
+
+# 異常例: 認証失敗
+Jul 13 10:24:12 host sshd[2345]: Failed password for invalid user test from 203.0.113.10 port 55222 ssh2</code></pre>
+        </div>
+        <p>
+          サービス名、時刻、エラー文字列、直前変更を合わせて確認します。
+          <code>No space left on device</code> が出ている場合はサービス再起動より先にディスク容量を確認します。
+        </p>
+      </details>
+
+      <h2 id="cpu">4. CPU・Load Average</h2>
+      <p>
+        Load Averageが高い場合でも、CPU使用率だけが原因とは限りません。
+        I/O待ち、プロセス滞留、短時間のスパイク、バックアップ処理、ログ圧縮などを分けて確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>uptime
-who -b</code></pre>
+top -b -n 1 | head -n 20
+ps -eo pid,ppid,user,stat,pcpu,pmem,etime,cmd --sort=-pcpu | head -n 20
+ps -eo pid,ppid,user,stat,pcpu,pmem,etime,cmd --sort=-pmem | head -n 20</code></pre>
       </div>
 
-      <p>時刻同期の状態を確認します。ログ時刻のずれがあると原因調査が難しくなります。</p>
+      <table>
+        <thead>
+          <tr><th>見る値</th><th>読み方</th><th>次の確認</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>load average</code></td><td>CPU数に対して高いかを見ます。CPU数を超える状態が継続する場合は滞留を疑います。</td><td><code>top</code>、I/O待ち、プロセス状態</td></tr>
+          <tr><td><code>%Cpu(s) wa</code></td><td>I/O待ちです。CPUが空いていてもディスク待ちで遅くなる場合があります。</td><td><a href="#disk">ディスク・I/O</a></td></tr>
+          <tr><td><code>STAT</code> が <code>D</code></td><td>割り込み不可スリープです。I/O待ちやNFS待ちなどを疑います。</td><td>ディスク、ネットワーク、外部ストレージ</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="memory">5. メモリ・Swap・OOM</h2>
+      <p>
+        メモリ不足では、プロセス停止、応答遅延、OOM Killerによる強制終了、swap多用による性能劣化が起こります。
+      </p>
+
       <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>timedatectl
-chronyc tracking</code></pre>
-      </div>
-
-      <h2 id="logs">3. ログ確認</h2>
-      <p>Red Hat Enterprise Linuxでは、一般的な構成で <code>rsyslog</code> が <code>/var/log/messages</code> や <code>/var/log/secure</code> にログを出力します。Amazon Linux 2023は標準状態で <code>rsyslog</code> が導入されていないため、まずログ管理方式を確認します。</p>
-
-      <p>ログ管理方式とJournalの状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>rpm -q rsyslog
-systemctl is-active rsyslog
-test -f /var/log/messages && echo "/var/log/messages exists" || echo "/var/log/messages does not exist"
-journalctl --disk-usage
-journalctl --list-boots</code></pre>
-      </div>
-
-      <p>Journalから直近のエラーを確認します。<code>emerg</code> はSyslogの正式なプライオリティ名です。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>journalctl -p err..alert -n 200 --no-pager</code></pre>
-      </div>
-
-      <p>RHEL系で <code>/var/log/messages</code> がある場合は、障害に関連しやすい文字列を検索します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>grep -Eai 'emerg|alert|crit(ical)?|error|fail(ed|ure)?|fatal|panic|oom|out of memory|killed process|segfault|I/O error|read-only|corrupt' /var/log/messages</code></pre>
-      </div>
-
-      <p>認証関連のログを確認します。SSHログイン不可、sudo失敗、アカウントロックの切り分けに使用します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>journalctl -u sshd -n 200 --no-pager
-grep -Eai 'failed|failure|invalid|denied|authentication|sudo|faillock' /var/log/secure</code></pre>
-      </div>
-
-      <h2 id="resources">4. CPU・メモリ・ディスク</h2>
-      <p>リソース逼迫は、アプリケーション障害、ログ出力停止、SSH接続不可など複数の症状につながります。現在値だけでなく、継続時間と急増の有無を確認します。</p>
-
-      <p>CPU、ロードアベレージ、プロセスの状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>uptime
-top -b -n 1 | head -n 30
-ps aux --sort=-%cpu | head -n 15</code></pre>
-      </div>
-
-      <p>メモリ、swap、OOM Killerの発生有無を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>free -h
 swapon --show
-journalctl -k --no-pager | grep -Ei 'out of memory|oom|killed process'</code></pre>
+ps -eo pid,ppid,user,stat,pcpu,pmem,rss,vsz,etime,cmd --sort=-rss | head -n 20
+sudo journalctl -k --since "-24 hours" --no-pager | grep -Ei 'out of memory|oom|killed process|memory cgroup'</code></pre>
       </div>
 
-      <p>ディスク使用率、inode、読み取り専用化の有無を確認します。</p>
+      <details class="example-details">
+        <summary>OOMのサンプル出力</summary>
+        <div class="code">
+          <div class="code-header"><span>sample</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>kernel: Out of memory: Killed process 12345 (java) total-vm:...
+kernel: oom_reaper: reaped process 12345 (java)</code></pre>
+        </div>
+        <p>
+          OOMが出ている場合は、該当プロセス、発生時刻、直前のアクセス増加、メモリ上限設定、バッチ処理有無を確認します。
+          いきなりサービスを再起動すると、発生時のメモリ状態を追えなくなります。
+        </p>
+      </details>
+
+      <h2 id="disk">6. ディスク・inode・I/O</h2>
+      <p>
+        ディスク障害は容量不足だけではありません。
+        inode枯渇、読み取り専用マウント、I/Oエラー、ログ肥大、削除済みファイルをプロセスが掴んでいるケースを確認します。
+      </p>
+
       <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>df -hT
 df -ih
-mount | grep ' ro,'
-journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_update_request'</code></pre>
+sudo du -xhd1 /var 2&gt;/dev/null | sort -h
+findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS
+findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS | grep -E '(^|[[:space:],])ro([,[:space:]]|$)'
+sudo journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_update_request'</code></pre>
       </div>
 
-      <h2 id="network">5. ネットワーク・名前解決</h2>
-      <p>疎通不可は、OS内部、Security Group、Network ACL、ルートテーブル、DNS、アプリケーション待受のどこで止まっているかを分けて確認します。</p>
-
-      <p>IPアドレス、ルート、待受ポートを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>ip addr
-ip route
-ss -lntup</code></pre>
-      </div>
-
-      <p>名前解決と外部疎通を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>getent hosts &lt;FQDN&gt;
-dig &lt;FQDN&gt;
-curl -I https://&lt;FQDN&gt;</code></pre>
-      </div>
-
-      <p>対象ポートへTCP接続できるか確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>nc -vz &lt;HOST&gt; &lt;PORT&gt;</code></pre>
-      </div>
-
-      <h2 id="service">6. サービス・プロセス</h2>
-      <p>サービス単位の障害では、状態、直近ログ、設定ファイル構文、プロセスの有無を確認します。再起動は確認結果を残してから実施します。</p>
-
-      <p>サービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status &lt;SERVICE_NAME&gt;
-journalctl -u &lt;SERVICE_NAME&gt; -n 200 --no-pager</code></pre>
-      </div>
-
-      <p>自動起動設定と失敗ユニットを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl is-enabled &lt;SERVICE_NAME&gt;
-systemctl --failed</code></pre>
-      </div>
-
-      <h2 id="symptoms">7. 症状別の切り分け</h2>
       <table>
         <thead>
-          <tr><th>症状</th><th>最初に見る場所</th><th>次の確認</th></tr>
+          <tr><th>症状</th><th>読み方</th><th>次に確認すること</th></tr>
         </thead>
         <tbody>
-          <tr><td>SSH接続不可</td><td><code>sshd</code>、認証ログ、Security Group。</td><td>ポート22待受、鍵、ユーザー、Network ACL、踏み台経路。</td></tr>
-          <tr><td>Web応答不可</td><td>ALB/NLB、Webサーバーサービス、待受ポート。</td><td>HTTPステータス、アプリログ、Security Group、DNS。</td></tr>
-          <tr><td>ディスク逼迫</td><td><code>df -hT</code>、<code>du</code>、logrotate。</td><td>急増ファイル、ローテーション失敗、バックアップ残骸。</td></tr>
-          <tr><td>CPU高騰</td><td><code>top</code>、<code>ps</code>、アプリログ。</td><td>処理集中、無限ループ、外部接続待ち、バッチ処理。</td></tr>
-          <tr><td>メモリ不足</td><td><code>free -h</code>、OOMログ。</td><td>プロセス別メモリ、swap、アプリ設定、再発周期。</td></tr>
+          <tr><td>容量100%</td><td>ログ、バックアップ、一時ファイル、アプリ出力の肥大を疑います。</td><td><code>du</code>、logrotate、アプリログ</td></tr>
+          <tr><td>inode100%</td><td>小さいファイルが大量に作成されています。</td><td>メールキュー、セッションファイル、キャッシュ</td></tr>
+          <tr><td>read-only</td><td>ファイルシステム保護やストレージ異常の可能性があります。</td><td>カーネルログ、EBS status checks</td></tr>
+          <tr><td><code>df</code> と <code>du</code> が合わない</td><td>削除済みファイルをプロセスが掴んでいる場合があります。</td><td><code>sudo lsof +L1</code></td></tr>
         </tbody>
       </table>
 
-      <h2 id="ec2">8. EC2環境の確認</h2>
-      <p>EC2ではOS内部だけでなく、AWS側のステータスチェック、EBS、Security Group、ルート、CloudWatchメトリクスも合わせて確認します。</p>
-
-      <p>インスタンスメタデータからInstance IDとリージョンを確認します。</p>
       <div class="code">
-        <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>sudo lsof +L1</code></pre>
+      </div>
+
+      <h2 id="systemd">7. プロセス・systemd</h2>
+      <p>
+        サービス単位の障害では、systemdの状態、直近ログ、設定ファイル構文、実行ユーザー、依存サービスを確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl status &lt;SERVICE_NAME&gt;
+journalctl -u &lt;SERVICE_NAME&gt; -n 200 --no-pager
+systemctl is-enabled &lt;SERVICE_NAME&gt;
+systemctl cat &lt;SERVICE_NAME&gt;
+systemctl show &lt;SERVICE_NAME&gt; -p User -p Group -p ExecStart -p Restart -p MemoryMax -p CPUQuota</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>手動実行では動くがsystemdでは失敗する場合</summary>
+        <p>
+          systemdでは環境変数、作業ディレクトリ、実行ユーザー、ulimit、PATHが対話シェルと異なることがあります。
+          <code>systemctl cat</code> と <code>systemctl show</code> でユニット定義を確認します。
+        </p>
+        <div class="code">
+          <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>systemctl show &lt;SERVICE_NAME&gt; -p Environment -p WorkingDirectory -p LimitNOFILE
+sudo -u &lt;SERVICE_USER&gt; /path/to/command --check</code></pre>
+        </div>
+      </details>
+
+      <h2 id="network">8. ポート・TCP・TLS・HTTP</h2>
+      <p>
+        通信不可では、OS内部、Security Group、Network ACL、ルートテーブル、DNS、アプリケーション応答のどこで止まっているかを分けます。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>ip addr
+ip route
+sudo ss -lntup
+curl -vI --connect-timeout 5 --max-time 10 https://&lt;FQDN&gt;/
+nc -vz -w 5 &lt;HOST&gt; &lt;PORT&gt;</code></pre>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>確認結果</th><th>読み方</th><th>次の確認</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>localhostでは応答する</td><td>アプリは起動しています。外部経路、SG、NACL、LB、DNSを確認します。</td><td>AWS側設定、LBヘルスチェック</td></tr>
+          <tr><td><code>ss</code> にLISTENがない</td><td>対象サービスがポート待受していません。</td><td>systemd、アプリ設定、起動ログ</td></tr>
+          <tr><td><code>nc</code> がtimeout</td><td>経路、SG、NACL、FW、宛先待受のいずれかで止まっています。</td><td>ルート、SG、NACL、宛先サーバー</td></tr>
+          <tr><td><code>curl</code> がTLSで失敗</td><td>証明書、SNI、プロトコル、時刻同期を疑います。</td><td><a href="#tls">証明書期限・TLS</a>、<a href="#time">時刻同期</a></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="dns-route">9. 名前解決・ルーティング</h2>
+      <p>
+        IPアドレスでは接続できるがFQDNでは失敗する場合、名前解決、検索ドメイン、キャッシュ、レコード変更の反映を確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>getent hosts &lt;FQDN&gt;
+dig &lt;FQDN&gt;
+dig +short &lt;FQDN&gt;
+cat /etc/resolv.conf
+ip route get &lt;DESTINATION_IP&gt;</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>名前解決の読み方</summary>
+        <p>
+          <code>getent hosts</code> はOSが実際に使う名前解決経路を確認します。
+          <code>dig</code> はDNS問い合わせ結果を確認します。
+          両者が異なる場合は、<code>/etc/nsswitch.conf</code>、<code>/etc/hosts</code>、DNSキャッシュを確認します。
+        </p>
+      </details>
+
+      <h2 id="security">10. Firewall・SELinux・ファイル権限</h2>
+      <p>
+        Permission deniedや接続拒否は、Linux権限、SELinux、firewalld、Security Groupを分けて確認します。
+        SELinuxを無効化する前に、拒否ログを確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>getenforce
+sudo journalctl -t setroubleshoot --since "-2 hours" --no-pager
+sudo ausearch -m avc,user_avc -ts recent 2&gt;/dev/null
+sudo firewall-cmd --state
+sudo firewall-cmd --list-all
+ls -lZ &lt;PATH&gt;</code></pre>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>
+          <code>setenforce 0</code> は原因切り分けとして使われることがありますが、恒久対応ではありません。
+          実行する場合は、対象時刻、影響範囲、戻し手順、SELinux拒否ログを記録します。
+        </p>
+      </div>
+
+      <h2 id="time">11. 時刻同期</h2>
+      <p>
+        Kerberos、TLS、署名付きAPI、ログ相関では時刻差が原因になります。
+        OS時刻とNTP同期状態を確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>timedatectl
+chronyc tracking
+chronyc sources -v</code></pre>
+      </div>
+
+      <p>
+        大きな時刻差を補正する <code>chronyc makestep</code> は、証跡とアプリ影響を確認してから実行します。
+      </p>
+
+      <h2 id="tls">12. 証明書期限・TLS</h2>
+      <p>
+        証明書更新後に古い証明書が返る場合、LB、Webサーバー、証明書チェーン、SNI、キャッシュを確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>echo | openssl s_client -servername &lt;FQDN&gt; -connect &lt;FQDN&gt;:443 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates
+curl -vI --connect-timeout 5 --max-time 10 https://&lt;FQDN&gt;/</code></pre>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>症状</th><th>確認観点</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>更新したのに古い証明書が出る</td><td>ALB/NLB、Webサーバー、CloudFront、SNI、接続先IPを確認します。</td></tr>
+          <tr><td>一部端末だけ失敗する</td><td>中間証明書、クライアントの信頼ストア、TLSバージョンを確認します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="login">13. OSユーザーでログインできない</h2>
+      <p>
+        SSHログイン不可は、ネットワーク、sshd、OSユーザー、認証方式、鍵、PAM、SSSD、AD/LDAP、ホームディレクトリを分けて確認します。
+      </p>
+
+      <h3>13.1 影響範囲を分ける</h3>
+      <table>
+        <thead>
+          <tr><th>事象</th><th>疑う範囲</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>全ユーザーがログインできない</td><td>TCP/22、Security Group、sshd、PAM、ディスク枯渇、OS全体障害。</td></tr>
+          <tr><td>特定ユーザーのみログインできない</td><td>ユーザー状態、パスワード期限、鍵権限、ホームディレクトリ、AllowUsers、SSSD。</td></tr>
+          <tr><td>踏み台からのみ失敗</td><td>接続元制限、Security Group、名前解決、踏み台側の鍵やSSHクライアント。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>13.2 OS側の確認</h3>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>sudo systemctl status sshd
+sudo journalctl -u sshd --since "-2 hours" --no-pager
+getent passwd &lt;USER&gt;
+id &lt;USER&gt;
+sudo passwd -S &lt;USER&gt;
+sudo chage -l &lt;USER&gt;
+sudo faillock --user &lt;USER&gt;
+grep -E '^(AllowUsers|DenyUsers|AllowGroups|DenyGroups|Match)' /etc/ssh/sshd_config
+sudo sshd -t</code></pre>
+      </div>
+
+      <h3>13.3 ホームディレクトリ・鍵・SELinux</h3>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>sudo ls -ld /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh
+sudo ls -l /home/&lt;USER&gt;/.ssh/authorized_keys
+sudo ls -Zd /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh /home/&lt;USER&gt;/.ssh/authorized_keys
+df -hT /home
+df -ih /home</code></pre>
+      </div>
+
+      <h3>13.4 AD / LDAP / SSSD利用時</h3>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl status sssd
+sudo journalctl -u sssd --since "-2 hours" --no-pager
+getent passwd &lt;USER&gt;
+id &lt;USER&gt;
+timedatectl
+getent hosts &lt;DOMAIN_CONTROLLER_FQDN&gt;</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>ログイン不可の異常例</summary>
+        <div class="code">
+          <div class="code-header"><span>sample</span><button class="copy" type="button">Copy</button></div>
+          <pre><code># 鍵権限の異常例
+Authentication refused: bad ownership or modes for directory /home/user
+
+# アカウントロックの異常例
+pam_faillock(sshd:auth): Consecutive login failures for user user account temporarily locked</code></pre>
+        </div>
+      </details>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>
+          <code>faillock --reset</code>、<code>chmod</code>、<code>restorecon</code> は復旧操作です。
+          実行前に対象ユーザー、原因、監査ログ、戻し要否を確認します。
+        </p>
+      </div>
+
+      <h2 id="ec2">14. EC2環境固有の確認</h2>
+      <p>
+        EC2ではOS内部だけでなく、Instance Status Checks、System Status Checks、EBS状態、Security Group、IAM Role、SSM Agentも確認します。
+      </p>
+
+      <h3>14.1 インスタンスメタデータ</h3>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id
 curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document</code></pre>
       </div>
 
-      <p>AWS CLIを利用できる場合は、ステータスチェックとEBS状態を確認します。</p>
+      <h3>14.2 AWS CLIでの確認</h3>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instance-status --instance-ids &lt;INSTANCE_ID&gt; --include-all-instances
-aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=&lt;INSTANCE_ID&gt;</code></pre>
-      </div>
+        <pre><code>aws ec2 describe-instance-status `
+  --region &lt;REGION&gt; `
+  --instance-ids &lt;INSTANCE_ID&gt; `
+  --include-all-instances
 
-      <h2 id="recovery">9. 復旧操作の扱い</h2>
-      <p>復旧操作は、確認コマンドとは別に扱います。実行する場合は、影響範囲、ロールバック方法、作業時刻、実行者、実行結果を記録します。</p>
+aws ec2 describe-volumes `
+  --region &lt;REGION&gt; `
+  --filters Name=attachment.instance-id,Values=&lt;INSTANCE_ID&gt; `
+  --query "Volumes[].{VolumeId:VolumeId,State:State,Size:Size,Device:Attachments[0].Device,DeleteOnTermination:Attachments[0].DeleteOnTermination}"
 
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        <p><code>systemctl restart</code>、<code>kill -9</code>、<code>faillock --reset</code>、<code>setenforce 0</code>、<code>rm</code>、<code>xfs_repair</code>、<code>chronyc makestep</code>、OS再起動は、原因調査に必要な状態を変える可能性があります。</p>
-        <p>実行前に、ログ、プロセス、メトリクス、設定ファイル、直前変更を確認します。</p>
+aws ec2 describe-volume-status `
+  --region &lt;REGION&gt; `
+  --volume-ids &lt;VOLUME_ID&gt;</code></pre>
       </div>
 
       <table>
         <thead>
-          <tr><th>復旧操作</th><th>実行前の確認</th></tr>
+          <tr><th>コマンド</th><th>確認できること</th></tr>
         </thead>
         <tbody>
-          <tr><td>サービス再起動</td><td>直近ログ、設定構文、依存サービス、影響範囲。</td></tr>
-          <tr><td>プロセス停止</td><td>対象PID、親子関係、処理中データ、再起動方式。</td></tr>
-          <tr><td>OS再起動</td><td>ステータスチェック、接続経路、起動設定、作業承認。</td></tr>
-          <tr><td>ログ削除</td><td>取得済みエビデンス、圧縮退避、監査要件。</td></tr>
+          <tr><td><code>describe-volumes</code></td><td>EBSボリュームの設定、状態、サイズ、アタッチ先、終了時削除属性を確認します。</td></tr>
+          <tr><td><code>describe-volume-status</code></td><td>EBSのステータスチェック、イベント、障害有無を確認します。</td></tr>
+          <tr><td><code>describe-instance-status</code></td><td>EC2インスタンスのSystem Status / Instance Statusを確認します。</td></tr>
         </tbody>
       </table>
+
+      <h3>14.3 SSM Agent</h3>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl status amazon-ssm-agent
+sudo journalctl -u amazon-ssm-agent --since "-2 hours" --no-pager</code></pre>
+      </div>
+
+      <p>
+        SSM AgentがOfflineの場合は、IAM Role、VPC Endpoint、Outbound通信、DNS、時刻同期、Agentログを確認します。
+      </p>
+
+      <h2 id="faq">15. 運用でよくある質問</h2>
+      <table>
+        <thead>
+          <tr><th>質問</th><th>確認観点</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Load Averageが高いがCPUは空いている</td><td>I/O待ち、D状態プロセス、NFS/外部ストレージ待ちを確認します。</td></tr>
+          <tr><td><code>df</code> と <code>du</code> の容量が合わない</td><td>削除済みファイルをプロセスが掴んでいないか <code>lsof +L1</code> で確認します。</td></tr>
+          <tr><td>inodeが100%になった</td><td>小さいファイルの大量生成、メールキュー、セッション、キャッシュを確認します。</td></tr>
+          <tr><td>Read-only filesystemになった</td><td>カーネルログ、EBS status checks、ファイルシステムエラーを確認します。</td></tr>
+          <tr><td>Too many open filesが出る</td><td><code>LimitNOFILE</code>、プロセスのFD数、アプリ設定を確認します。</td></tr>
+          <tr><td>OOM Killerが動いた</td><td>該当プロセス、メモリ推移、cgroup制限、アクセス増加を確認します。</td></tr>
+          <tr><td>手動実行は成功するがsystemdでは失敗する</td><td>環境変数、実行ユーザー、WorkingDirectory、PATH、ulimitを確認します。</td></tr>
+          <tr><td>localhostでは動くが外部から接続できない</td><td>待受アドレス、Security Group、NACL、LB、DNS、ルートを確認します。</td></tr>
+          <tr><td>IPでは接続できるがFQDNでは失敗する</td><td>DNS、<code>/etc/hosts</code>、検索ドメイン、キャッシュを確認します。</td></tr>
+          <tr><td>証明書を更新したが古い証明書が返る</td><td>ALB、Webサーバー、CloudFront、SNI、接続先IPを確認します。</td></tr>
+          <tr><td>cronやsystemd timerが動かない</td><td>サービス状態、ユーザー、PATH、時刻、ログ、実行権限を確認します。</td></tr>
+          <tr><td>sudoが突然失敗する</td><td><code>/etc/sudoers</code> 構文、グループ所属、LDAP/SSSD、PAMを確認します。</td></tr>
+          <tr><td>SELinuxでPermission deniedになる</td><td>AVCログ、ファイルコンテキスト、boolean、ポリシーを確認します。</td></tr>
+          <tr><td>cloud-init / User Dataが失敗した</td><td><code>/var/log/cloud-init.log</code>、<code>/var/log/cloud-init-output.log</code>、IMDS、パッケージリポジトリを確認します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="preparation">16. 障害に備えた事前準備</h2>
+      <p>
+        障害発生後に情報が不足すると、原因特定よりも証跡集めに時間を使います。
+        事前に以下を整備しておくと、初動が安定します。
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>準備</th><th>目的</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CloudWatch Agent / rsyslog転送</td><td>OSログ、アプリログをサーバー外へ退避します。</td></tr>
+          <tr><td>journal永続化</td><td>再起動後もjournalを確認できるようにします。</td></tr>
+          <tr><td>CPU / Memory / Disk / inode監視</td><td>リソース枯渇を早期検知します。</td></tr>
+          <tr><td>OOM / systemd failed監視</td><td>プロセス強制終了やユニット失敗を検知します。</td></tr>
+          <tr><td>証明書期限監視</td><td>TLS期限切れを事前に検知します。</td></tr>
+          <tr><td>Chrony同期監視</td><td>時刻差による認証・TLS・ログ相関不備を避けます。</td></tr>
+          <tr><td>logrotate設計</td><td>ログ肥大化によるディスク枯渇を防ぎます。</td></tr>
+          <tr><td>平常時ベースライン</td><td>CPU、メモリ、ポート、プロセス、ログ量の通常値を把握します。</td></tr>
+          <tr><td>sysstat / sar / PCP</td><td>過去時点のリソース状態を確認できるようにします。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="evidence-script">17. 初動証跡収集スクリプト</h2>
+      <p>
+        障害発生直後に最低限の情報を同じ形式で残すためのサンプルです。
+        実行前に、保存先と取得対象に機密情報が含まれないか確認します。
+      </p>
+
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>OUT_DIR="/tmp/troubleshoot-$(hostname)-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$OUT_DIR"
+
+{
+  date
+  hostnamectl
+  uptime
+  free -h
+  df -hT
+  df -ih
+  ip addr
+  ip route
+  systemctl --failed
+} &gt; "$OUT_DIR/basic.txt" 2&gt;&amp;1
+
+sudo journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise &gt; "$OUT_DIR/journal-errors.txt" 2&gt;&amp;1
+ps -eo pid,ppid,user,stat,pcpu,pmem,etime,cmd --sort=-pcpu | head -n 50 &gt; "$OUT_DIR/ps-cpu.txt"
+ps -eo pid,ppid,user,stat,pcpu,pmem,etime,cmd --sort=-pmem | head -n 50 &gt; "$OUT_DIR/ps-mem.txt"
+
+tar -czf "$OUT_DIR.tar.gz" -C "$(dirname "$OUT_DIR")" "$(basename "$OUT_DIR")"
+echo "$OUT_DIR.tar.gz"</code></pre>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>
+          収集したファイルには、ユーザー名、プロセス引数、内部IP、ホスト名などが含まれる場合があります。
+          外部共有前にマスクします。
+        </p>
+      </div>
+
+      <h2 id="recovery">18. 復旧操作の扱い</h2>
+      <p>
+        復旧操作は、確認コマンドとは分けて扱います。
+        実行する場合は、影響範囲、実行理由、戻し方、作業前後の確認結果を残します。
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>操作</th><th>実行前に確認すること</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>サービス再起動</td><td>直近ログ、設定構文、依存サービス、利用者影響、再起動後の確認手順。</td></tr>
+          <tr><td>プロセス停止</td><td>対象PID、親子関係、処理中データ、再起動方式、証跡取得済みか。</td></tr>
+          <tr><td>OS再起動</td><td>ステータスチェック、ディスク状態、アプリ影響、起動順序、メンテナンス承認。</td></tr>
+          <tr><td>ログ削除</td><td>取得済みエビデンス、圧縮退避、削除対象の妥当性、調査要件。</td></tr>
+          <tr><td>SELinux一時変更</td><td>AVCログ、対象パス、恒久対策、戻し手順、監査観点。</td></tr>
+          <tr><td>faillock解除</td><td>対象ユーザー、失敗回数、攻撃兆候、本人確認、解除後の監視。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="os-difference">19. OSごとの差分メモ</h2>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>Red Hat Enterprise Linux 9 / 10</th><th>Amazon Linux 2023</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ログ</td><td>systemd-journalとrsyslog構成を確認します。</td><td>環境によりjournal中心の構成になるため、<code>/var/log/messages</code> の有無を確認します。</td></tr>
+          <tr><td>SELinux</td><td>有効化されている環境が多いため、<code>getenforce</code> で確認します。</td><td>初期状態やAMI差分があるため、前提にせず <code>getenforce</code> で確認します。</td></tr>
+          <tr><td>パッケージ</td><td>subscription-managerや社内リポジトリ設定を確認します。</td><td>Amazon Linuxリリースバージョンと <code>dnf</code> のreleaseverを確認します。</td></tr>
+          <tr><td>SSM Agent</td><td>標準導入でない場合があります。</td><td>AMIにより導入済みの場合がありますが、サービス状態を確認します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="references">20. 参考リンク</h2>
+      <ul>
+        <li><a href="https://www.freedesktop.org/software/systemd/man/latest/journalctl.html">journalctl - systemd manual</a></li>
+        <li><a href="https://docs.redhat.com/ja/documentation/red_hat_enterprise_linux/9">Red Hat Enterprise Linux 9 documentation</a></li>
+        <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/what-is-amazon-linux.html">Amazon Linux 2023 User Guide</a></li>
+        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/monitoring-system-instance-status-check.html">Amazon EC2 status checks</a></li>
+        <li><a href="https://docs.aws.amazon.com/ebs/latest/userguide/monitoring-volume-status.html">Amazon EBS volume status checks</a></li>
+        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html">Configure the instance metadata service</a></li>
+      </ul>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>ページ内</h2>
+      <h2>ページ内目次</h2>
       <a class="active" href="#initial-record">初動記録</a>
-      <a href="#basic-status">基本状態</a>
+      <a href="#quick-check">基本状態</a>
       <a href="#logs">ログ確認</a>
-      <a href="#resources">CPU・メモリ・ディスク</a>
-      <a href="#network">ネットワーク</a>
-      <a href="#service">サービス</a>
-      <a href="#symptoms">症状別</a>
-      <a href="#ec2">EC2環境</a>
+      <a href="#cpu">CPU・Load</a>
+      <a href="#memory">メモリ・Swap</a>
+      <a href="#disk">ディスク・I/O</a>
+      <a href="#systemd">systemd</a>
+      <a href="#network">通信確認</a>
+      <a href="#dns-route">DNS・ルート</a>
+      <a href="#security">Firewall・SELinux</a>
+      <a href="#time">時刻同期</a>
+      <a href="#tls">証明書・TLS</a>
+      <a href="#login">ログイン不可</a>
+      <a href="#ec2">EC2固有</a>
+      <a href="#faq">FAQ</a>
+      <a href="#preparation">事前準備</a>
+      <a href="#evidence-script">証跡収集</a>
       <a href="#recovery">復旧操作</a>
+      <a href="#os-difference">OS差分</a>
+      <a href="#references">参考リンク</a>
     </aside>
   </div>
+
   <script src="../assets/app.js"></script>
 </body>
 </html>
