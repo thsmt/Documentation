@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>[構築] RedHat9 | Knowledge</title>
-  <meta name="description" content="RHEL9 manual build guide for AWS EC2.">
+  <title>[構築] Red Hat Enterprise Linux 9 | Knowledge</title>
+  <meta name="description" content="Red Hat Enterprise Linux 9 manual build guide for AWS EC2.">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -24,7 +24,7 @@
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
-      <a class="active" href="rhel9-ops.html">[構築] RedHat9</a>
+      <a class="active" href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
@@ -34,9 +34,9 @@
 
     <main>
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
-      <p class="meta">Linux / RHEL9 / Manual Build</p>
-      <h1>[構築] RedHat9</h1>
-      <p class="lead">AWS EC2上のRHEL9を手動構築する際の初期設定、SSH、cloud-init、swap、ミドルウェア、Apache、Postfix、logrotateを整理します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
+      <p class="meta">Linux / Red Hat Enterprise Linux 9 / Manual Build</p>
+      <h1>[構築] Red Hat Enterprise Linux 9</h1>
+      <p class="lead">AWS EC2上のRed Hat Enterprise Linux 9を手動構築する際の初期設定、SSH、cloud-init、swap、ミドルウェア、Apache、Postfix、logrotateを整理します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
 
       <div class="callout">
         <strong>前提</strong>
@@ -55,7 +55,7 @@
       </table>
 
       <h2 id="step-02">2. SELinuxの設定変更</h2>
-      <p>RHEL9では <code>SELINUX=disabled</code> にすると起動や動作に影響する場合があるため、ログ出力のみの <code>permissive</code> に変更します。</p>
+      <p>Red Hat Enterprise Linux 9では <code>SELINUX=disabled</code> にすると起動や動作に影響する場合があるため、ログ出力のみの <code>permissive</code> に変更します。</p>
       <p>設定ファイルを退避します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -464,7 +464,7 @@ dnf module list postgresql
 dnf module install postgresql/client</code></pre>
       </div>
 
-      <p>パッケージライフサイクルは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_application-streams_considerations-in-adopting-rhel-9">Application Streams</a> を確認します。RHEL9で削除・変更されたモジュールは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html-single/considerations_in_adopting_rhel_9/index">RHEL9導入時の考慮事項</a> も確認します。</p>
+      <p>パッケージライフサイクルは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_application-streams_considerations-in-adopting-rhel-9">Application Streams</a> を確認します。Red Hat Enterprise Linux 9で削除・変更されたモジュールは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html-single/considerations_in_adopting_rhel_9/index">Red Hat Enterprise Linux 9導入時の考慮事項</a> も確認します。</p>
 
       <h2 id="step-12">12. Postfix設定</h2>
       <p>Postfixをインストールします。SASL認証を利用する場合は <code>cyrus-sasl-plain</code> も導入します。</p>
@@ -569,7 +569,7 @@ systemctl enable postfix.service
 systemctl is-enabled postfix.service</code></pre>
       </div>
 
-      <p>RHEL9以降では <code>s-nail</code> に <code>mail</code>、<code>mailx</code> が含まれます。</p>
+      <p>Red Hat Enterprise Linux 9以降では <code>s-nail</code> に <code>mail</code>、<code>mailx</code> が含まれます。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>yum install s-nail</code></pre>

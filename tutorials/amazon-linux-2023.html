@@ -24,7 +24,7 @@
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
-      <a href="rhel9-ops.html">[構築] RedHat9</a>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a class="active" href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
@@ -36,7 +36,7 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
       <p class="meta">Linux / Amazon Linux 2023 / Manual Build</p>
       <h1>[構築] Amazon Linux 2023</h1>
-      <p class="lead">AWS EC2上のAmazon Linux 2023を手動構築する際の初期設定を、[構築] RedHat9 の順番に合わせて整理します。RedHat9と同じ考え方で扱う項目、Amazon Linux 2023では不要な項目、追加導入が必要になりやすい項目を分けて記載します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
+      <p class="lead">AWS EC2上のAmazon Linux 2023を手動構築する際の初期設定を、[構築] Red Hat Enterprise Linux 9 の順番に合わせて整理します。Red Hat Enterprise Linux 9と同じ考え方で扱う項目、Amazon Linux 2023では不要な項目、追加導入が必要になりやすい項目を分けて記載します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
 
       <div class="callout">
         <strong>前提</strong>
@@ -60,7 +60,7 @@
       </table>
 
       <h2 id="step-02">2. SELinuxの状態確認</h2>
-      <p>Amazon Linux 2023ではSELinuxが初期状態で <code>Permissive</code> です。RedHat9のように <code>permissive</code> へ変更する手順は標準では不要です。</p>
+      <p>Amazon Linux 2023ではSELinuxが初期状態で <code>Permissive</code> です。Red Hat Enterprise Linux 9のように <code>permissive</code> へ変更する手順は標準では不要です。</p>
       <p>SELinuxの状態を確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -79,7 +79,7 @@
       </div>
 
       <h2 id="step-03">3. subscription-managerの確認</h2>
-      <p>Amazon Linux 2023ではRed Hat Subscription Managementを利用しないため、RedHat9のような <code>subscription-manager</code> 無効化は不要です。</p>
+      <p>Amazon Linux 2023ではRed Hat Subscription Managementを利用しないため、Red Hat Enterprise Linux 9のような <code>subscription-manager</code> 無効化は不要です。</p>
       <p>パッケージが入っていないことを確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -231,7 +231,11 @@ df -hT</code></pre>
         <pre><code>df -h | grep /$ | awk '{print $4}'</code></pre>
       </div>
 
-      <p>swapファイルを作成し、権限を変更します。RedHat9手順と同じ形式に合わせ、<code>/.swapfile</code> を利用します。</p>
+      <p>swapファイルを作成し、権限を変更します。Red Hat Enterprise Linux 9手順と同じ形式に合わせ、<code>/.swapfile</code> を利用します。</p>
+      <div class="callout">
+        <strong>補足</strong>
+        <code>fallocate</code> は短時間でswapファイルを作成できるため、検証用途では便利です。一方で、ファイルシステムや作成方式によってはswapファイルとして扱う際に差が出ることがあります。手順書としては環境差を減らし、Red Hat Enterprise Linux 9の手順とも揃えるため、実データを書き込む <code>dd</code> 方式に統一しています。
+      </div>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dd if=/dev/zero of=/.swapfile bs=512M count=4
@@ -525,7 +529,7 @@ cat /etc/logrotate.d/syslog</code></pre>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/journald.html">systemd journal replaces rsyslog - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/cron.html">systemd timers replace cron - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/enforcing-mode.html">Change to enforcing mode - Amazon Linux 2023</a></li>
-        <li><a href="https://hyron.co.jp/blog/awsamazonlinux2023%E3%81%A8rhel9-3%E3%82%92%E6%AF%94%E8%BC%83%E3%81%97%E3%81%A6%E3%81%BF%E3%81%9F">[AWS]AmazonLinux2023とRHEL9.3を比較してみた</a></li>
+        <li><a href="https://hyron.co.jp/blog/awsamazonlinux2023%E3%81%A8rhel9-3%E3%82%92%E6%AF%94%E8%BC%83%E3%81%97%E3%81%A6%E3%81%BF%E3%81%9F">[AWS]AmazonLinux2023とRed Hat Enterprise Linux 9.3を比較してみた</a></li>
         <li><a href="https://www.nedia.ne.jp/blog/2023/08/01/21909">Amazon Linux 2023 を技術者が触ってみた</a></li>
       </ul>
     </main>

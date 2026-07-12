@@ -11,7 +11,7 @@ https://thsmt.github.io/Knowledge/
 - CloudFormation 運用手順の整理
 - AWS CLI 実務手順の整理
 - Terraform 入門から運用までの整理
-- [構築] RedHat9の整理
+- [構築] Red Hat Enterprise Linux 9の整理
 - [構築] Amazon Linux 2023の整理
 - [構築] Windows Server 2022の整理
 - Zabbix 6.0 運用手順の整理
