@@ -1,31 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Knowledge | thsmt</title>
-  <meta name="description" content="AWS and infrastructure operation knowledge by thsmt.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knowledge</title>
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-  <header class="topbar">
+  <header class="site-header">
     <a class="brand" href="./">
-      <img src="assets/icon.jpg" alt="">
+      <img src="assets/icon.jpg" alt="Knowledge icon">
       <span>Knowledge</span>
     </a>
     <nav class="nav" aria-label="Global navigation">
       <a href="./">Home</a>
-      <a href="#guides">目次</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
   </header>
 
   <div class="layout">
-    <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>ガイド一覧</h2>
+    <aside class="sidebar" aria-label="Page list">
+      <h2>ページ一覧</h2>
       <a class="active" href="tutorials/cloudformation.html">CloudFormation</a>
       <a href="tutorials/aws-cli.html">AWS CLI</a>
+      <a href="tutorials/aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="tutorials/terraform.html">Terraform</a>
       <a href="tutorials/rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="tutorials/amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -35,35 +34,38 @@
       <a href="tutorials/eol.html">EOL / Lifecycle</a>
     </aside>
 
-    <main>
-      <p class="meta">AWS / Infrastructure / IaC / Operations</p>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="./">Home</a>
+        <span>手順一覧</span>
+      </nav>
+
+      <p class="eyebrow">AWS / Infrastructure / IaC / Operations</p>
       <h1>Knowledge</h1>
+      <p class="lead">CloudFormation、AWS CLI、Terraform、AWX / Ansible など、クラウドエンジニアの実務で使う手順を横断的に整理するためのドキュメントサイトです。</p>
+      <p>各GitHubリポジトリには構成図、CloudFormationテンプレート、パラメータ例を置き、このサイトにはリポジトリをまたいで使う運用手順や確認観点をまとめます。</p>
 
-      <p class="lead">
-        CloudFormation、AWS CLI、Terraform、AWX / Ansible など、クラウドエンジニアの実務で使う手順を横断的に整理するためのドキュメントサイトです。
-      </p>
-
-      <p>
-        各GitHubリポジトリには構成図、CloudFormationテンプレート、パラメータ例を置き、このサイトにはリポジトリをまたいで使う運用手順や確認観点をまとめます。
-      </p>
-
-      <div class="notice">
+      <div class="callout">
         <strong>運用方針</strong>
-        リポジトリは実装本体、Knowledge は横断手順集として分けます。READMEやdocsと重複させすぎず、変更作業、障害時の確認、ツール操作の手順を中心に整理します。
+        <p>リポジトリは実装本体、Knowledge は横断手順集として分けます。変更作業、障害時の確認、ツール操作の手順を中心に整理します。</p>
       </div>
 
-      <h2 id="guides">目次</h2>
-      <div class="cards">
+      <h2 id="guides">手順一覧</h2>
+      <section class="card-grid" aria-label="Guide list">
         <article class="card">
           <strong><a href="tutorials/cloudformation.html">CloudFormation 運用手順集</a></strong>
-          <p>S3 URL、Git sync、CLIなどの作成方法と、変更セット、ロールバック、削除前確認の観点を整理します。</p>
+          <p>デプロイ方法、変更セット、ロールバック、ドリフト検出、削除前確認などを整理します。</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/aws-cli.html">AWS CLI 実務手順集</a></strong>
-          <p>プロファイル切替、認証確認、CloudFormation操作、ログ確認などの基本操作をまとめます。</p>
+          <strong><a href="tutorials/aws-cli.html">AWS CLI 特殊対応集</a></strong>
+          <p>GUIだけでは対応しづらい復旧、取り消し、属性変更などの運用手順をまとめます。</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/terraform.html">Terraform 入門から運用まで</a></strong>
+          <strong><a href="tutorials/aws-cli-reference.html">AWS CLI コマンドリファレンス</a></strong>
+          <p>認証確認、Security Group、Prefix List、SNSなど、日常運用で使う基本コマンドを整理します。</p>
+        </article>
+        <article class="card">
+          <strong><a href="tutorials/terraform.html">Terraform</a></strong>
           <p>init、plan、apply、destroy、tfstate、backend、variables などを実務目線で整理します。</p>
         </article>
         <article class="card">
@@ -72,7 +74,7 @@
         </article>
         <article class="card">
           <strong><a href="tutorials/amazon-linux-2023.html">[構築] Amazon Linux 2023</a></strong>
-          <p>Red Hat Enterprise Linux 9手順をベースに、AL2023固有の差分、リリース更新、rsyslog、cronを整理します。</p>
+          <p>Amazon Linux 2023の初期設定、追加パッケージ、rsyslog、cron、リリース固定を整理します。</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/windows-server-2022.html">[構築] Windows Server 2022</a></strong>
@@ -80,26 +82,23 @@
         </article>
         <article class="card">
           <strong><a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a></strong>
-          <p>Zabbix Agent 2、ホストグループ、メンテナンス設定、ホスト登録、最新データ確認の観点を整理します。</p>
+          <p>Zabbix Agent、ホスト登録、監視項目、メンテナンス設定、作業前後エビデンス取得の観点を整理します。</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/awx-ansible.html">AWX / Ansible 手順</a></strong>
           <p>Inventory、Credential、Project、Job Template、Playbook実行ログの確認観点を整理します。</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/eol.html">EOL / ライフサイクル確認表</a></strong>
+          <strong><a href="tutorials/eol.html">EOL / ライフサイクル一覧表</a></strong>
           <p>OS、AWSサービス、ミドルウェア、エージェントのサポート期限と確認リンクを整理します。</p>
         </article>
-      </div>
-
+      </section>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>目次</h2>
-      <a class="active" href="#guides">目次</a>
+      <h2>ページ内</h2>
+      <a class="active" href="#guides">手順一覧</a>
     </aside>
   </div>
-
-  <script src="assets/app.js"></script>
 </body>
 </html>

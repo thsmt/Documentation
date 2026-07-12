@@ -1,28 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AWS CLI 実務手順集 | Knowledge</title>
-  <meta name="description" content="AWS CLI operation guide.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS CLI 特殊対応集 | Knowledge</title>
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Knowledge</span></a>
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Knowledge icon">
+      <span>Knowledge</span>
+    </a>
     <nav class="nav" aria-label="Global navigation">
       <a href="../">Home</a>
-      <a href="../#guides">目次</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
   </header>
 
   <div class="layout">
-    <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>ガイド一覧</h2>
+    <aside class="sidebar" aria-label="Page list">
+      <h2>ページ一覧</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a class="active" href="aws-cli.html">AWS CLI</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="terraform.html">Terraform</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -32,229 +34,20 @@
       <a href="eol.html">EOL / Lifecycle</a>
     </aside>
 
-    <main class="aws-cli-guide">
-      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
-      <p class="meta">AWS / CLI / Operations</p>
-      <h1>AWS CLI 実務手順集</h1>
-      <p class="lead">AWS CLIを使った認証確認、リージョン設定、IAM、Security Group、SNS、Amazon RDS、EC2 / EBS、Elastic IP、S3、Auto Scaling、CloudWatch Logs、CloudFormation、Compute Optimizerの実務手順を整理します。</p>
+    <main class="content aws-cli-guide">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../">Home</a>
+        <span>手順一覧</span>
+      </nav>
 
-      <div class="callout">
-        <strong>補足</strong>
-        AWS CLIの作業前には、利用者、アカウントID、リージョンを確認します。CloudShellや作業端末にデフォルト認証情報が設定済みであれば、以降のコマンドに <code>--profile</code> は不要です。
-      </div>
+      <p class="eyebrow">AWS / CLI / Operations</p>
+      <h1>AWS CLI 特殊対応集</h1>
+      <p class="lead">AWS Management Consoleだけでは取り消しや復旧が難しい操作、またはAWS CLI/APIで実施する運用対応を整理します。</p>
 
       <div class="callout">
         <strong>掲載方針</strong>
-        このページでは、AWS Management Consoleだけでは対応しづらい操作、またはAWS CLI/APIでの実施が必要になりやすい運用手順を扱います。実作業では、実行前確認、対象リソース、ロールバック可否、作業後確認をセットで扱います。
+        <p>このページでは、GUIだけでは対応しづらい作業、復旧性や監査観点でCLI実行内容を残したい作業を扱います。Security GroupやSNSなどの日常的な基本コマンドは、<a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a> に分けています。</p>
       </div>
-
-      <h2 id="setup">AWS CLIの初期設定</h2>
-      <h3 id="install">インストール</h3>
-      <p>作業端末のOSに合わせてAWS CLIをインストールします。</p>
-
-      <div class="tab-group" data-tabs>
-        <div class="tabs" role="tablist" aria-label="AWS CLI install commands">
-          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="awscli-windows">Windows</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="awscli-macos">macOS</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="awscli-linux">Linux</button>
-        </div>
-
-        <section class="tab-panel active" id="awscli-windows" role="tabpanel">
-          <div class="code">
-            <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>winget install --id Amazon.AWSCLI -e --source winget
-aws --version</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="awscli-macos" role="tabpanel">
-          <div class="code">
-            <div class="code-header"><span>zsh</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>brew install awscli
-aws --version</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="awscli-linux" role="tabpanel">
-          <div class="code">
-            <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-aws --version</code></pre>
-          </div>
-        </section>
-      </div>
-
-      <h3 id="identity">認証情報の確認</h3>
-      <p>現在の認証情報が、想定しているAWSアカウントとIAMユーザー/ロールを向いているか確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sts get-caller-identity</code></pre>
-      </div>
-
-      <h3 id="credentials">認証情報の設定</h3>
-      <p>作業端末で初めてAWS CLIを使う場合は、デフォルト認証情報を設定します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure</code></pre>
-      </div>
-
-      <div class="callout">
-        <strong>補足</strong>
-        <code>--profile</code> は、複数のAWSアカウントやIAMユーザーを名前付きプロファイルで切り替える場合だけ指定します。このページでは、デフォルト認証情報を使う前提で記載します。
-      </div>
-
-      <h3 id="region">リージョン確認</h3>
-      <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure set region ap-northeast-1</code></pre>
-      </div>
-
-      <h2 id="iam">AWS Identity and Access Management (IAM) / AWS IAM Identity Center</h2>
-      <p>原則として人のログイン用途はAWS IAM Identity Centerを優先します。AWS Identity and Access Management (IAM) のIAMユーザーを作成する場合は、用途、権限、利用期限、アクセスキーの有無を事前に確認します。</p>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;USER_NAME&gt;</code></td><td>作成または確認するIAMユーザー名</td></tr>
-          <tr><td><code>&lt;GROUP_NAME&gt;</code></td><td>ユーザーを所属させるIAMグループ名</td></tr>
-        </tbody>
-      </table>
-
-      <p>IAMユーザーを作成します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam create-user --user-name &lt;USER_NAME&gt;</code></pre>
-      </div>
-
-      <p>作成したIAMユーザーを既存グループに追加します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt;</code></pre>
-      </div>
-
-      <p>ユーザーの所属グループを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam list-groups-for-user --user-name &lt;USER_NAME&gt;</code></pre>
-      </div>
-
-      <h2 id="security-group">Security Group ルール追加・削除</h2>
-      <p>Security Group変更は影響範囲が広いため、対象SG、方向、プロトコル、ポート、送信元/宛先、説明欄を事前に確定します。</p>
-      <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用します。</p>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>変更対象のSecurity Group ID</td></tr>
-          <tr><td><code>&lt;CIDR&gt;</code></td><td>許可または削除する送信元CIDR。例: <code>203.0.113.10/32</code></td></tr>
-        </tbody>
-      </table>
-
-      <p>作業前に、対象Security Groupの現在のルールを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt;</code></pre>
-      </div>
-
-      <p>HTTPの80/tcpだけを許可する例です。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
-      </div>
-
-      <p>全プロトコル・全ポートを許可する例です。検証や一時作業以外では原則として避け、作業後に必ず削除します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
-      </div>
-
-      <p>80/tcpの許可ルールを削除する例です。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
-      </div>
-
-      <p>全プロトコル・全ポートの許可ルールを削除する例です。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
-      </div>
-
-      <h2 id="prefix-list">Prefix List作成・IP登録</h2>
-      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加するのではなく、Customer-managed Prefix ListにまとめてからSecurity Groupで参照します。変更対象をPrefix List側に寄せられるため、接続元IPの追加・削除を運用しやすくなります。詳細は <a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/create-managed-prefix-list.html">create-managed-prefix-list</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-managed-prefix-list.html">modify-managed-prefix-list</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">authorize-security-group-ingress</a> を確認します。</p>
-      <div class="notice">
-        <strong>注意</strong>
-        Security Groupの画面上は1つのPrefix List参照として整理できます。ただし、Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われます。最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計します。
-      </div>
-      <table>
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;PREFIX_LIST_NAME&gt;</code></td><td>作成または更新するPrefix List名。</td></tr>
-          <tr><td><code>&lt;MAX_ENTRIES&gt;</code></td><td>Prefix Listに登録できる最大エントリ数。例: <code>10</code></td></tr>
-          <tr><td><code>&lt;CIDR_1&gt;</code></td><td>登録する接続元CIDR。例: <code>203.0.113.10/32</code></td></tr>
-          <tr><td><code>&lt;CIDR_2&gt;</code></td><td>追加で登録する接続元CIDR。不要な場合はコマンドから削除します。</td></tr>
-          <tr><td><code>&lt;CIDR_3&gt;</code></td><td>既存Prefix Listへ後から追加する接続元CIDR。</td></tr>
-          <tr><td><code>&lt;DESCRIPTION_1&gt;</code></td><td>登録CIDRの説明。例: <code>office-a</code></td></tr>
-          <tr><td><code>&lt;DESCRIPTION_2&gt;</code></td><td>追加CIDRの説明。</td></tr>
-          <tr><td><code>&lt;DESCRIPTION_3&gt;</code></td><td>後から追加するCIDRの説明。</td></tr>
-          <tr><td><code>&lt;PREFIX_LIST_ID&gt;</code></td><td>作成後に払い出されるPrefix List ID。</td></tr>
-          <tr><td><code>&lt;CURRENT_VERSION&gt;</code></td><td>Prefix List更新時に指定する現在のバージョン。</td></tr>
-          <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>Prefix Listを参照させるSecurity Group ID。</td></tr>
-          <tr><td><code>&lt;PORT&gt;</code></td><td>許可するポート番号。例: <code>443</code></td></tr>
-        </tbody>
-      </table>
-
-      <p>Prefix Listを作成し、初期CIDRを登録します。登録するIPアドレスが複数ある場合は、<code>Cidr=...</code> の指定を追加します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 create-managed-prefix-list --prefix-list-name &lt;PREFIX_LIST_NAME&gt; --address-family IPv4 --max-entries &lt;MAX_ENTRIES&gt; --entries Cidr=&lt;CIDR_1&gt;,Description="&lt;DESCRIPTION_1&gt;" Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code></pre>
-      </div>
-
-      <p>作成したPrefix ListのID、現在のバージョン、最大エントリ数を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=&lt;PREFIX_LIST_NAME&gt; --query "PrefixLists[*].[PrefixListId,PrefixListName,Version,MaxEntries,State]" --output table</code></pre>
-      </div>
-
-      <p>既存のPrefix Listへ接続元CIDRを追加します。更新時は、直前に確認した <code>Version</code> を <code>&lt;CURRENT_VERSION&gt;</code> に指定します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 modify-managed-prefix-list --prefix-list-id &lt;PREFIX_LIST_ID&gt; --current-version &lt;CURRENT_VERSION&gt; --add-entries Cidr=&lt;CIDR_3&gt;,Description="&lt;DESCRIPTION_3&gt;"</code></pre>
-      </div>
-
-      <p>Prefix Listに登録されているCIDRを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 get-managed-prefix-list-entries --prefix-list-id &lt;PREFIX_LIST_ID&gt; --query "Entries[*].[Cidr,Description]" --output table</code></pre>
-      </div>
-
-      <p>Security GroupのインバウンドルールでPrefix Listを参照します。例では、Prefix Listに登録した接続元CIDR群から <code>&lt;PORT&gt;</code> へのTCP通信を許可します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions IpProtocol=tcp,FromPort=&lt;PORT&gt;,ToPort=&lt;PORT&gt;,PrefixListIds=[{PrefixListId=&lt;PREFIX_LIST_ID&gt;}]</code></pre>
-      </div>
-
-      <h2 id="sns">SNS Topic・Subscription作成</h2>
-      <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テストまでを一連の手順として扱います。</p>
-      <p>SNS Topicを作成します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns create-topic --name &lt;TOPIC_NAME&gt;</code></pre>
-      </div>
-
-      <p>メール通知先をSubscriptionとして登録します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns subscribe --topic-arn &lt;TOPIC_ARN&gt; --protocol email --notification-endpoint &lt;MAIL_ADDRESS&gt;</code></pre>
-      </div>
-
-      <p>通知テストを実行します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test"</code></pre>
-      </div>
-
       <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
       <p>Amazon RDSのエンジンバージョン変更を「次回のメンテナンスウィンドウで適用」として保存した後、コンソール上で保留中の変更を取り消せない場合があります。その場合は、AWS CLIで現在稼働中の値を再指定して、保留中の変更を打ち消します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a> を確認します。</p>
       <table>
@@ -614,13 +407,8 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>目次</h2>
-      <a class="active" href="#setup">AWS CLIの初期設定</a>
-      <a href="#iam">IAM / IAM Identity Center</a>
-      <a href="#security-group">Security Group</a>
-      <a href="#prefix-list">Prefix List作成</a>
-      <a href="#sns">SNS</a>
-      <a href="#rds-pending-maintenance">Amazon RDS保留変更</a>
+      <h2>ページ内</h2>
+      <a class="active" href="#rds-pending-maintenance">Amazon RDS保留変更</a>
       <a href="#ec2-ebs-delete-on-termination">EBS終了時削除</a>
       <a href="#elastic-ip">Elastic IP</a>
       <a href="#s3-versioning-restore">S3 Versioning復元</a>
@@ -631,7 +419,6 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       <a href="#compute-optimizer">Compute Optimizer</a>
     </aside>
   </div>
-
   <script src="../assets/app.js"></script>
 </body>
 </html>

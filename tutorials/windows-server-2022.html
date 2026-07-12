@@ -12,7 +12,6 @@
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Knowledge</span></a>
     <nav class="nav" aria-label="Global navigation">
       <a href="../">Home</a>
-      <a href="../#guides">目次</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
@@ -20,9 +19,10 @@
 
   <div class="layout">
     <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>ガイド一覧</h2>
+      <h2>ページ一覧</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="terraform.html">Terraform</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -33,7 +33,7 @@
     </aside>
 
     <main>
-      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>手順一覧</span></div>
       <p class="meta">Windows Server / EC2 / Manual Build</p>
       <h1>[構築] Windows Server 2022</h1>
       <p class="lead">AWS EC2上のWindows Server 2022で、接続、ローカルユーザー作成、OS初期設定を行うための手順です。EC2起動時のタグ設計やストレージ属性ではなく、起動後のサーバ構築・設定作業に絞って整理します。</p>
@@ -235,7 +235,7 @@ Remove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>目次</h2>
+      <h2>ページ内</h2>
       <a class="active" href="#pre-check">1. 接続前の確認</a>
       <a href="#connect">2. インスタンス接続</a>
       <a href="#local-users">3. ローカルユーザー</a>

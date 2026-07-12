@@ -12,7 +12,6 @@
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Knowledge</span></a>
     <nav class="nav" aria-label="Global navigation">
       <a href="../">Home</a>
-      <a href="../#guides">目次</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
@@ -20,9 +19,10 @@
 
   <div class="layout">
     <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>ガイド一覧</h2>
+      <h2>ページ一覧</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="terraform.html">Terraform</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -33,7 +33,7 @@
     </aside>
 
     <main>
-      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>手順一覧</span></div>
       <p class="meta">Monitoring / Zabbix / Operations</p>
       <h1>Zabbix 6.0 運用手順</h1>
       <p class="lead">Zabbix 6.0を想定し、Linux / Red Hat Enterprise Linux 9とWindows ServerのZabbix Agent 2導入、ホストグループ作成、メンテナンス設定、ホスト登録、最新データ確認を整理します。OSごとに差分が出る手順はタブで切り替えます。</p>
@@ -84,24 +84,47 @@
             <pre><code>dnf install -y zabbix-agent2</code></pre>
           </div>
 
+          <p>PSK暗号化を利用する場合は、Agent側でPSKファイルを作成します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>openssl rand -hex 64 &gt; /etc/zabbix/zabbix_agent2.psk</code></pre>
+          </div>
+
+          <p>PSKファイルの所有者と権限を設定します。</p>
+          <div class="code">
+            <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>chown zabbix:zabbix /etc/zabbix/zabbix_agent2.psk
+chmod 600 /etc/zabbix/zabbix_agent2.psk</code></pre>
+          </div>
+
           <p>Agent設定ファイルを編集します。</p>
           <div class="code">
             <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
             <pre><code>vi /etc/zabbix/zabbix_agent2.conf</code></pre>
           </div>
 
-          <p>主な設定例です。パッシブチェックでは <code>Server</code>、アクティブチェックでは <code>ServerActive</code> を確認します。</p>
+          <p>主な設定例です。パッシブチェックでは <code>Server</code>、アクティブチェックでは <code>ServerActive</code> を確認します。PSKを利用する場合は、暗号化設定も合わせて記載します。</p>
           <div class="code">
             <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
             <pre><code>Server=&lt;ZABBIX_SERVER_IP&gt;
 ServerActive=&lt;ZABBIX_SERVER_IP&gt;
-Hostname=&lt;HOSTNAME&gt;</code></pre>
+Hostname=&lt;HOSTNAME&gt;
+TLSConnect=psk
+TLSAccept=psk
+TLSPSKIdentity=&lt;ZABBIX_PSK_IDENTITY&gt;
+TLSPSKFile=/etc/zabbix/zabbix_agent2.psk</code></pre>
+          </div>
+
+          <div class="callout">
+            <strong>PSK値の扱い</strong>
+            <p>Zabbix画面に登録するPSK valueは、作成した <code>/etc/zabbix/zabbix_agent2.psk</code> の値を使用します。作業記録やチケット本文に平文で残さないようにします。</p>
           </div>
 
           <p>設定値を確認します。</p>
           <div class="code">
             <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>grep -E '^(Server|ServerActive|Hostname)=' /etc/zabbix/zabbix_agent2.conf</code></pre>
+            <pre><code>grep -E '^(Server|ServerActive|Hostname|TLSConnect|TLSAccept|TLSPSKIdentity|TLSPSKFile)=' /etc/zabbix/zabbix_agent2.conf
+ls -l /etc/zabbix/zabbix_agent2.psk</code></pre>
           </div>
 
           <p>Zabbix Agent 2のバージョンを確認します。</p>
@@ -254,7 +277,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>目次</h2>
+      <h2>ページ内</h2>
       <a class="active" href="#scope">1. 対象作業</a>
       <a href="#agent-setup">2. Agent導入・設定</a>
       <a href="#host-group">3. ホストグループ</a>
