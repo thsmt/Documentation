@@ -12,7 +12,7 @@
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Knowledge</span></a>
     <nav class="nav" aria-label="Global navigation">
       <a href="../">Home</a>
-      <a href="../#guides">Guides</a>
+      <a href="../#guides">目次</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
     </nav>
@@ -20,7 +20,7 @@
 
   <div class="layout">
     <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>Guides</h2>
+      <h2>目次</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
@@ -32,7 +32,7 @@
     </aside>
 
     <main>
-      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>Guides</span></div>
+      <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
       <p class="meta">Monitoring / Zabbix / Operations</p>
       <h1>Zabbix 6.0 運用手順</h1>
       <p class="lead">Zabbix 6.0を想定し、Linux / RHEL9とWindows ServerのZabbix Agent 2導入、ホストグループ作成、メンテナンス設定、ホスト登録、最新データ確認を整理します。OSごとに差分が出る手順はタブで切り替えます。</p>
@@ -60,7 +60,7 @@
       <div class="tab-group" data-tabs>
         <div class="tabs" role="tablist" aria-label="Zabbix Agent 2 setup">
           <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="zabbix-agent-rhel">RHEL9</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-agent-windows">Windows Server</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-agent-windows">Windows Server 2022</button>
         </div>
 
         <section class="tab-panel active" id="zabbix-agent-rhel" role="tabpanel">
@@ -129,7 +129,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         </section>
 
         <section class="tab-panel" id="zabbix-agent-windows" role="tabpanel">
-          <h3>Windows Server</h3>
+          <h3>Windows Server 2022</h3>
           <p>Windows ServerへZabbix Agent 2を導入する場合は、Zabbix公式ダウンロードページからWindows向けMSIを取得し、ウィザードでServer、Host名、PSKを設定します。</p>
           <table>
             <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -209,7 +209,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
       <div class="tab-group" data-tabs>
         <div class="tabs" role="tablist" aria-label="Zabbix host registration">
           <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="zabbix-register-rhel">RHEL9</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-register-windows">Windows Server</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-register-windows">Windows Server 2022</button>
         </div>
 
         <section class="tab-panel active" id="zabbix-register-rhel" role="tabpanel">
@@ -227,7 +227,7 @@ Hostname=&lt;HOSTNAME&gt;</code></pre>
         </section>
 
         <section class="tab-panel" id="zabbix-register-windows" role="tabpanel">
-          <h3>Windows Server</h3>
+          <h3>Windows Server 2022</h3>
           <ol>
             <li>「設定」から「ホスト」を開きます。</li>
             <li>「ホストの作成」を選択します。</li>
