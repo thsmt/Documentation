@@ -13,7 +13,10 @@
       <img src="../assets/icon.jpg" alt="">
       <span>Knowledge</span>
     </a>
-    <nav class="nav" aria-label="Global navigation">
+    <div class="header-actions">
+      <button class="icon-button sidebar-toggle" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
       <a href="../">Home</a>
       <a href="https://github.com/thsmt">Repositories</a>
       <a href="https://github.com/thsmt/Knowledge">GitHub</a>
@@ -21,7 +24,7 @@
   </header>
 
   <div class="layout">
-    <aside class="sidebar" aria-label="Tutorial navigation">
+    <aside id="site-sidebar" class="sidebar" aria-label="Tutorial navigation">
       <h2>ページ一覧</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>

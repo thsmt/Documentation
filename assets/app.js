@@ -1,3 +1,59 @@
+const themeToggle = document.querySelector(".theme-toggle");
+const savedTheme = localStorage.getItem("knowledge-theme");
+const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+
+const applyTheme = (theme) => {
+  document.documentElement.dataset.theme = theme;
+
+  if (!themeToggle) return;
+
+  themeToggle.textContent = theme === "dark" ? "☀" : "☾";
+  themeToggle.setAttribute("aria-label", theme === "dark" ? "ライトモードに切り替え" : "ダークモードに切り替え");
+  themeToggle.setAttribute("title", theme === "dark" ? "ライトモードに切り替え" : "ダークモードに切り替え");
+};
+
+applyTheme(savedTheme || preferredTheme);
+
+themeToggle?.addEventListener("click", () => {
+  const currentTheme = document.documentElement.dataset.theme || "dark";
+  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
+  localStorage.setItem("knowledge-theme", nextTheme);
+  applyTheme(nextTheme);
+});
+
+const sidebarToggle = document.querySelector(".sidebar-toggle");
+const sidebarQuery = window.matchMedia("(max-width: 980px)");
+
+const syncSidebarToggle = () => {
+  if (!sidebarToggle) return;
+
+  const isOpen = sidebarQuery.matches
+    ? document.body.classList.contains("sidebar-open")
+    : !document.body.classList.contains("sidebar-collapsed");
+
+  sidebarToggle.setAttribute("aria-expanded", String(isOpen));
+  sidebarToggle.setAttribute("title", isOpen ? "ページ一覧を閉じる" : "ページ一覧を開く");
+  sidebarToggle.setAttribute("aria-label", isOpen ? "ページ一覧を閉じる" : "ページ一覧を開く");
+};
+
+sidebarToggle?.addEventListener("click", () => {
+  if (sidebarQuery.matches) {
+    document.body.classList.toggle("sidebar-open");
+  } else {
+    document.body.classList.toggle("sidebar-collapsed");
+  }
+
+  syncSidebarToggle();
+});
+
+sidebarQuery.addEventListener("change", () => {
+  document.body.classList.remove("sidebar-open", "sidebar-collapsed");
+  syncSidebarToggle();
+});
+
+syncSidebarToggle();
+
 document.querySelectorAll(".copy").forEach((button) => {
   button.addEventListener("click", async () => {
     const code = button.closest(".code").querySelector("code").innerText;
