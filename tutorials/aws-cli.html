@@ -42,11 +42,11 @@
 
       <p class="eyebrow">AWS / CLI / Operations</p>
       <h1>AWS CLI 特殊対応集</h1>
-      <p class="lead">AWS Management Consoleだけでは取り消しや復旧が難しい操作、またはAWS CLI/APIで実施する運用対応を整理します。</p>
+      <p class="lead">AWS CLI/APIでしか変更・切り戻し・復旧できない運用手順を整理します。</p>
 
       <div class="callout">
         <strong>掲載方針</strong>
-        <p>このページでは、GUIだけでは対応しづらい作業、復旧性や監査観点でCLI実行内容を残したい作業を扱います。Security GroupやSNSなどの日常的な基本コマンドは、<a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a> に分けています。</p>
+        <p>このページでは、CLI/APIでしか変更または切り戻しできない操作を扱います。Security GroupやSNSなどの日常的な基本コマンドは、<a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a> に分けています。</p>
       </div>
       <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
       <p>Amazon RDSのエンジンバージョン変更を「次回のメンテナンスウィンドウで適用」として保存した後、コンソール上で保留中の変更を取り消せない場合があります。その場合は、AWS CLIで現在稼働中の値を再指定して、保留中の変更を打ち消します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a> を確認します。</p>
@@ -112,9 +112,11 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </figure>
       </details>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
-        エンジンバージョン変更は停止を伴う場合があります。<code>--apply-immediately</code> を指定すると、今回再指定した項目だけでなく、同一DBインスタンスに残っている他の保留中変更も即時適用される場合があります。作業前に <code>PendingModifiedValues</code> 全体を確認し、対象外の保留中変更がある場合は作業を中止するか、取り消す各項目の現在値を同一リクエストで再指定します。
+        <p>エンジンバージョン変更は停止を伴う場合があります。</p>
+        <p><code>--apply-immediately</code> を指定した場合は今回再指定した項目だけでなく、同一DBインスタンスに残っている他の保留中変更も即時適用される場合があります。</p>
+        <p>作業前に <code>PendingModifiedValues</code> 全体を確認し、対象外の保留中変更がある場合は作業を中止するか、取り消す各項目の現在値を同一リクエストで再指定します。</p>
       </div>
 
       <h2 id="ec2-ebs-delete-on-termination">EC2 EBS終了時削除属性の変更</h2>
@@ -151,7 +153,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt; --query "Reservations[0].Instances[0].BlockDeviceMappings[*].{DeviceName:DeviceName,VolumeId:Ebs.VolumeId,DeleteOnTermination:Ebs.DeleteOnTermination}" --output table</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         <code>modify-instance-attribute</code> では、Volume IDではなくインスタンス側の <code>DeviceName</code> を指定します。終了時削除を有効にすると、EC2インスタンスをterminateしたタイミングで対象EBSボリュームも削除されます。DB、ログ、永続データを保持するボリュームでは有効化しないよう、作業前に用途を確認します。
       </div>
@@ -180,7 +182,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws ec2 associate-address --allocation-id &lt;ALLOCATION_ID&gt; --instance-id &lt;INSTANCE_ID&gt; --region &lt;REGION&gt;</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         解放済みのElastic IPが他のAWSアカウントに割り当てられている場合は再取得できません。作業前に対象リージョン、対象IP、現在の割り当て状況を確認します。
       </div>
@@ -221,7 +223,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws s3api head-object --bucket &lt;BUCKET_NAME&gt; --key "&lt;OBJECT_KEY&gt;"</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         <code>--version-id</code> を付けずに <code>delete-object</code> を実行すると、Delete Markerを削除するのではなく、新しいDelete Markerを追加する動作になります。復元作業では、削除対象がDelete Marker自身のVersion IDであることを必ず確認します。
       </div>
@@ -253,7 +255,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws iam list-virtual-mfa-devices --assignment-status Unassigned --query "VirtualMFADevices[*].SerialNumber" --output table</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         IAMユーザーに割り当て済みのMFAデバイスは、先に割り当て解除が必要です。この手順は、登録途中で残った未割当てMFAデバイスの整理を目的とします。
       </div>
@@ -293,7 +295,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws autoscaling complete-lifecycle-action --lifecycle-action-result ABANDON --lifecycle-hook-name &lt;LIFECYCLE_HOOK_NAME&gt; --auto-scaling-group-name &lt;AUTO_SCALING_GROUP_NAME&gt; --instance-id &lt;INSTANCE_ID&gt;</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         <code>CONTINUE</code> と <code>ABANDON</code> の意味は、起動時と終了時で運用影響が異なります。事前にLifecycle Hookの目的、通知先、タイムアウト、デフォルト結果を確認してから実行します。
       </div>
@@ -326,7 +328,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws logs disassociate-kms-key --log-group-name "&lt;LOG_GROUP_NAME&gt;"</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         CloudWatch Logsで使用できるのは対称KMSキーです。反映に数分かかる場合があり、関連付け後に取り込まれたログデータが対象KMSキーで暗号化されます。KMSキーを無効化または削除すると、そのキーで暗号化されたログを読み出せなくなるため、キーのライフサイクル管理も確認します。
       </div>
@@ -380,7 +382,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws cloudformation get-stack-policy --stack-name &lt;STACK_NAME&gt;</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         Stack Policyは削除ではなく置き換えで管理します。保護を解除する場合も、すべての更新を許可するPolicyへ置き換える運用になります。設定前に、対象Logical IDと更新計画を必ず確認します。
       </div>
@@ -400,7 +402,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         <pre><code>aws compute-optimizer update-enrollment-status --status Inactive</code></pre>
       </div>
 
-      <div class="callout">
+      <div class="callout callout-warning">
         <strong>注意</strong>
         オプトアウト時に <code>--include-member-accounts</code> を指定するとエラーになります。また、オプトアウトすると対象アカウントのレコメンデーションと関連メトリクスデータはCompute Optimizerから削除されます。
       </div>
