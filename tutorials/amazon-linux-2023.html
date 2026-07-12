@@ -20,7 +20,7 @@
 
   <div class="layout">
     <aside class="sidebar" aria-label="Tutorial navigation">
-      <h2>ガイド一覧</h2>
+      <h2>目次</h2>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI</a>
       <a href="terraform.html">Terraform</a>
@@ -36,198 +36,82 @@
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>目次</span></div>
       <p class="meta">Linux / Amazon Linux 2023 / Manual Build</p>
       <h1>[構築] Amazon Linux 2023</h1>
-      <p class="lead">AWS EC2上のAmazon Linux 2023を手動構築する際の初期設定、RHEL9との差分、rsyslog、cron、sudoers、profile、SSH、cloud-initの確認観点を整理します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
+      <p class="lead">AWS EC2上のAmazon Linux 2023を手動構築する際の初期設定を、[構築] RedHat9 の順番に合わせて整理します。RedHat9と同じ考え方で扱う項目、Amazon Linux 2023では不要な項目、追加導入が必要になりやすい項目を分けて記載します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています。</p>
 
       <div class="callout">
         <strong>前提</strong>
-        実環境名、IPアドレス、顧客固有値は扱わず、再利用できる手順として一般化しています。<code>&lt;HOSTNAME&gt;</code>、<code>&lt;FQDN&gt;</code>、<code>&lt;PRIVATE_IP&gt;</code> などは環境に合わせて置き換えます。
+        実環境名、IPアドレス、顧客固有値は扱わず、再利用できる手順として一般化しています。<code>&lt;HOSTNAME&gt;</code>、<code>&lt;FQDN&gt;</code>、<code>&lt;PRIVATE_IP&gt;</code>、<code>&lt;RELEASE_VERSION&gt;</code> などは環境に合わせて置き換えます。
       </div>
 
-      <h2 id="difference">1. RedHat9との差分</h2>
+      <h2 id="step-01">1. 起動時の確認</h2>
+      <p>AWSコンソールでEC2を起動する場合、キーペアは <code>ED25519</code> で作成します。RSA鍵は組織ポリシーや鍵長の条件で拒否される場合があります。</p>
       <table>
         <thead>
           <tr>
-            <th>項目</th>
-            <th>Amazon Linux 2023での扱い</th>
-            <th>構築時の判断</th>
+            <th>確認項目</th>
+            <th>内容</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>パッケージ管理</td>
-            <td><code>dnf</code> が標準です。<code>yum</code> も利用できますが、DNFへのポインタとして扱われます。</td>
-            <td>手順では <code>dnf</code> に統一します。</td>
-          </tr>
-          <tr>
-            <td>SELinux</td>
-            <td>初期状態は <code>Permissive</code> です。</td>
-            <td>RHEL9のように <code>permissive</code> へ変更する手順は不要です。状態確認のみ行います。</td>
-          </tr>
-          <tr>
-            <td>rsyslog</td>
-            <td>デフォルトではインストールされず、標準ログ確認は <code>journalctl</code> です。</td>
-            <td><code>/var/log/messages</code> など従来運用のログファイルが必要な場合は追加導入します。</td>
-          </tr>
-          <tr>
-            <td>cron</td>
-            <td><code>cronie</code> はデフォルトでは含まれません。AWSはsystemd timerへの移行も推奨しています。</td>
-            <td>既存運用でcrontabを使う場合は <code>cronie</code> を追加導入します。</td>
-          </tr>
-          <tr>
-            <td>SSH</td>
-            <td>古いSSHクライアントでは接続できない場合があります。</td>
-            <td>クライアント側を更新し、安易に暗号ポリシーをLEGACYへ下げない方針にします。</td>
-          </tr>
-          <tr>
-            <td>リポジトリ更新</td>
-            <td>AMIごとにリポジトリバージョンが紐づき、決定的な更新が重視されています。</td>
-            <td>本番ではAMI、リポジトリバージョン、更新タイミングを作業前に確認します。</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2 id="step-01">2. 起動時の確認</h2>
-      <p>AWSコンソールでEC2を起動する場合、AMI、インスタンスタイプ、キーペア、Security Group、EBS、IAM Roleを確認します。</p>
-      <table>
-        <thead><tr><th>確認項目</th><th>内容</th></tr></thead>
-        <tbody>
-          <tr><td>ログインユーザー</td><td>標準ユーザーは <code>ec2-user</code> です。</td></tr>
-          <tr><td>キーペア</td><td><code>ED25519</code> を基本にします。利用するSSHクライアントが対応しているか確認します。</td></tr>
+          <tr><td>キーペア</td><td><code>ED25519</code> を利用します。</td></tr>
           <tr><td>接続方式</td><td>SSH、Session Manager、踏み台経由など、作業経路を事前に確認します。</td></tr>
           <tr><td>バックアップ</td><td>設定変更前にAMI、EBS Snapshot、設定ファイル退避の要否を確認します。</td></tr>
         </tbody>
       </table>
 
-      <h2 id="step-02">3. OSとSELinuxの確認</h2>
-      <p>OSバージョンを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>cat /etc/os-release</code></pre>
-      </div>
-
-      <p>カーネルバージョンを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>uname -r</code></pre>
-      </div>
-
-      <p>SELinuxの状態を確認します。Amazon Linux 2023では初期状態が <code>Permissive</code> のため、RHEL9手順のような設定変更は行いません。</p>
+      <h2 id="step-02">2. SELinuxの状態確認</h2>
+      <p>Amazon Linux 2023ではSELinuxが初期状態で <code>Permissive</code> です。RedHat9のように <code>permissive</code> へ変更する手順は標準では不要です。</p>
+      <p>SELinuxの状態を確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>getenforce</code></pre>
       </div>
 
+      <p>設定ファイルも確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>grep '^SELINUX=' /etc/selinux/config</code></pre>
+      </div>
+
       <div class="callout">
         <strong>補足</strong>
-        セキュリティ要件で <code>Enforcing</code> が必要な場合は、影響調査、ログ確認、再起動、アプリケーション動作確認をセットで行います。このページでは初期構築の標準手順としては変更しません。
+        Amazon Linux 2023で <code>Enforcing</code> を利用する場合は、対象ミドルウェア、ログ出力、運用手順を別途検証します。このページでは標準状態の確認に留めます。
       </div>
 
-      <h2 id="step-03">4. パッケージ更新と基本パッケージ導入</h2>
-      <p>パッケージを更新します。</p>
+      <h2 id="step-03">3. subscription-managerの確認</h2>
+      <p>Amazon Linux 2023ではRed Hat Subscription Managementを利用しないため、RedHat9のような <code>subscription-manager</code> 無効化は不要です。</p>
+      <p>パッケージが入っていないことを確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf update -y</code></pre>
+        <pre><code>rpm -q subscription-manager</code></pre>
       </div>
 
-      <p>運用で使用する基本パッケージを導入します。<code>rsyslog</code> と <code>cronie</code> はAmazon Linux 2023で追加導入が必要になりやすい代表例です。</p>
+      <p>利用中のリポジトリを確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y vim-enhanced rsyslog cronie cronie-noanacron logrotate \
-  tar zip unzip wget telnet traceroute bind-utils sysstat lsof</code></pre>
+        <pre><code>dnf repolist</code></pre>
       </div>
 
-      <p>導入済みパッケージを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>rpm -q rsyslog cronie cronie-noanacron logrotate sysstat</code></pre>
-      </div>
-
-      <h2 id="step-04">5. rsyslogの有効化</h2>
-      <p>Amazon Linux 2023は <code>systemd-journald</code> が標準です。従来の <code>/var/log/messages</code>、<code>/var/log/secure</code>、<code>/var/log/cron</code> を使う運用では <code>rsyslog</code> を有効化します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl enable --now rsyslog</code></pre>
-      </div>
-
-      <p>サービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status rsyslog</code></pre>
-      </div>
-
-      <p>ログファイルの出力状況を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>ls -l /var/log/messages /var/log/secure /var/log/cron</code></pre>
-      </div>
-
-      <p>journald側のログも確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>journalctl -u rsyslog --no-pager</code></pre>
-      </div>
-
-      <h2 id="step-05">6. cronの有効化</h2>
-      <p>Amazon Linux 2023ではcronがデフォルトでは利用できません。既存運用で <code>crontab</code> を使用する場合は <code>cronie</code> を導入し、<code>crond</code> を有効化します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl enable --now crond</code></pre>
-      </div>
-
-      <p>サービス状態を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status crond</code></pre>
-      </div>
-
-      <p>rootのcrontabを確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>crontab -l</code></pre>
-      </div>
-
-      <h2 id="step-06">7. sudoers編集時のエディタ指定</h2>
-      <p><code>visudo</code> や <code>sudo vi /etc/sudoers</code> の実行時にnanoが開く環境では、作業前にエディタを明示します。sudoersは構文ミスの影響が大きいため、直接編集ではなく <code>visudo</code> を使用します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>export EDITOR=vi
-export VISUAL=vi</code></pre>
-      </div>
-
-      <p>sudoersを編集します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>visudo</code></pre>
-      </div>
-
-      <p>構文を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>visudo -c</code></pre>
-      </div>
-
-      <h2 id="step-07">8. ログインプロファイル設定</h2>
-      <p>操作履歴に時刻を残し、調査時に作業順序を追いやすくするため、<code>/etc/profile</code> と新規ユーザー用の雛形を変更します。</p>
-      <p><code>/etc/profile</code> を退避します。</p>
+      <h2 id="step-04">4. ログインプロファイル設定</h2>
+      <p>ログイン時の共通環境変数や履歴設定を整理するため、<code>/etc/profile</code> を退避します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cp -pi /etc/profile /etc/profile.org</code></pre>
       </div>
 
-      <p><code>/etc/profile</code> を編集します。</p>
+      <p>設定ファイルを編集します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/profile</code></pre>
       </div>
 
-      <p>末尾に履歴時刻とumaskを設定します。</p>
+      <p>必要に応じて追記します。</p>
       <div class="code">
-        <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>umask 002
-HISTSIZE=50000
-HISTFILESIZE=50000
-HISTTIMEFORMAT='%Y-%m-%d %T '
-export HISTSIZE HISTFILESIZE HISTTIMEFORMAT</code></pre>
+        <div class="code-header"><span>profile</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>export HISTSIZE=10000
+export HISTTIMEFORMAT='%F %T '
+export EDITOR=vi
+export VISUAL=vi</code></pre>
       </div>
 
       <p>差分を確認します。</p>
@@ -236,73 +120,139 @@ export HISTSIZE HISTFILESIZE HISTTIMEFORMAT</code></pre>
         <pre><code>diff -u /etc/profile.org /etc/profile</code></pre>
       </div>
 
-      <h2 id="step-08">9. ホスト名・hosts・時刻設定</h2>
+      <h2 id="step-05">5. ホスト名とhosts設定</h2>
       <p>必要に応じてホスト名を変更します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>hostnamectl set-hostname &lt;HOSTNAME&gt;</code></pre>
       </div>
 
-      <p><code>/etc/hosts</code> を編集します。</p>
+      <p>ホスト名を確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>vi /etc/hosts</code></pre>
+        <pre><code>hostnamectl
+hostname -f</code></pre>
+      </div>
+
+      <p><code>/etc/hosts</code> を退避して編集します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cp -pi /etc/hosts /etc/hosts.org
+vi /etc/hosts</code></pre>
       </div>
 
       <p>プライベートIP、FQDN、ホスト名を追記します。</p>
       <div class="code">
-        <div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>hosts</span><button class="copy" type="button">Copy</button></div>
         <pre><code>&lt;PRIVATE_IP&gt; &lt;FQDN&gt; &lt;HOSTNAME&gt;</code></pre>
       </div>
 
-      <p>タイムゾーンを設定します。</p>
+      <h2 id="step-06">6. タイムゾーン設定</h2>
+      <p>サーバーのタイムゾーンを日本時間に変更します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>timedatectl set-timezone Asia/Tokyo</code></pre>
       </div>
 
-      <p>時刻同期状態を確認します。</p>
+      <p>設定後の時刻を確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>chronyc sources -v</code></pre>
+        <pre><code>timedatectl
+date</code></pre>
       </div>
 
-      <h2 id="step-09">10. SSHとcloud-init確認</h2>
-      <p>SSHサービス状態を確認します。</p>
+      <h2 id="step-07">7. sshd_config修正</h2>
+      <p>SSHのrootログイン、タイムアウト、DNS逆引き、SFTPログ出力を確認・調整します。キーペアは起動時に <code>ED25519</code> で作成する前提です。</p>
+      <p>設定ファイルを退避します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl status sshd</code></pre>
+        <pre><code>cp -pi /etc/ssh/sshd_config /etc/ssh/sshd_config.org</code></pre>
       </div>
 
-      <p>古いクライアントで接続できない場合は、まずクライアント側の更新を検討します。やむを得ず互換性を優先する場合のみ、AWS公式手順に沿って暗号ポリシーを変更します。</p>
+      <p>設定ファイルを編集します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y crypto-policies-scripts
-update-crypto-policies --set LEGACY</code></pre>
+        <pre><code>vi /etc/ssh/sshd_config</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>注意</strong>
-        <code>LEGACY</code> への変更はセキュリティレベルを下げます。恒久対応ではなく、接続ツールの更新、Session Manager利用、対応済みSSHクライアント利用を優先します。
+      <p>必要に応じて、以下のような設定を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>sshd_config</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>PermitRootLogin no
+UseDNS no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+Subsystem sftp /usr/libexec/openssh/sftp-server -f LOCAL3 -l VERBOSE</code></pre>
       </div>
 
-      <p>cloud-initの状態を確認します。</p>
+      <p>構文確認後、sshdを再起動します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>cloud-init status --long</code></pre>
+        <pre><code>sshd -t
+systemctl restart sshd
+systemctl status sshd</code></pre>
       </div>
 
-      <h2 id="step-10">11. swap設定</h2>
-      <p>メモリ容量やアプリケーション要件に応じてswapを作成します。不要な場合はこの手順をスキップします。</p>
+      <h2 id="step-08">8. cloud-init設定変更</h2>
+      <p>Amazon Linux 2023では、標準的な手動構築ではcloud-init設定を変更しません。必要な場合のみ、起動時ユーザーデータ、ホスト名管理、追加ディスクの自動マウントなどの要件を確認して個別に調整します。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>確認項目</th>
+            <th>Amazon Linux 2023での扱い</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>ホスト名</td><td><code>hostnamectl</code> と <code>/etc/hosts</code> で設定します。</td></tr>
+          <tr><td>追加ディスク</td><td>手動でマウント、または別途UserDataやCloudFormationで管理します。</td></tr>
+          <tr><td>root無効化</td><td>AMI既定値とSSH設定を確認し、必要時のみ変更します。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="step-09">9. 追加ディスクのマウント</h2>
+      <p>追加EBSを利用する場合は、デバイス名、ファイルシステム、マウントポイント、<code>/etc/fstab</code> の永続化設定を確認します。不要な場合はこの手順をスキップします。</p>
+      <p>ディスク構成を確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>fallocate -l 2G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-swapon /swapfile</code></pre>
+        <pre><code>lsblk
+df -hT</code></pre>
       </div>
 
-      <p>永続化する場合は <code>/etc/fstab</code> に追記します。</p>
+      <h2 id="step-10">10. swap領域作成</h2>
+      <p>現在のswap領域を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>free | grep Swap | awk '{print $2}'</code></pre>
+      </div>
+
+      <p>ルートファイルシステムの空き容量を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>df -h | grep /$ | awk '{print $4}'</code></pre>
+      </div>
+
+      <p>swapファイルを作成し、権限を変更します。RedHat9手順と同じ形式に合わせ、<code>/.swapfile</code> を利用します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dd if=/dev/zero of=/.swapfile bs=512M count=4
+chmod 600 /.swapfile</code></pre>
+      </div>
+
+      <p>swapを有効化します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>mkswap /.swapfile
+swapon /.swapfile</code></pre>
+      </div>
+
+      <p>swap領域を再確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>free | grep Swap | awk '{print $2}'
+swapon --show</code></pre>
+      </div>
+
+      <p>再起動後も有効化されるように、<code>/etc/fstab</code> へ追記します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cp -pi /etc/fstab /etc/fstab.org
@@ -311,21 +261,206 @@ vi /etc/fstab</code></pre>
 
       <div class="code">
         <div class="code-header"><span>fstab</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>/swapfile none swap sw 0 0</code></pre>
+        <pre><code>/.swapfile    swap    swap    defaults    0    0</code></pre>
       </div>
 
-      <p>swap状態を確認します。</p>
+      <p>fstabの記載ミスがないか確認します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>swapon --show
-free -h</code></pre>
+        <pre><code>mount -a</code></pre>
       </div>
 
-      <h2 id="step-11">12. logrotate確認</h2>
+      <h2 id="step-11">11. ミドルウェアのインストール方針</h2>
+      <p>Amazon Linux 2023では <code>dnf</code> を利用します。<code>yum</code> も利用できますが、実体は <code>dnf</code> へ向くため、このページでは <code>dnf</code> で統一します。</p>
+      <p>利用可能なパッケージを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf search httpd
+dnf search mariadb
+dnf search postgresql</code></pre>
+      </div>
+
+      <p>Webサーバー、メール関連、DBクライアントを導入する例です。MySQL互換のクライアント用途では、Amazon Linux 2023の標準リポジトリ上にあるMariaDB系パッケージを確認して導入します。PostgreSQLも同様に、利用するメジャーバージョンを確認してから導入します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf install -y httpd httpd-devel httpd-tools mod_ssl
+dnf install -y postfix cyrus-sasl-plain s-nail
+dnf install -y mariadb105
+dnf install -y postgresql15</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>補足</strong>
+        外部リポジトリを追加する前に、標準リポジトリで提供されるパッケージとサポート方針を確認します。DBサーバー本体を構築する場合は、<code>mariadb105-server</code> や <code>postgresql15-server</code> など、環境で利用するバージョンに合わせて別途検証します。
+      </div>
+
+      <h2 id="step-12">12. Postfix設定</h2>
+      <p>Postfixを利用する場合は、設定ファイルを退避してからホスト名やドメイン、リレー先などを設定します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cp -pi /etc/postfix/main.cf /etc/postfix/main.cf.org
+vi /etc/postfix/main.cf</code></pre>
+      </div>
+
+      <p>設定後、サービスを有効化します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>postfix check
+systemctl enable --now postfix
+systemctl status postfix</code></pre>
+      </div>
+
+      <h2 id="step-13">13. Apache設定</h2>
+      <p>Apacheを利用する場合は、設定ファイルを退避してから変更します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cp -pi /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.org
+vi /etc/httpd/conf/httpd.conf</code></pre>
+      </div>
+
+      <p>構文確認後、サービスを有効化します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>apachectl configtest
+systemctl enable --now httpd
+systemctl status httpd</code></pre>
+      </div>
+
+      <h2 id="step-14">14. 基本コマンドのインストール</h2>
+      <p>運用調査で利用する基本コマンドを導入します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf install -y vim-enhanced telnet lftp mlocate libyaml wget mtr tcpdump tmux \
+bash-completion net-tools bind-utils sysstat lsof tar zip unzip logrotate</code></pre>
+      </div>
+
+      <p>導入後、主要コマンドを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>rpm -q logrotate sysstat bind-utils net-tools</code></pre>
+      </div>
+
+      <h2 id="step-15">15. Amazon Linux 2023リリース更新</h2>
+      <p>Amazon Linux 2023はリリースバージョンを指定して更新できます。新しいリリースが利用可能な場合は、<code>dnf check-release-update</code> の結果を確認してから、適用するリリースを明示します。</p>
+      <p>利用可能なリリースを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf check-release-update</code></pre>
+      </div>
+
+      <p>実行例では、以下のように新しいAmazon Linuxのリリースが表示されます。</p>
+      <div class="code">
+        <div class="code-header"><span>example output</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>WARNING:
+  A newer release of "Amazon Linux" is available.
+
+Available Versions:
+Version 2023.8.20250721:
+  Run the following command to upgrade to 2023.8.20250721:
+    dnf upgrade --releasever=2023.8.20250721
+Version 2023.8.20250804:
+  Run the following command to upgrade to 2023.8.20250804:
+    dnf upgrade --releasever=2023.8.20250804</code></pre>
+      </div>
+
+      <p>適用するリリースを指定して更新します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf upgrade --releasever=&lt;RELEASE_VERSION&gt;</code></pre>
+      </div>
+
+      <p>必要に応じて再起動します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>reboot</code></pre>
+      </div>
+
+      <p>再接続後、OS情報を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cat /etc/os-release</code></pre>
+      </div>
+
+      <h2 id="step-16">16. rsyslog設定</h2>
+      <p>Amazon Linux 2023は <code>systemd-journald</code> が標準です。従来の <code>/var/log/messages</code>、<code>/var/log/secure</code>、<code>/var/log/cron</code>、SFTPログファイルを使う運用では <code>rsyslog</code> を追加導入します。</p>
+      <p>rsyslogをインストールして有効化します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf install -y rsyslog
+systemctl enable --now rsyslog
+systemctl status rsyslog</code></pre>
+      </div>
+
+      <p>SFTPログ出力用のファイルを事前に作成します。ファイルが存在しない状態で出力先だけを指定すると、環境によってログ出力や検証時にエラーとなる場合があります。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>touch /var/log/sftp.log
+chown root:root /var/log/sftp.log
+chmod 600 /var/log/sftp.log</code></pre>
+      </div>
+
+      <p>SFTPログを <code>/var/log/sftp.log</code> に出力する設定を作成します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>vi /etc/rsyslog.d/sftp.conf</code></pre>
+      </div>
+
+      <div class="code">
+        <div class="code-header"><span>/etc/rsyslog.d/sftp.conf</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>local3.*    /var/log/sftp.log</code></pre>
+      </div>
+
+      <p>rsyslogを再起動し、テストログを書き込みます。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl restart rsyslog
+logger -p local3.info "sftp log test"
+tail -n 20 /var/log/sftp.log</code></pre>
+      </div>
+
+      <h2 id="step-17">17. cron設定</h2>
+      <p>Amazon Linux 2023ではcronがデフォルトでは利用できません。既存運用で <code>crontab</code> を使用する場合は <code>cronie</code> を導入し、<code>crond</code> を有効化します。</p>
+      <p>cronieをインストールします。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>dnf install -y cronie cronie-noanacron</code></pre>
+      </div>
+
+      <p>crondを有効化します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl enable --now crond
+systemctl status crond</code></pre>
+      </div>
+
+      <p>rootのcrontabを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>crontab -l</code></pre>
+      </div>
+
+      <h2 id="step-18">18. sudoers編集時のエディタ指定</h2>
+      <p><code>visudo</code> 実行時に意図せず <code>nano</code> が開く場合は、作業セッションで利用するエディタを明示します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>export EDITOR=vi
+export VISUAL=vi
+visudo</code></pre>
+      </div>
+
+      <p>編集後、構文を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>visudo -c</code></pre>
+      </div>
+
+      <h2 id="step-19">19. logrotate設定</h2>
       <p>rsyslogやミドルウェアのログをファイル出力する場合は、logrotate設定を確認します。</p>
+      <p>共通設定を退避して編集します。</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>logrotate -d /etc/logrotate.conf</code></pre>
+        <pre><code>cp -pi /etc/logrotate.conf /etc/logrotate.conf.org
+vi /etc/logrotate.conf</code></pre>
       </div>
 
       <p>個別設定ファイルを確認します。</p>
@@ -335,7 +470,31 @@ free -h</code></pre>
 cat /etc/logrotate.d/syslog</code></pre>
       </div>
 
-      <h2 id="step-12">13. 作業後確認</h2>
+      <p>SFTPログをローテート対象にする場合は、個別設定を作成します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>vi /etc/logrotate.d/sftp</code></pre>
+      </div>
+
+      <div class="code">
+        <div class="code-header"><span>/etc/logrotate.d/sftp</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>/var/log/sftp.log {
+    weekly
+    rotate 12
+    missingok
+    notifempty
+    compress
+    create 0600 root root
+}</code></pre>
+      </div>
+
+      <p>logrotateのデバッグ実行で設定を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>logrotate -d /etc/logrotate.conf</code></pre>
+      </div>
+
+      <h2 id="step-20">20. 作業後確認</h2>
       <table>
         <thead>
           <tr>
@@ -346,22 +505,26 @@ cat /etc/logrotate.d/syslog</code></pre>
         <tbody>
           <tr><td>OS情報</td><td><code>cat /etc/os-release</code></td></tr>
           <tr><td>SELinux</td><td><code>getenforce</code></td></tr>
+          <tr><td>ホスト名</td><td><code>hostnamectl</code></td></tr>
+          <tr><td>時刻同期</td><td><code>timedatectl</code></td></tr>
+          <tr><td>SSH</td><td><code>systemctl status sshd</code></td></tr>
+          <tr><td>swap</td><td><code>swapon --show</code></td></tr>
+          <tr><td>Apache</td><td><code>systemctl status httpd</code></td></tr>
+          <tr><td>Postfix</td><td><code>systemctl status postfix</code></td></tr>
           <tr><td>rsyslog</td><td><code>systemctl status rsyslog</code></td></tr>
           <tr><td>cron</td><td><code>systemctl status crond</code></td></tr>
-          <tr><td>SSH</td><td><code>systemctl status sshd</code></td></tr>
-          <tr><td>時刻同期</td><td><code>chronyc sources -v</code></td></tr>
           <tr><td>ログローテート</td><td><code>logrotate -d /etc/logrotate.conf</code></td></tr>
         </tbody>
       </table>
 
-      <h2 id="references">14. 参考</h2>
+      <h2 id="references">参考</h2>
       <ul>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html">Comparing AL2 and AL2023 - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/package-management.html">Package management tool - Amazon Linux 2023</a></li>
+        <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/deterministic-upgrades.html">Deterministic upgrades through versioned repositories - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/journald.html">systemd journal replaces rsyslog - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/cron.html">systemd timers replace cron - Amazon Linux 2023</a></li>
         <li><a href="https://docs.aws.amazon.com/linux/al2023/ug/enforcing-mode.html">Change to enforcing mode - Amazon Linux 2023</a></li>
-        <li><a href="https://docs.aws.amazon.com/ja_jp/linux/al2023/ug/ssh-host-keys-disabled.html">デフォルトの SSH サーバー設定 - Amazon Linux 2023</a></li>
         <li><a href="https://hyron.co.jp/blog/awsamazonlinux2023%E3%81%A8rhel9-3%E3%82%92%E6%AF%94%E8%BC%83%E3%81%97%E3%81%A6%E3%81%BF%E3%81%9F">[AWS]AmazonLinux2023とRHEL9.3を比較してみた</a></li>
         <li><a href="https://www.nedia.ne.jp/blog/2023/08/01/21909">Amazon Linux 2023 を技術者が触ってみた</a></li>
       </ul>
@@ -369,19 +532,26 @@ cat /etc/logrotate.d/syslog</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>目次</h2>
-      <a class="active" href="#difference">差分</a>
-      <a href="#step-01">起動時</a>
-      <a href="#step-02">OS / SELinux</a>
-      <a href="#step-03">パッケージ</a>
-      <a href="#step-04">rsyslog</a>
-      <a href="#step-05">cron</a>
-      <a href="#step-06">sudoers</a>
-      <a href="#step-07">profile</a>
-      <a href="#step-08">hostname / time</a>
-      <a href="#step-09">SSH / cloud-init</a>
-      <a href="#step-10">swap</a>
-      <a href="#step-11">logrotate</a>
-      <a href="#step-12">作業後確認</a>
+      <a class="active" href="#step-01">1. 起動時</a>
+      <a href="#step-02">2. SELinux</a>
+      <a href="#step-03">3. subscription-manager</a>
+      <a href="#step-04">4. profile</a>
+      <a href="#step-05">5. hostname / hosts</a>
+      <a href="#step-06">6. timezone</a>
+      <a href="#step-07">7. sshd_config</a>
+      <a href="#step-08">8. cloud-init</a>
+      <a href="#step-09">9. disk</a>
+      <a href="#step-10">10. swap</a>
+      <a href="#step-11">11. middleware</a>
+      <a href="#step-12">12. Postfix</a>
+      <a href="#step-13">13. Apache</a>
+      <a href="#step-14">14. basic commands</a>
+      <a href="#step-15">15. release update</a>
+      <a href="#step-16">16. rsyslog</a>
+      <a href="#step-17">17. cron</a>
+      <a href="#step-18">18. sudoers</a>
+      <a href="#step-19">19. logrotate</a>
+      <a href="#step-20">20. 作業後確認</a>
       <a href="#references">参考</a>
     </aside>
   </div>
