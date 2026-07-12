@@ -79,9 +79,9 @@ a:hover {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(170px, 220px) minmax(0, 780px) minmax(190px, 260px);
+  grid-template-columns: minmax(170px, 220px) minmax(0, 900px) minmax(180px, 240px);
   gap: 36px;
-  width: min(1200px, calc(100% - 48px));
+  width: min(1420px, calc(100% - 48px));
   margin: 0 auto;
   padding: 56px 0 88px;
 }
