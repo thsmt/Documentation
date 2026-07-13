@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon WorkSpaces | Knowledge</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Knowledge icon">
+      <span>Knowledge</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../">Home</a>
+        <a href="https://github.com/thsmt">Repositories</a>
+        <a href="https://github.com/thsmt/Knowledge">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <a class="active" href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../">Home</a>
+        <span>手順一覧</span>
+      </nav>
+
+      <p class="eyebrow">AWS / End User Computing / Directory / Operations</p>
+      <h1>Amazon WorkSpaces</h1>
+      <p class="lead">Amazon WorkSpaces Personal の構築、ディレクトリ登録、Web Access、カスタムイメージ、Cost Optimizer、トラブル対応の確認観点を整理します。</p>
+
+      <div class="callout">
+        <strong>📍 掲載方針</strong>
+        <p>実環境名、ディレクトリID、ユーザー名、グローバルIP、顧客固有のドメイン名は記載せず、再利用できる構築・運用手順として一般化しています。</p>
+      </div>
+
+      <p class="repo-link"><a href="https://github.com/thsmt/workspaces-ad-foundation-poc">関連リポジトリ: workspaces-ad-foundation-poc</a></p>
+
+      <h2 id="scope">対象範囲</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>区分</th>
+            <th>内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>基盤</td>
+            <td>VPC、Public / Private Subnet、NAT Gateway、VPC Peering、Route Table、Security Group。</td>
+          </tr>
+          <tr>
+            <td>ディレクトリ</td>
+            <td>AWS Managed Microsoft AD、AD Connector、WorkSpacesディレクトリ登録。</td>
+          </tr>
+          <tr>
+            <td>WorkSpaces</td>
+            <td>ユーザー選択、バンドル選択、WorkSpace起動、クライアント接続、Web Access。</td>
+          </tr>
+          <tr>
+            <td>運用</td>
+            <td>カスタムイメージ、カスタムバンドル、Cost Optimizer、エラー時の切り分け。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="flow">構築フロー</h2>
+      <ol>
+        <li>WorkSpaces用VPCと、AD Connectorまたは管理用接続経路のVPCを設計します。</li>
+        <li>AWS Managed Microsoft ADを作成し、ディレクトリDNS名、NetBIOS名、管理ユーザーを確認します。</li>
+        <li>必要に応じてAD Connectorを作成し、既存ADまたはManaged Microsoft ADへの接続を構成します。</li>
+        <li>Amazon WorkSpacesでディレクトリを登録し、利用するサブネット、セルフサービス権限、アクセス制御を設定します。</li>
+        <li>ユーザーを選択し、WindowsまたはLinuxのバンドルを選択してWorkSpaceをプロビジョニングします。</li>
+        <li>クライアントアプリまたはWeb Accessで接続確認を行います。</li>
+        <li>必要に応じて、カスタムイメージ、カスタムバンドル、Cost Optimizerを構成します。</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>WorkSpacesはディレクトリ、DNS、サブネット、セキュリティグループ、ルートテーブルの影響を強く受けます。WorkSpace単体のステータスだけでなく、Directory Service側のセキュリティグループやVPC DNS設定も合わせて確認します。</p>
+      </div>
+
+      <h2 id="directory">Directory Service連携</h2>
+      <p>WorkSpacesでは、AWS Managed Microsoft AD、Simple AD、AD Connectorなどのディレクトリを利用します。AD Connectorを使う場合は、ディレクトリに接続するためのサービスアカウントを用意し、必要最小限の権限を委任します。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>確認項目</th>
+            <th>確認内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DNS</td>
+            <td>WorkSpaces用VPCからディレクトリのDNS名を解決できること。</td>
+          </tr>
+          <tr>
+            <td>ルーティング</td>
+            <td>VPC PeeringやClient VPN経由でAD Connector、Domain Controllerへ到達できること。</td>
+          </tr>
+          <tr>
+            <td>セキュリティグループ</td>
+            <td>DNS、Kerberos、LDAPなど、AD ConnectorとDomain Controller間に必要な通信が許可されていること。</td>
+          </tr>
+          <tr>
+            <td>サービスアカウント</td>
+            <td>Domain Adminsではなく、AD Connector用の最小権限アカウントを作成して利用すること。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        <p>AD Connectorのサービスアカウントには、ユーザーとグループの読み取り権限が必要です。Seamless Domain JoinやWorkSpacesを使う場合は、ドメイン参加やコンピューターオブジェクト作成に関する権限も確認します。</p>
+      </div>
+
+      <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
+      <p>Directory Serviceで作成または接続したディレクトリを、Amazon WorkSpaces側で登録します。登録後に、利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定します。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>設定・確認観点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ディレクトリ</td>
+            <td>WorkSpacesで利用するDirectory Serviceのディレクトリを選択します。</td>
+          </tr>
+          <tr>
+            <td>サブネット</td>
+            <td>異なるAZのPrivate Subnetを選択します。WorkSpacesのネットワーク到達性とDNS解決を確認します。</td>
+          </tr>
+          <tr>
+            <td>アクセス制御</td>
+            <td>接続元、クライアント種別、Web Accessの利用可否を確認します。</td>
+          </tr>
+          <tr>
+            <td>ユーザー</td>
+            <td>WorkSpaceは基本的に1ユーザーに対して1台を割り当てます。複数ユーザーで共有する前提にしないよう、要件を確認します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="provision">WorkSpaces起動</h2>
+      <ol>
+        <li>Amazon WorkSpacesのナビゲーションから、WorkSpacesのプロビジョニングを開始します。</li>
+        <li>登録済みディレクトリを選択します。</li>
+        <li>対象ユーザーを選択します。</li>
+        <li>バンドル、実行モード、暗号化、ルートボリューム、ユーザーボリュームを確認します。</li>
+        <li>作成後、ステータスがAvailableになることを確認します。</li>
+        <li>WorkSpacesクライアントまたはWeb Accessでサインインします。</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>カスタムイメージを作成する予定があるWorkSpaceでは、ボリューム暗号化の扱いに注意します。AWS公式ドキュメントでは、暗号化されたWorkSpaceからのイメージ作成はサポートされないとされています。</p>
+      </div>
+
+      <h2 id="web-access">Web Access</h2>
+      <p>Web Accessを使うと、WorkSpacesクライアントアプリをインストールせずに、対応ブラウザからWorkSpacesへ接続できます。利用するには、管理者側でWeb Accessを有効化します。</p>
+
+      <ol>
+        <li>Amazon WorkSpacesのディレクトリ設定を開きます。</li>
+        <li>ディレクトリの詳細更新から、アクセス制御オプションを確認します。</li>
+        <li>Web Accessを有効化します。</li>
+        <li>必要に応じて、対象WorkSpaceをリビルドまたは再作成します。</li>
+        <li><a href="https://clients.amazonworkspaces.com/">WorkSpacesクライアントページ</a> からWeb Accessに接続します。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        <p>現在のWorkSpaces Web Accessは、DCVベースのWindows / Linux WorkSpacesで利用できます。PCoIPベースのWorkSpacesにはリージョンや機能の制約があります。</p>
+      </div>
+
+      <h2 id="image-bundle">カスタムイメージ・バンドル</h2>
+      <p>WorkSpaceにOS設定やアプリケーションを入れた後、同じ構成を再利用するためにカスタムイメージとカスタムバンドルを作成します。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>区分</th>
+            <th>確認内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>イメージ作成前</td>
+            <td>WorkSpaceのステータスがAvailableで、変更状態がNoneであることを確認します。</td>
+          </tr>
+          <tr>
+            <td>Windows</td>
+            <td>Image Checkerを実行し、失敗または警告を解消してからイメージ化します。</td>
+          </tr>
+          <tr>
+            <td>Linux</td>
+            <td>ユーザーボリューム配下にアプリケーションを含めないようにし、必要コンポーネントを確認します。</td>
+          </tr>
+          <tr>
+            <td>暗号化</td>
+            <td>暗号化されたWorkSpaceからはカスタムイメージを作成できないため、要件定義時点で暗号化の必要性とイメージ運用を整理します。</td>
+          </tr>
+          <tr>
+            <td>バンドル</td>
+            <td>カスタムイメージとコンピュート・ストレージ構成を組み合わせ、以後のWorkSpaces作成時に利用します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="cost-optimizer">Cost Optimizer</h2>
+      <p>Cost Optimizer for Amazon WorkSpacesは、WorkSpacesの利用状況を分析し、利用実績に応じて時間課金または月額課金の適切なモードへ変換するAWS Solutionsです。</p>
+
+      <ol>
+        <li>AWS SolutionsのCost OptimizerページからCloudFormationテンプレートを開きます。</li>
+        <li>新規VPCに作成するか、既存VPCに配置するかを確認します。</li>
+        <li>WorkSpacesが存在するリージョンと、Cost Optimizerをデプロイするリージョンを確認します。</li>
+        <li>Dry Runの有無を確認します。初回はDry Runで結果を確認してから本適用する運用にします。</li>
+        <li>出力レポート、ECSタスク、EventBridgeスケジュール、S3バケット、CloudWatch Logsを確認します。</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <p>Cost Optimizerのレポートが空になる場合、WorkSpacesの対象リージョン、CloudFormationパラメータ、実行タスクのログ、VPCエンドポイントの通信許可を確認します。VPC Interface Endpointを利用している環境では、ECSタスクやLambdaからWorkSpaces APIへ到達できるセキュリティグループ設定も確認します。</p>
+      </div>
+
+      <h2 id="troubleshooting">トラブルシュート</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>事象</th>
+            <th>確認観点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>WorkSpaceがエラーになる</td>
+            <td>ディレクトリの登録状態、ユーザー割り当て、Domain ControllerのSecurity Group、VPC DNS設定、サブネットのルートを確認します。</td>
+          </tr>
+          <tr>
+            <td>AD認証できない</td>
+            <td>VPC CIDRを追加している場合、Directory Service側Security Groupの許可範囲が初期CIDRだけになっていないか確認します。</td>
+          </tr>
+          <tr>
+            <td>Web Accessできない</td>
+            <td>ディレクトリ設定でWeb Accessが有効か、対象WorkSpaceが対応プロトコルか、設定変更後にリビルドが必要か確認します。</td>
+          </tr>
+          <tr>
+            <td>カスタムイメージが作成できない</td>
+            <td>WorkSpace暗号化、Image Checker結果、ユーザープロファイル、Windows Updateの未完了、ドメインユーザーで動作するサービスを確認します。</td>
+          </tr>
+          <tr>
+            <td>Cost OptimizerのExcelやレポートが空</td>
+            <td>対象リージョン、Dry Run設定、実行ログ、WorkSpaces API到達性、VPC EndpointのSecurity Groupを確認します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="checklist">作業チェックリスト</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>タイミング</th>
+            <th>確認内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>構築前</td>
+            <td>ディレクトリ方式、VPC CIDR、DNS、Client VPN、AD Connector、ユーザー数、課金方式を確認します。</td>
+          </tr>
+          <tr>
+            <td>構築中</td>
+            <td>Directory Service、WorkSpacesディレクトリ登録、サブネット、Security Group、ルートテーブルを確認します。</td>
+          </tr>
+          <tr>
+            <td>接続確認</td>
+            <td>WorkSpacesクライアント、Web Access、AD認証、ユーザープロファイル、通信経路を確認します。</td>
+          </tr>
+          <tr>
+            <td>運用開始前</td>
+            <td>カスタムイメージ要件、暗号化要件、Cost Optimizer、バックアップ・スナップショット、手順書を確認します。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="references">参考</h2>
+      <ul>
+        <li><a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/ja-JP">AWS Workshop - Amazon WorkSpaces</a></li>
+        <li><a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/create-custom-bundle.html">Create a custom WorkSpaces image and bundle for WorkSpaces Personal</a></li>
+        <li><a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></li>
+        <li><a href="https://aws.amazon.com/jp/solutions/implementations/cost-optimizer-for-amazon-workspaces/">Cost Optimizer for Amazon WorkSpaces</a></li>
+        <li><a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ad_connector_getting_started.html">Getting started with AD Connector</a></li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#scope">対象範囲</a>
+      <a href="#flow">構築フロー</a>
+      <a href="#directory">Directory Service連携</a>
+      <a href="#register-directory">ディレクトリ登録</a>
+      <a href="#provision">WorkSpaces起動</a>
+      <a href="#web-access">Web Access</a>
+      <a href="#image-bundle">イメージ・バンドル</a>
+      <a href="#cost-optimizer">Cost Optimizer</a>
+      <a href="#troubleshooting">トラブルシュート</a>
+      <a href="#checklist">チェックリスト</a>
+      <a href="#references">参考</a>
+    </aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
