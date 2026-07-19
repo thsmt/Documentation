@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>[構築] Red Hat Enterprise Linux 9 | Documentation</title>
-  <meta name="description" content="Red Hat Enterprise Linux 9 manual build guide for AWS EC2.">
+  <title>[構築] Red Hat Enterprise Linux 10 | Documentation</title>
+  <meta name="description" content="Red Hat Enterprise Linux 10 manual build guide for AWS EC2.">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -33,8 +33,8 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a class="active" href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a class="active" href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
@@ -46,12 +46,20 @@
 
     <main>
       <div class="breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>&gt;</span><span>トピック</span></div>
-      <h1>[構築] Red Hat Enterprise Linux 9</h1>
-      <p class="lead">AWS EC2上のRed Hat Enterprise Linux 9を手動構築する際の初期設定、SSH、cloud-init、swap、ミドルウェア、Apache、Postfix、logrotateを整理します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略しています</p>
+      <h1>[構築] Red Hat Enterprise Linux 10</h1>
+      <p class="lead">AWS EC2上のRed Hat Enterprise Linux 10を手動構築する際の初期設定、SSH、cloud-init、追加ディスク、swap、ミドルウェア、Apache、Postfix、logrotateを整理します</p>
 
       <div class="callout">
         <strong>ℹ️ 前提</strong>
         実環境名、IPアドレス、顧客固有値は扱わず、再利用できる手順として一般化しています。<code>&lt;HOSTNAME&gt;</code>、<code>&lt;FQDN&gt;</code>、<code>&lt;PRIVATE_IP&gt;</code> などは環境に合わせて置き換えます
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ Red Hat Enterprise Linux 10の主な変更点</strong>
+        <p>x86_64版は<code>x86-64-v3</code>命令セットを前提とするため、使用するEC2インスタンスタイプが対応していることを確認します</p>
+        <p>モジュール形式のApplication Streamは廃止されています。<code>dnf module</code>ではなく、通常のRPMパッケージとして導入します</p>
+        <p>PAYG AMIはRHUI、BYOSまたはRed Hat Gold ImageはRHSMを利用します。AMIの提供方式を確認してから<code>subscription-manager</code>の扱いを決定します</p>
+        <p><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/10.0_release_notes/distribution">Red Hat Enterprise Linux 10 - Content distribution</a></p>
       </div>
 
       <h2 id="step-01">1. 起動時の確認</h2>
@@ -66,7 +74,7 @@
       </table>
 
       <h2 id="step-02">2. SELinuxの設定変更</h2>
-      <p>Red Hat Enterprise Linux 9では <code>SELINUX=disabled</code> にすると起動や動作に影響する場合があるため、ログ出力のみの <code>permissive</code> に変更します</p>
+      <p>Red Hat Enterprise Linux 10では<code>SELINUX=disabled</code>を設定ファイルへ指定する方式は使用せず、無効化が必要な場合はカーネルパラメーターで管理します。本手順では監査ログを残すため<code>permissive</code>へ変更します</p>
       <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -557,29 +565,31 @@ swapon /.swapfile</code></pre>
       </div>
 
       <h2 id="step-11">11. ミドルウェアの導入</h2>
-      <p class="procedure-step"><strong>1. 導入するバージョンをApplication Streamsで確認し、OS標準リポジトリを優先します。標準リポジトリで要件を満たせない場合だけ、提供元と保守期限を確認したうえで外部リポジトリを追加します</strong></p>
+      <p>Red Hat Enterprise Linux 10ではモジュール形式のApplication Streamが廃止されています。利用可能な通常のRPMパッケージを確認し、OS標準リポジトリを優先します</p>
+      <p class="procedure-step"><strong>1. MariaDB、PostgreSQL、PHPの提供バージョンを確認</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf module list &lt;MIDDLEWARE_NAME&gt;</code></pre>
+        <pre><code>dnf info mariadb-server
+dnf info postgresql-server
+dnf info php php-fpm</code></pre>
       </div>
 
-      <p class="procedure-step"><strong>2. PostgreSQLの例です</strong></p>
+      <p class="procedure-step"><strong>2. DBクライアントとPHP-FPMの導入例</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf module list postgresql
-dnf module enable postgresql:15
-dnf module list postgresql
-dnf module install postgresql/client</code></pre>
+        <pre><code>dnf install -y mariadb postgresql php php-fpm</code></pre>
       </div>
 
-      <p>パッケージライフサイクルは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_application-streams_considerations-in-adopting-rhel-9">Application Streams</a> を確認します。Red Hat Enterprise Linux 9で削除・変更されたモジュールは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html-single/considerations_in_adopting_rhel_9/index">Red Hat Enterprise Linux 9導入時の考慮事項</a> も確認します</p>
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        初期リリースではMariaDB 10.11、PostgreSQL 16が提供されます。後続バージョンは別名のRPMストリームとして提供される場合があるため、導入前にパッケージ名とライフサイクルを確認します
+      </div>
 
       <h2 id="step-12">12. Postfix設定</h2>
       <p class="procedure-step"><strong>1. PostfixとSASL認証パッケージのインストール</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>yum install postfix
-yum install cyrus-sasl-plain</code></pre>
+        <pre><code>dnf install -y postfix cyrus-sasl-plain</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
@@ -678,10 +688,10 @@ systemctl enable postfix.service
 systemctl is-enabled postfix.service</code></pre>
       </div>
 
-      <p class="procedure-step"><strong>9. Red Hat Enterprise Linux 9以降では <code>s-nail</code> に <code>mail</code>、<code>mailx</code> が含まれます</strong></p>
+      <p class="procedure-step"><strong>9. Red Hat Enterprise Linux 10では<code>s-nail</code>に<code>mail</code>、<code>mailx</code>が含まれます</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>yum install s-nail</code></pre>
+        <pre><code>dnf install -y s-nail</code></pre>
       </div>
 
       <p class="procedure-step"><strong>10. メール送信の確認</strong></p>
@@ -694,8 +704,7 @@ systemctl is-enabled postfix.service</code></pre>
       <p class="procedure-step"><strong>1. Apache関連パッケージの導入</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>yum install httpd.x86_64 httpd-devel.x86_64 httpd-filesystem.noarch httpd-tools.x86_64
-yum install mod_ssl</code></pre>
+        <pre><code>dnf install -y httpd httpd-devel httpd-filesystem httpd-tools mod_ssl</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
@@ -778,7 +787,7 @@ IncludeOptional /etc/httpd/conf.d/*.conf</code></pre>
       <div class="callout">
         <strong>ℹ️ 情報</strong>
         <p>prefork MPMは接続ごとにプロセスを割り当てるため、同時接続数が増えるほどメモリ使用量が増えます</p>
-        <p>非スレッドセーフなモジュールや従来の<code>mod_php</code>構成が必要な場合を除き、Red Hat Enterprise Linux 9ではPHP-FPMと組み合わせやすいevent MPMを優先します。preforkは各プロセスが1リクエストを処理するため、同じ同時接続数ではスレッド型のevent MPMより多くのメモリを消費します</p>
+        <p>非スレッドセーフなモジュールや従来の<code>mod_php</code>構成が必要な場合を除き、Red Hat Enterprise Linux 10ではPHP-FPMと組み合わせやすいevent MPMを優先します。preforkは各プロセスが1リクエストを処理するため、同じ同時接続数ではスレッド型のevent MPMより多くのメモリを消費します</p>
         <p>preforkが必要な場合は、<code>MaxRequestWorkers</code>と1プロセス当たりのメモリ使用量から上限を算出し、対象モジュールと負荷条件を事前に検証します</p>
       </div>
 
@@ -901,10 +910,10 @@ systemctl is-enabled httpd.service</code></pre>
       </div>
 
       <h2 id="step-14">14. 運用支援ツールの導入</h2>
-      <p class="procedure-step"><strong>1. 運用・障害対応で利用する補助ツールの導入。Red Hat Enterprise Linux 9では<code>yum</code>もDNFへの互換コマンドですが、この手順では<code>dnf</code>を使用します</strong></p>
+      <p class="procedure-step"><strong>1. 運用・障害対応で利用する補助ツールをDNFで導入</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y telnet lftp mlocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
+        <pre><code>dnf install -y telnet lftp plocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
       </div>
 
       <table>
@@ -912,7 +921,7 @@ systemctl is-enabled httpd.service</code></pre>
         <tbody>
           <tr><td><code>telnet</code></td><td>TCPポートの到達性確認。対話ログインには使用しません</td></tr>
           <tr><td><code>lftp</code></td><td>FTP/SFTPによるファイル転送と接続確認</td></tr>
-          <tr><td><code>mlocate</code></td><td><code>locate</code>によるファイルパス検索</td></tr>
+          <tr><td><code>plocate</code></td><td><code>locate</code>によるファイルパス検索（RHEL 10では<code>mlocate</code>から置換）</td></tr>
           <tr><td><code>libyaml</code></td><td>YAMLを扱うツールの依存ライブラリ</td></tr>
           <tr><td><code>wget</code></td><td>HTTP/HTTPSのファイル取得</td></tr>
           <tr><td><code>mtr</code></td><td>経路上の遅延・パケットロス確認</td></tr>

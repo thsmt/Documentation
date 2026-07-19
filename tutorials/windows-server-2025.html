@@ -15,7 +15,7 @@
       <nav class="nav" aria-label="Global navigation">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
-        <a href="https://github.com/thsmt/Knowledge"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
       </nav>
     </div>
   </header>
@@ -34,6 +34,7 @@
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a class="active" href="windows-server-2025.html">[構築] Windows Server 2025</a>
@@ -371,7 +372,6 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行します
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
 
       <h3 id="ec2launch-sysprep">4.4 EC2Launch v2とAMI横展開</h3>
       <p>AWS提供のWindows Server 2025 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化します</p>
@@ -389,7 +389,6 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しません
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
 
       <h2 id="security-options">5. 要件に応じた追加設定</h2>
 
@@ -452,7 +451,6 @@ foreach ($protocol in $protocols) {
         Schannel設定はOS全体へ影響します。互換性問題が発生した場合は<code>schannel-before.reg</code>を<code>reg import</code>で復元し、再起動して切り戻します。Microsoftはレジストリの直接変更より、グループポリシーや管理された構成方式の利用を推奨しています
       </div>
 
-      <p><a href="https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-10-11-deprecation-in-windows">Microsoft公式: WindowsにおけるTLS 1.0 / 1.1の非推奨化</a></p>
 
       <h3 id="event-logs">5.2 イベントログとクラッシュダンプ</h3>
       <p>監視要件と障害解析要件に合わせて、Windowsイベントログの最大サイズと上書き方式、ページファイル、クラッシュダンプの保存方式を設計します。ローカルログだけに依存せず、CloudWatch Logsなどの集中管理先へ転送します</p>

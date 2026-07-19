@@ -1,10 +1,10 @@
-# Knowledge
+# Documentation
 
 AWS / Infrastructure / IaC / Operations に関する横断的なナレッジサイトです
 
 ## 公開URL
 
-https://thsmt.github.io/Knowledge/
+https://thsmt.github.io/Documentation/
 
 ## 目的
 
