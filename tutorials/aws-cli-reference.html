@@ -50,7 +50,7 @@
       </nav>
 
       <h1>AWS CLI コマンドリファレンス</h1>
-      <p class="lead">日常運用でよく使うAWS CLIの基本確認、IAM、Security Group、Prefix List、SNS、EC2 / EBS、Systems Manager、CloudFormationなどのコマンドを整理します。</p>
+      <p class="lead">日常運用でよく使うAWS CLIの初期設定、IAM、Security Group、Prefix List、SNSに加え、EBS拡張、WAF IPセット更新、IAMユーザーの利用停止を整理します。</p>
 
       <div class="callout">
         <strong>📍 使い分け</strong>
@@ -390,84 +390,109 @@ aws --version</code></pre>
         <pre><code>aws sns unsubscribe --subscription-arn &lt;SUBSCRIPTION_ARN&gt;</code></pre>
       </div>
 
-      <h2 id="ec2">EC2 インスタンス確認</h2>
-      <p>問い合わせ対応や作業前確認では、インスタンスID、Nameタグ、状態、Private IP、Public IPを一覧化して対象を取り違えないようにします。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instances --query "Reservations[].Instances[].{Name:Tags[?Key=='Name']|[0].Value,InstanceId:InstanceId,State:State.Name,PrivateIp:PrivateIpAddress,PublicIp:PublicIpAddress}" --output table</code></pre>
-      </div>
-
-      <p>特定インスタンスの詳細を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt;</code></pre>
-      </div>
-
-      <h2 id="ebs">EBS ボリューム確認</h2>
-      <p>ディスク増強や作業前確認では、インスタンスに紐づくEBS Volume、サイズ、タイプ、デバイス名を確認します。</p>
+      <h2 id="ebs-expand">EC2 / EBS ボリューム拡張</h2>
+      <p>ファイルシステムの空き容量が不足した場合に、EBSボリュームの容量をオンラインで拡張します。EBSは縮小できないため、作業前にスナップショットを取得し、必要なサイズを確定します。OS側のパーティション・ファイルシステム拡張は <a href="rhel9-ops.html#step-09">[構築] Red Hat Enterprise Linux 9</a> を参照します。</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
-          <tr><td><code>&lt;INSTANCE_ID&gt;</code></td><td>確認対象のEC2インスタンスID。</td></tr>
-          <tr><td><code>&lt;VOLUME_ID&gt;</code></td><td>確認対象のEBS Volume ID。</td></tr>
+          <tr><td><code>&lt;VOLUME_ID&gt;</code></td><td>拡張するEBSボリュームID。</td></tr>
+          <tr><td><code>&lt;TARGET_SIZE_GIB&gt;</code></td><td>拡張後のサイズ（GiB）。現在のサイズ以上を指定。</td></tr>
         </tbody>
       </table>
 
-      <p>インスタンスにアタッチされているEBS Volumeを一覧で確認します。</p>
+      <p>作業前の復旧ポイントとしてスナップショットを作成</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=&lt;INSTANCE_ID&gt; --query "Volumes[].{VolumeId:VolumeId,Size:Size,Type:VolumeType,State:State,Device:Attachments[0].Device}" --output table</code></pre>
+        <pre><code>aws ec2 create-snapshot --volume-id &lt;VOLUME_ID&gt; --description "pre-resize backup"</code></pre>
       </div>
 
-      <p>EBS Volumeの詳細を確認します。</p>
+      <p>権限と入力値の事前確認。<code>DryRunOperation</code> が返る場合は、実行権限があります。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-volumes --volume-ids &lt;VOLUME_ID&gt;</code></pre>
+        <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt; --dry-run</code></pre>
       </div>
 
-      <h2 id="ssm">Systems Manager Run Command</h2>
-      <p>SSHやRDPでログインせずに、対象インスタンス上で確認コマンドを実行します。SSM Agent、IAMロール、ネットワーク経路が前提です。</p>
+      <p>EBSボリュームの拡張</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt;</code></pre>
+      </div>
+
+      <p>変更状況の確認。OS側の拡張は、状態が <code>optimizing</code> または <code>completed</code> になってから実施します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 describe-volumes-modifications --volume-ids &lt;VOLUME_ID&gt; --query "VolumesModifications[*].[VolumeId,ModificationState,OriginalSize,TargetSize,Progress]" --output table</code></pre>
+      </div>
+
+      <div class="notice notice-warning">
+        <strong>⚠️ 注意</strong>
+        <p>EBSボリュームは拡張できますが、縮小はできません。</p>
+        <p>ファイルシステムの種類とデバイス名をOS上で確認してから拡張します。誤ったデバイスに対してファイルシステム作成コマンドを実行しないでください。</p>
+      </div>
+
+      <h2 id="waf-ip-set">AWS WAF IPセットの更新</h2>
+      <p>接続元IPアドレスの追加・削除が発生する場合は、Web ACLに関連付けたIPセットを更新します。変更前に現在のアドレスとロックトークンを取得し、全アドレスを含む一覧を指定して更新します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a> を確認します。</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
-          <tr><td><code>&lt;INSTANCE_ID&gt;</code></td><td>Run Commandを実行する対象インスタンスID。</td></tr>
-          <tr><td><code>&lt;SERVICE_NAME&gt;</code></td><td>確認するサービス名。例: <code>httpd</code></td></tr>
-          <tr><td><code>&lt;COMMAND_ID&gt;</code></td><td><code>send-command</code> 実行後に返されるCommand ID。</td></tr>
+          <tr><td><code>&lt;IP_SET_NAME&gt;</code></td><td>更新対象のAWS WAF IPセット名。</td></tr>
+          <tr><td><code>&lt;IP_SET_ID&gt;</code></td><td>更新対象のIPセットID。</td></tr>
+          <tr><td><code>&lt;SCOPE&gt;</code></td><td><code>REGIONAL</code> または <code>CLOUDFRONT</code>。</td></tr>
+          <tr><td><code>&lt;LOCK_TOKEN&gt;</code></td><td>取得直後のIPセット状態を示すロックトークン。</td></tr>
         </tbody>
       </table>
 
-      <p>Linuxインスタンスでサービス状態を確認します。</p>
+      <p>現在のアドレスとロックトークンの取得。CloudFrontスコープの場合は <code>--region us-east-1</code> を追加します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ssm send-command --instance-ids &lt;INSTANCE_ID&gt; --document-name "AWS-RunShellScript" --parameters commands="systemctl status &lt;SERVICE_NAME&gt; --no-pager" --comment "check service status"</code></pre>
+        <pre><code>aws wafv2 get-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt;</code></pre>
       </div>
 
-      <p>Run Commandの実行結果を確認します。</p>
+      <p>更新後アドレス一覧の作成。既存アドレスを残す場合は、必ず同じファイルに含めます。</p>
+      <div class="code">
+        <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>[
+  "203.0.113.10/32",
+  "198.51.100.0/24"
+]</code></pre>
+      </div>
+
+      <p>IPセットの更新</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ssm list-command-invocations --command-id &lt;COMMAND_ID&gt; --details</code></pre>
+        <pre><code>aws wafv2 update-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt; --lock-token &lt;LOCK_TOKEN&gt; --addresses file://ip-set-addresses.json</code></pre>
       </div>
 
-      <h2 id="cloudformation">CloudFormation スタック確認</h2>
-      <p>スタック作成・更新後の問い合わせでは、ステータスと直近イベントをCLIで素早く確認します。デプロイ設計や変更セットの詳細は <a href="cloudformation.html">CloudFormation 運用手順集</a> に分けます。</p>
+      <div class="notice notice-warning">
+        <strong>⚠️ 注意</strong>
+        <p><code>update-ip-set</code> は指定したアドレス一覧でIPセット全体を置き換えます。</p>
+        <p>既存アドレスをJSONファイルから省くと、そのアドレスは削除されます。更新競合時は新しいロックトークンを取得し直して内容を再確認します。</p>
+      </div>
+
+      <h2 id="iam-offboarding">IAMユーザーの利用停止・削除</h2>
+      <p>異動・退職・アカウント整理では、いきなりユーザーを削除せず、アクセスキーとコンソールログインを無効化して影響を確認します。人のログイン用途はAWS IAM Identity Centerを優先し、IAMユーザーはサービス要件がある場合に限定します。</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
-          <tr><td><code>&lt;STACK_NAME&gt;</code></td><td>確認対象のCloudFormationスタック名。</td></tr>
+          <tr><td><code>&lt;USER_NAME&gt;</code></td><td>利用停止または削除するIAMユーザー名。</td></tr>
+          <tr><td><code>&lt;ACCESS_KEY_ID&gt;</code></td><td>無効化するアクセスキーID。</td></tr>
         </tbody>
       </table>
 
-      <p>スタックの状態を確認します。</p>
+      <p>アクセスキーの確認と無効化</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws cloudformation describe-stacks --stack-name &lt;STACK_NAME&gt; --query "Stacks[0].[StackName,StackStatus,CreationTime]" --output table</code></pre>
+        <pre><code>aws iam list-access-keys --user-name &lt;USER_NAME&gt;
+aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCESS_KEY_ID&gt; --status Inactive</code></pre>
       </div>
 
-      <p>直近のスタックイベントを確認します。</p>
+      <p>コンソールログインの停止</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws cloudformation describe-stack-events --stack-name &lt;STACK_NAME&gt; --query "StackEvents[0:10].[Timestamp,ResourceStatus,LogicalResourceId,ResourceStatusReason]" --output table</code></pre>
+        <pre><code>aws iam delete-login-profile --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
+
+      <p>完全削除する場合は、アクセスキー、グループ所属、MFAデバイス、ポリシーなどの依存関係を先に解除してから <code>delete-user</code> を実行します。</p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -477,10 +502,9 @@ aws --version</code></pre>
       <a href="#security-group">Security Group</a>
       <a href="#prefix-list">Prefix List作成</a>
       <a href="#sns">SNS</a>
-      <a href="#ec2">EC2</a>
-      <a href="#ebs">EBS</a>
-      <a href="#ssm">Systems Manager</a>
-      <a href="#cloudformation">CloudFormation</a>
+      <a href="#ebs-expand">EBS ボリューム拡張</a>
+      <a href="#waf-ip-set">AWS WAF IPセット</a>
+      <a href="#iam-offboarding">IAMユーザー利用停止</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
