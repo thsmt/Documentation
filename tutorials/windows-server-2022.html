@@ -249,24 +249,99 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h2 id="aws-management">4. AWS管理機能の設定</h2>
 
       <h3 id="cloudwatch-agent">4.1 CloudWatch Agent導入</h3>
-      <p>AWS Systems Manager Run Commandを使用して、Amazon CloudWatch Agentをインストールします。</p>
+      <p>AWS Systems Manager Run Commandを使用して、Amazon CloudWatch Agentをインストールします。インストールだけではメトリクスやログは収集されないため、後続手順で設定ファイルを作成して適用します。</p>
       <ol>
         <li>AWS Systems Managerコンソールで「Run Command」を開く。</li>
         <li>コマンドドキュメントへ<code>AWS-ConfigureAWSPackage</code>を選択。</li>
         <li>Actionへ<code>Install</code>、Nameへ<code>AmazonCloudWatchAgent</code>を指定。</li>
         <li>対象インスタンスをタグまたはインスタンスIDで指定。</li>
         <li>コマンドを実行。</li>
-        <li>収集するWindowsイベントログとパフォーマンスカウンターを定義した設定ファイルを、Systems Manager Parameter Storeまたは承認済みの配布経路から適用。</li>
       </ol>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        CloudWatch Agentを使用する場合は、EC2インスタンスのIAMロールへ<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルに認証情報を保存しません。
+        EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しません。
       </div>
 
       <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
 
-      <h3 id="ec2launch-sysprep">4.2 EC2Launch v2とAMI横展開</h3>
+      <h3 id="cloudwatch-config">4.2 CloudWatch Agent設定ファイル作成</h3>
+      <p>収集するWindowsイベントログ、パフォーマンスカウンター、収集間隔、CloudWatch Logsのロググループ名をJSON形式の設定ファイルへ定義します。</p>
+
+      <table>
+        <thead><tr><th>分類</th><th>設定例</th><th>設計時の確認事項</th></tr></thead>
+        <tbody>
+          <tr><td>Windowsイベントログ</td><td><code>System</code>、<code>Application</code></td><td>収集するイベントレベル、保持期間、機密情報の有無。</td></tr>
+          <tr><td>Windowsセキュリティログ</td><td><code>Security</code></td><td>監査要件がある場合のみ追加し、ログ量と閲覧権限を確認。</td></tr>
+          <tr><td>CPU</td><td><code>Processor(_Total)\% Processor Time</code></td><td>収集間隔とアラームしきい値。</td></tr>
+          <tr><td>メモリ</td><td><code>Memory\% Committed Bytes In Use</code></td><td>OS標準メトリクスでは取得できないため、Agentで収集。</td></tr>
+          <tr><td>ディスク</td><td><code>LogicalDisk(*)\% Free Space</code></td><td>一時ドライブや不要なボリュームを対象外にするか確認。</td></tr>
+        </tbody>
+      </table>
+
+      <h4 id="cloudwatch-config-wizard">4.2.1 Windows上のウィザードで作成</h4>
+      <p>単体サーバーで設定内容を確認しながら作成する場合は、管理者権限のPowerShellから設定ウィザードを実行します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Set-Location "$Env:ProgramFiles\Amazon\AmazonCloudWatchAgent"
+.\amazon-cloudwatch-agent-config-wizard.exe</code></pre>
+      </div>
+      <ol>
+        <li>OSへ<code>Windows</code>、実行環境へ<code>EC2</code>を指定。</li>
+        <li>収集間隔とパフォーマンスカウンターを選択。</li>
+        <li>収集するWindowsイベントログ、イベントレベル、ロググループ名を指定。</li>
+        <li>ローカル利用の場合は、生成された<code>config.json</code>を確認。</li>
+        <li>Parameter Storeで集中管理する場合は、保存確認へ<code>Yes</code>を選択し、パラメータ名とリージョンを指定。</li>
+      </ol>
+
+      <p>ローカルの<code>config.json</code>を使用する場合は、次のコマンドで設定を読み込み、Agentを起動します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&amp; "$Env:ProgramFiles\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" `
+  -a fetch-config -m ec2 -s `
+  -c "file:$Env:ProgramFiles\Amazon\AmazonCloudWatchAgent\config.json"</code></pre>
+      </div>
+
+      <h4 id="cloudwatch-config-parameter-store">4.2.2 Parameter Storeへ保存</h4>
+      <p>複数台へ同じ設定を配布する場合は、承認済みのJSONファイルをAWS Systems Manager Parameter Storeへ保存します。AWS管理ポリシーの<code>CloudWatchAgentServerPolicy</code>を利用する場合は、<code>AmazonCloudWatch-WindowsServer2022</code>のように<code>AmazonCloudWatch-</code>で始まるパラメータ名を指定します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ssm put-parameter `
+  --name "&lt;CLOUDWATCH_AGENT_CONFIG_PARAMETER&gt;" `
+  --type "String" `
+  --value file://cloudwatch-agent.json `
+  --overwrite</code></pre>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録します。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
+
+      <h3 id="cloudwatch-run-command">4.3 Run Commandによる設定適用</h3>
+      <p>Parameter Storeに保存した設定を、AWS Systems Manager Run Commandから対象インスタンスへ適用します。</p>
+      <ol>
+        <li>AWS Systems Managerコンソールで「Run Command」を開く。</li>
+        <li>コマンドドキュメントへ<code>AmazonCloudWatch-ManageAgent</code>を選択。</li>
+        <li>Actionへ<code>configure</code>を指定。</li>
+        <li>Modeへ<code>ec2</code>を指定。</li>
+        <li>Optional Configuration Sourceへ<code>ssm</code>を指定。</li>
+        <li>Optional Configuration Locationへ<code>&lt;CLOUDWATCH_AGENT_CONFIG_PARAMETER&gt;</code>を指定。</li>
+        <li>Optional Restartへ<code>yes</code>を指定。</li>
+        <li>対象インスタンスをタグまたはインスタンスIDで指定し、コマンドを実行。</li>
+        <li>コマンド出力が成功していることを確認し、CloudWatchのメトリクスとロググループへデータが到着していることを確認。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行します。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
+
+      <h3 id="ec2launch-sysprep">4.4 EC2Launch v2とAMI横展開</h3>
       <p>AWS提供のWindows Server 2022 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化します。</p>
       <ol>
         <li>構築作業とWindows Updateを完了。</li>
