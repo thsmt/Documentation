@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>[構築] Windows Server 2022 | Knowledge</title>
-  <meta name="description" content="Windows Server 2022 manual build guide for AWS EC2.">
+  <meta name="description" content="Amazon EC2上のWindows Server 2022を手動構築するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -13,10 +13,11 @@
     <div class="header-actions">
       <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
       <nav class="nav" aria-label="Global navigation">
-      <a href="../">Home</a>
-      <a href="https://github.com/thsmt">Repositories</a>
-      <a href="https://github.com/thsmt/Knowledge">GitHub</a>
-    </nav>
+        <a href="../">Home</a>
+        <a href="https://github.com/thsmt">Repositories</a>
+        <a href="https://github.com/thsmt/Knowledge">GitHub</a>
+      </nav>
+    </div>
   </header>
 
   <div class="layout">
@@ -43,210 +44,277 @@
     <main>
       <div class="breadcrumb"><a href="../">Home</a><span>&gt;</span><span>手順一覧</span></div>
       <h1>[構築] Windows Server 2022</h1>
-      <p class="lead">AWS EC2上のWindows Server 2022で、接続、ローカルユーザー作成、OS初期設定を行うための手順です。EC2起動時のタグ設計やストレージ属性ではなく、起動後のサーバ構築・設定作業に絞って整理します。</p>
 
       <div class="callout">
         <strong>ℹ️ 前提</strong>
-        実環境名、顧客名、社内固有パス、固定IPアドレスは扱わず、再利用できる手順として一般化しています。<code>&lt;WINDOWS_PRIVATE_IP&gt;</code>、<code>&lt;HOSTNAME&gt;</code>、<code>&lt;CUSTOMER_USER&gt;</code> などは環境に合わせて置き換えます。
+        実環境名、IPアドレス、顧客固有値は扱わず、再利用できる手順として一般化しています。<code>&lt;WINDOWS_PRIVATE_IP&gt;</code>、<code>&lt;HOSTNAME&gt;</code>、<code>&lt;ADMIN_USER&gt;</code>などは環境に合わせて置き換えます。
       </div>
 
-      <h2 id="pre-check">1. 接続前の確認</h2>
-      <p>作業前に、接続先とOS設定に必要な値を確認します。</p>
+      <h2 id="launch">0. 起動時の確認</h2>
+
+      <h3 id="launch-ami">0.1 AMIとキーペア</h3>
+      <p>AWSが提供するWindows Server 2022 AMIを選択し、秘密鍵を安全に管理できるRSAキーペアを指定します。</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用します。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html">AWS公式: CreateKeyPair</a></p>
+
+      <h3 id="launch-values">0.2 構築値</h3>
       <table>
         <thead>
-          <tr>
-            <th>値</th>
-            <th>用途</th>
-          </tr>
+          <tr><th>値</th><th>用途</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>&lt;WINDOWS_PRIVATE_IP&gt;</code></td><td>Windows ServerへRDP接続するためのプライベートIPアドレス。</td></tr>
-          <tr><td><code>&lt;KEY_PAIR_NAME&gt;</code></td><td>Administrator初期パスワードの復号に利用するキーペア。</td></tr>
-          <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Windows OS上に設定するコンピューター名。</td></tr>
+          <tr><td><code>&lt;WINDOWS_PRIVATE_IP&gt;</code></td><td>RDP接続先のプライベートIPアドレス。</td></tr>
+          <tr><td><code>&lt;KEY_PAIR_NAME&gt;</code></td><td>Administrator初期パスワードの復号に使用するRSAキーペア。</td></tr>
+          <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Windows Serverへ設定するコンピューター名。</td></tr>
           <tr><td><code>&lt;ADMIN_USER&gt;</code></td><td>管理用ローカルユーザー名。</td></tr>
           <tr><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>利用者用ローカルユーザー名。</td></tr>
-          <tr><td><code>&lt;VOLUME_DRIVE_LETTER&gt;</code></td><td>追加ボリュームを割り当てるドライブ文字。例: <code>D:</code></td></tr>
+          <tr><td><code>&lt;VOLUME_DRIVE_LETTER&gt;</code></td><td>追加ボリュームへ割り当てるドライブ文字。例: <code>D:</code></td></tr>
         </tbody>
       </table>
 
-      <h2 id="connect">2. Windowsインスタンス接続</h2>
-      <p>接続方法は、踏み台経由のRDP、またはAWS Systems Manager Fleet Manager Remote Desktopを利用します。環境に応じて接続経路、IAM権限、ルート、Security Groupを確認します。</p>
+      <h2 id="connect">1. Windowsインスタンス接続</h2>
 
-      <h3 id="connect-bastion">2.1 踏み台経由での接続</h3>
+      <h3 id="windows-password">1.1 Administratorパスワード取得</h3>
       <ol>
-        <li>踏み台サーバーへSSHログインします。</li>
-        <li>Tera TermなどのSSHクライアントで、SSHポートフォワード設定を開きます。</li>
-        <li>ローカルポートに、他と重複しない任意のポートを設定します。例: <code>65001</code></li>
-        <li>リモートホストに <code>&lt;WINDOWS_PRIVATE_IP&gt;</code> を指定します。</li>
-        <li>リモートポートに <code>3389</code> を指定します。</li>
-        <li>RDPクライアントで <code>127.0.0.1:65001</code> に接続します。</li>
-        <li>ユーザー名 <code>Administrator</code> と、キーペアから復号したパスワードでログインします。</li>
+        <li>Amazon EC2コンソールで対象インスタンスを選択。</li>
+        <li>「アクション」から「セキュリティ」、「Windowsパスワードを取得」を選択。</li>
+        <li>起動時に指定したRSAキーペアの秘密鍵をアップロード。</li>
+        <li>「パスワードを復号化」を選択。</li>
+        <li>表示されたAdministratorパスワードを認証情報管理ルールに従って保管。</li>
       </ol>
 
-      <table>
-        <thead><tr><th>項目</th><th>設定例</th></tr></thead>
-        <tbody>
-          <tr><td>ローカルポート</td><td><code>65001</code></td></tr>
-          <tr><td>リッスン</td><td>未入力</td></tr>
-          <tr><td>リモートホスト</td><td><code>&lt;WINDOWS_PRIVATE_IP&gt;</code></td></tr>
-          <tr><td>リモートポート</td><td><code>3389</code></td></tr>
-          <tr><td>RDP接続先</td><td><code>127.0.0.1:65001</code></td></tr>
-        </tbody>
-      </table>
-
-      <h3 id="connect-fleet-manager">2.2 Fleet Manager Remote Desktopでの接続</h3>
+      <h3 id="connect-bastion">1.2 踏み台経由のRDP接続</h3>
       <ol>
-        <li>EC2ダッシュボードで対象インスタンスを選択します。</li>
-        <li>「接続」から「RDPクライアント」を開きます。</li>
-        <li>接続タイプで「Fleet Managerを使用して接続する」を選択します。</li>
-        <li>認証種類にユーザー認証情報を選択します。</li>
-        <li>ユーザー名 <code>Administrator</code> と、キーペアから復号したパスワードを入力します。</li>
+        <li>踏み台サーバーへSSH接続。</li>
+        <li>SSHクライアントでローカルポートフォワードを設定。</li>
+        <li>ローカルポートへ未使用の任意ポートを指定。例: <code>65001</code></li>
+        <li>転送先へ<code>&lt;WINDOWS_PRIVATE_IP&gt;:3389</code>を指定。</li>
+        <li>リモートデスクトップクライアントで<code>127.0.0.1:65001</code>へ接続。</li>
+        <li><code>Administrator</code>と復号したパスワードでサインイン。</li>
+      </ol>
+
+      <h3 id="connect-fleet-manager">1.3 Fleet Manager Remote Desktop接続</h3>
+      <ol>
+        <li>AWS Systems ManagerのFleet Managerで対象のマネージドノードを選択。</li>
+        <li>「ノードアクション」から「リモートデスクトップで接続」を選択。</li>
+        <li>ユーザー認証情報を使用する接続方式を選択。</li>
+        <li><code>Administrator</code>と復号したパスワードで接続。</li>
       </ol>
 
       <div class="callout">
-        <strong>ℹ️ 接続できない場合</strong>
-        パスワード未復号、SSM Agent未起動、IAMインスタンスプロファイルの権限不足、NAT GatewayまたはSSM関連VPCエンドポイントへの経路不足を確認します。IAMには <code>AmazonSSMManagedInstanceCore</code> 相当の権限が必要です。
+        <strong>ℹ️ 情報</strong>
+        Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与します。
       </div>
 
-      <h3 id="windows-password">2.3 Windowsパスワード取得</h3>
+      <p><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/setup-instance-permissions.html">AWS公式: Systems Managerに必要なインスタンス権限</a></p>
+
+      <h2 id="local-users">2. ローカルユーザー作成</h2>
+
+      <h3 id="admin-user">2.1 管理用ローカルユーザー</h3>
       <ol>
-        <li>起動したWindowsインスタンスを選択します。</li>
-        <li>「アクション」から「セキュリティ」へ進み、「Windowsパスワードを取得」を選択します。</li>
-        <li>プライベートキーファイルをアップロードします。</li>
-        <li>「パスワードを復号化」を選択します。</li>
-        <li>表示されたAdministratorパスワードを、認証情報管理ルールに従って安全に保管します。</li>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>compmgmt.msc</code>を実行。</li>
+        <li>「ローカル ユーザーとグループ」から「ユーザー」を開く。</li>
+        <li>「新しいユーザー」を選択。</li>
+        <li>ユーザー名へ<code>&lt;ADMIN_USER&gt;</code>を入力。</li>
+        <li>パスワード運用要件に合わせて初回変更と有効期限を設定。</li>
+        <li>対象ユーザーを<code>Administrators</code>グループへ追加。</li>
       </ol>
 
-      <h2 id="local-users">3. ローカルユーザー作成</h2>
-      <h3 id="admin-user">3.1 管理用ローカルユーザー</h3>
-      <p>管理用ユーザーをGUIで作成します。</p>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>compmgmt.msc</code> を実行します。</li>
-        <li>「ローカル ユーザーとグループ」から「ユーザー」を開きます。</li>
-        <li>「新しいユーザー」を選択します。</li>
-        <li>ユーザー名、フルネーム、説明に <code>&lt;ADMIN_USER&gt;</code> を設定します。</li>
-        <li>「ユーザーは次回ログオン時にパスワードの変更が必要」のチェックを外します。</li>
-        <li>「パスワードを無期限にする」を選択します。</li>
-        <li>作成後、対象ユーザーの所属グループに <code>Administrators</code> を追加します。</li>
-        <li><code>Administrators</code> と <code>Users</code> に所属していることを確認します。</li>
-      </ol>
-
-      <h3 id="customer-user">3.2 利用者用ローカルユーザー</h3>
-      <p>利用者用ユーザーをPowerShellで作成する場合は、パスワードを平文で直接書かず、入力プロンプトからSecureStringとして受け取ります。</p>
-
-      <p>管理者権限でPowerShellを起動します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>net user</code></pre>
-      </div>
-
-      <p>パスワードを対話入力で受け取り、ローカルユーザーを作成します。</p>
+      <h3 id="customer-user">2.2 利用者用ローカルユーザー</h3>
+      <p>管理者権限でPowerShellを起動し、パスワードを対話入力で受け取ります。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString
-New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;" -PasswordNeverExpires</code></pre>
+New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
       </div>
 
-      <p>必要なローカルグループへ追加します。</p>
+      <p>業務上必要な最小権限のローカルグループへ追加します。</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"
-Add-LocalGroupMember -Group "Users" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
+        <pre><code>Add-LocalGroupMember -Group "Users" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
       </div>
 
-      <p>作成結果を確認します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>net user &lt;CUSTOMER_USER&gt;</code></pre>
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        <code>Administrators</code>グループへの追加とパスワード無期限化は、対象ユーザーに管理権限が必要で、社内標準で許可されている場合に限ります。Active Directoryへ参加する環境では、ローカルアカウントを増やさず、ドメインアカウントとグループポリシーによる管理を優先します。
       </div>
 
-      <p>PowerShell履歴を削除します。</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Clear-History
-Remove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue</code></pre>
+      <h2 id="os-settings">3. Windows OS初期設定</h2>
+
+      <h3 id="file-extensions">3.1 ファイル名拡張子の表示</h3>
+      <ol>
+        <li>エクスプローラーを開く。</li>
+        <li>「表示」から「表示」を開く。</li>
+        <li>「ファイル名拡張子」を有効化。</li>
+      </ol>
+      <p>実行ファイルや設定ファイルの種類を誤認しないよう、拡張子を常に表示します。</p>
+
+      <h3 id="hostname">3.2 コンピューター名設定</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行。</li>
+        <li>「コンピューター名」タブから「変更」を選択。</li>
+        <li>コンピューター名へ<code>&lt;HOSTNAME&gt;</code>を入力。</li>
+        <li>ドメイン参加が必要な場合は、名前解決と接続先Directory Serviceを確認して設定。</li>
+        <li>再起動要求を保留し、他の再起動を伴う設定とまとめて実施。</li>
+      </ol>
+
+      <h3 id="timezone">3.3 タイムゾーン設定</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>timedate.cpl</code>を実行。</li>
+        <li>「タイムゾーンの変更」を選択。</li>
+        <li><code>(UTC+09:00) 大阪、札幌、東京</code>を選択。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        2018年8月以降のAWS提供Windows AMIは、Amazon Time Sync Serviceを既定で使用します。Windows Server 2022の標準AMIでは追加のNTP設定は不要です。ドメイン参加後は、Active Directoryの時刻階層を含む設計に従います。
       </div>
 
-      <h2 id="os-settings">4. Windows OS初期設定</h2>
-      <h3 id="hostname">4.1 ホスト名設定</h3>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>sysdm.cpl</code> を実行します。</li>
-        <li>「コンピューター名」タブの「変更」を選択します。</li>
-        <li>コンピューター名に <code>&lt;HOSTNAME&gt;</code> を入力します。</li>
-        <li>ドメイン参加が必要な場合は、要件に応じてドメイン設定を行います。</li>
-        <li>再起動確認が表示された場合は、他の設定完了後に再起動します。</li>
-      </ol>
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html">AWS公式: Amazon Time Sync Service</a></p>
 
-      <h3 id="timezone">4.2 タイムゾーン設定</h3>
+      <h3 id="windows-update-policy">3.4 Windows Update自動更新の無効化</h3>
+      <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、自動更新を無効化します。</p>
       <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>timedate.cpl</code> を実行します。</li>
-        <li>「タイムゾーンの変更」を選択します。</li>
-        <li><code>(UTC+09:00) 大阪、札幌、東京</code> を選択します。</li>
-        <li>現在時刻が日本時間になっていることを確認します。</li>
-      </ol>
-
-      <h3 id="windows-update-policy">4.3 Windows Update自動更新の無効化</h3>
-      <p>運用上のメンテナンスウィンドウに合わせるため、自動更新を無効化し、更新は計画作業として実施します。</p>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>gpedit.msc</code> を実行します。</li>
-        <li>「コンピューターの構成」から「管理用テンプレート」へ進みます。</li>
-        <li>「Windowsコンポーネント」から「Windows Update」を開きます。</li>
-        <li>「自動更新を構成する」を開きます。</li>
-        <li>「無効」を選択し、設定が無効になっていることを確認します。</li>
-      </ol>
-
-      <h3 id="rdp-limit">4.4 RDP接続数の制限設定</h3>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>gpedit.msc</code> を実行します。</li>
-        <li>「管理用テンプレート」から「Windowsコンポーネント」を開きます。</li>
-        <li>「リモート デスクトップ サービス」から「リモート デスクトップ セッション ホスト」へ進みます。</li>
-        <li>「接続」を開き、「接続数を制限する」を無効にします。</li>
-        <li>「リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する」も要件に応じて無効化します。</li>
-      </ol>
-
-      <h3 id="windows-firewall">4.5 Windows Firewall設定</h3>
-      <p>OS標準のWindows Firewallを無効化する場合は、Security Group、Network ACL、EDR、社内ポリシーで必要な制御が担保されていることを確認します。</p>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>firewall.cpl</code> を実行します。</li>
-        <li>「Windows Defender ファイアウォールの有効化または無効化」を開きます。</li>
-        <li>プライベート、パブリックの両方で無効化します。</li>
-        <li>「詳細設定」からプロパティを開きます。</li>
-        <li>ドメイン、プライベート、パブリックの各プロファイルでファイアウォール状態を確認します。</li>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行。</li>
+        <li>「コンピューターの構成」、「管理用テンプレート」、「Windowsコンポーネント」、「Windows Update」の順に開く。</li>
+        <li>「自動更新を構成する」を開く。</li>
+        <li>「無効」を選択して保存。</li>
       </ol>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Windows Firewallの無効化は、標準化された運用要件がある場合のみ実施します。公開サーバーや不特定経路から到達可能なサーバーでは、原則としてOS側ファイアウォールも含めて防御層を確認します。
+        自動更新を無効化する場合は、AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意します。更新経路がない状態で無効化すると、既知の脆弱性が残ります。
       </div>
 
-      <h3 id="additional-volume">4.6 追加ボリュームの初期化</h3>
-      <p>ルートボリューム以外の追加ディスクをアタッチしている場合のみ実施します。</p>
+      <h3 id="rdp-security">3.5 RDPセキュリティ設定</h3>
+
+      <h4 id="rdp-nla">3.5.1 ネットワークレベル認証</h4>
       <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>diskmgmt.msc</code> を実行します。</li>
-        <li>未初期化ディスクが表示された場合、対象ディスクを確認します。</li>
-        <li>パーティションスタイルは <code>GPT</code> を選択します。</li>
-        <li>未割り当て領域を右クリックし、「新しいシンプルボリューム」を選択します。</li>
-        <li>ボリュームサイズは最大値、ドライブ文字は要件に応じて割り当てます。例: <code>&lt;VOLUME_DRIVE_LETTER&gt;</code></li>
-        <li>ファイルシステムは <code>NTFS</code>、アロケーションユニットサイズは既定値、クイックフォーマットを選択します。</li>
-        <li>ディスクの状態が「正常」となり、エクスプローラーに対象ドライブが表示されることを確認します。</li>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行。</li>
+        <li>「リモート」タブを開く。</li>
+        <li>「ネットワーク レベル認証でリモート デスクトップを実行しているコンピューターからのみ接続を許可する」を有効化。</li>
+      </ol>
+      <p>ネットワークレベル認証は、RDPセッションを確立する前に利用者を認証し、未認証接続によるリソース消費と攻撃対象領域を抑えます。</p>
+      <p><a href="https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/remotepc/remote-desktop-allow-access">Microsoft公式: Remote Desktopとネットワークレベル認証</a></p>
+
+      <h4 id="rdp-limit">3.5.2 RDPセッション制限</h4>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行。</li>
+        <li>「管理用テンプレート」、「Windowsコンポーネント」、「リモート デスクトップ サービス」、「リモート デスクトップ セッション ホスト」、「接続」の順に開く。</li>
+        <li>「接続数を制限する」を開き、運用要件に合わせて設定。</li>
+        <li>複数セッションが必要な場合のみ、「リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する」を無効化。</li>
       </ol>
 
-      <h3 id="windows-update">4.7 Windows Updateの実施</h3>
+      <h3 id="windows-firewall">3.6 Windows Defender Firewallの無効化</h3>
+      <p>本手順の対象環境では、通信制御をSecurity Groupなどの上位レイヤーへ集約し、OS側との二重管理による設定差分や疎通障害を避ける社内標準に基づいてWindows Defender Firewallを無効化します。</p>
       <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd> を押し、<code>ms-settings:windowsupdate</code> を実行します。</li>
-        <li>「更新プログラムのチェック」を選択します。</li>
-        <li>更新プログラムが検出された場合は、ダウンロードとインストールを実施します。</li>
-        <li>再起動が必要な場合は、作業影響を確認して再起動します。</li>
-        <li>再ログイン後、再度更新チェックを行い、「最新の状態です」と表示されるまで繰り返します。</li>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>wf.msc</code>を実行。</li>
+        <li>「Windows Defender ファイアウォールのプロパティ」を開く。</li>
+        <li>ドメイン、プライベート、パブリックの各プロファイルで「ファイアウォールの状態」を「無効」に変更。</li>
+        <li>設定を保存。</li>
       </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用します。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-windows-security-best-practices.html">AWS公式: Windowsインスタンスのセキュリティベストプラクティス</a></p>
+
+      <h3 id="additional-volume">3.7 追加ボリュームの初期化</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>diskmgmt.msc</code>を実行。</li>
+        <li>未初期化ディスクの容量とディスク番号を確認。</li>
+        <li>パーティションスタイルへ<code>GPT</code>を選択。</li>
+        <li>未割り当て領域から「新しいシンプル ボリューム」を選択。</li>
+        <li>ドライブ文字へ<code>&lt;VOLUME_DRIVE_LETTER&gt;</code>を割り当て。</li>
+        <li>ファイルシステムへ<code>NTFS</code>を選択し、要件に合わせたボリュームラベルを設定。</li>
+        <li>クイックフォーマットを実行。</li>
+      </ol>
+
+      <h3 id="windows-update">3.8 Windows Update</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>ms-settings:windowsupdate</code>を実行。</li>
+        <li>「更新プログラムのチェック」を選択。</li>
+        <li>検出された更新プログラムをインストール。</li>
+        <li>再起動要求がある場合は、作業影響を確認して再起動。</li>
+        <li>更新プログラムが検出されなくなるまで繰り返し実行。</li>
+      </ol>
+
+      <h2 id="aws-management">4. AWS管理機能の設定</h2>
+
+      <h3 id="cloudwatch-agent">4.1 CloudWatch Agent導入</h3>
+      <p>AWS Systems Manager Run Commandを使用して、Amazon CloudWatch Agentをインストールします。</p>
+      <ol>
+        <li>AWS Systems Managerコンソールで「Run Command」を開く。</li>
+        <li>コマンドドキュメントへ<code>AWS-ConfigureAWSPackage</code>を選択。</li>
+        <li>Actionへ<code>Install</code>、Nameへ<code>AmazonCloudWatchAgent</code>を指定。</li>
+        <li>対象インスタンスをタグまたはインスタンスIDで指定。</li>
+        <li>コマンドを実行。</li>
+        <li>収集するWindowsイベントログとパフォーマンスカウンターを定義した設定ファイルを、Systems Manager Parameter Storeまたは承認済みの配布経路から適用。</li>
+      </ol>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        CloudWatch Agentを使用する場合は、EC2インスタンスのIAMロールへ<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルに認証情報を保存しません。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
+
+      <h3 id="ec2launch-sysprep">4.2 EC2Launch v2とAMI横展開</h3>
+      <p>AWS提供のWindows Server 2022 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化します。</p>
+      <ol>
+        <li>構築作業とWindows Updateを完了。</li>
+        <li>一時ファイル、個別の認証情報、作業用アカウント、固定IP設定などを除去。</li>
+        <li>スタートメニューから「EC2Launch settings」を開く。</li>
+        <li>AMI起動後に必要なタスクとSSM Agentの起動設定を確認。</li>
+        <li>「Shutdown with Sysprep」を実行。</li>
+        <li>インスタンス停止後にAmazon EC2コンソールからAMIを作成。</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しません。
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
+
+      <h2 id="security-options">5. 要件に応じた追加設定</h2>
+
+      <h3 id="tls-policy">5.1 TLS 1.0 / 1.1の無効化</h3>
+      <p>組織の暗号化基準でTLS 1.2以上を必須とする場合は、IIS、.NET Framework、データベースクライアント、監視エージェントなどの互換性を検証してからTLS 1.0 / 1.1を無効化します。</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        OS全体のSchannel設定を変更すると、古いミドルウェアや外部システムとの通信が失敗することがあります。対象プロトコルを使用するアプリケーション、切り戻し用レジストリ値、再起動影響を確認してから適用します。
+      </div>
+
+      <p><a href="https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-10-11-deprecation-in-windows">Microsoft公式: WindowsにおけるTLS 1.0 / 1.1の非推奨化</a></p>
+
+      <h3 id="event-logs">5.2 イベントログとクラッシュダンプ</h3>
+      <p>監視要件と障害解析要件に合わせて、Windowsイベントログの最大サイズと上書き方式、ページファイル、クラッシュダンプの保存方式を設計します。ローカルログだけに依存せず、CloudWatch Logsなどの集中管理先へ転送します。</p>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        完全メモリダンプには、OSボリューム上へ十分なページファイル容量が必要です。メモリ容量、OSボリュームの空き容量、障害時に必要な解析レベルを確認し、システム管理サイズまたは組織標準の値を使用します。
+      </div>
+
+      <p><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/troubleshoot-stop-errors-best-practices-dump-configuration-recommendations">Microsoft公式: クラッシュダンプ設定の推奨事項</a></p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#pre-check">1. 接続前の確認</a>
-      <a href="#connect">2. インスタンス接続</a>
-      <a href="#local-users">3. ローカルユーザー</a>
-      <a href="#os-settings">4. OS初期設定</a>
+      <a class="active" href="#launch">0. 起動時</a>
+      <a href="#connect">1. 接続</a>
+      <a href="#local-users">2. ローカルユーザー</a>
+      <a href="#os-settings">3. OS初期設定</a>
+      <a href="#aws-management">4. AWS管理機能</a>
+      <a href="#security-options">5. 追加設定</a>
     </aside>
   </div>
 
