@@ -35,7 +35,6 @@
       <a class="active" href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -256,66 +255,6 @@
       </div>
       <p>公式情報: <a href="https://aws.amazon.com/jp/solutions/implementations/cost-optimizer-for-amazon-workspaces/">Cost Optimizer for Amazon WorkSpaces</a></p>
 
-      <h2 id="troubleshooting">トラブルシュート</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>事象</th>
-            <th>確認観点</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>WorkSpaceがエラーになる</td>
-            <td>ディレクトリの登録状態、ユーザー割り当て、Domain ControllerのSecurity Group、VPC DNS設定、サブネットのルートを確認します</td>
-          </tr>
-          <tr>
-            <td>AD認証できない</td>
-            <td>VPC CIDRを追加している場合、Directory Service側Security Groupの許可範囲が初期CIDRだけになっていないか確認します</td>
-          </tr>
-          <tr>
-            <td>Web Accessできない</td>
-            <td>ディレクトリ設定でWeb Accessが有効か、対象WorkSpaceが対応プロトコルか、設定変更後にリビルドが必要か確認します</td>
-          </tr>
-          <tr>
-            <td>カスタムイメージが作成できない</td>
-            <td>WorkSpace暗号化、Image Checker結果、ユーザープロファイル、Windows Updateの未完了、ドメインユーザーで動作するサービスを確認します</td>
-          </tr>
-          <tr>
-            <td>Cost OptimizerのExcelやレポートが空</td>
-            <td>対象リージョン、Dry Run設定、実行ログ、WorkSpaces API到達性、VPC EndpointのSecurity Groupを確認します</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2 id="checklist">作業チェックリスト</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>タイミング</th>
-            <th>確認内容</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>構築前</td>
-            <td>ディレクトリ方式、VPC CIDR、DNS、Client VPN、AD Connector、ユーザー数、課金方式を確認します</td>
-          </tr>
-          <tr>
-            <td>構築中</td>
-            <td>Directory Service、WorkSpacesディレクトリ登録、サブネット、Security Group、ルートテーブルを確認します</td>
-          </tr>
-          <tr>
-            <td>接続確認</td>
-            <td>WorkSpacesクライアント、Web Access、AD認証、ユーザープロファイル、通信経路を確認します</td>
-          </tr>
-          <tr>
-            <td>運用開始前</td>
-            <td>カスタムイメージ要件、暗号化要件、Cost Optimizer、バックアップ・スナップショット、手順書を確認します</td>
-          </tr>
-        </tbody>
-      </table>
-
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -328,8 +267,6 @@
       <a href="#web-access">Web Access</a>
       <a href="#image-bundle">イメージ・バンドル</a>
       <a href="#cost-optimizer">Cost Optimizer</a>
-      <a href="#troubleshooting">トラブルシュート</a>
-      <a href="#checklist">チェックリスト</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

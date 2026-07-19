@@ -36,7 +36,6 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -60,8 +59,6 @@
         OS、AWSマネージドサービス、ミドルウェア、運用エージェントのサポート期限と主要な世代差分を整理した一覧表です
       </p>
 
-      <p>収録パッケージと導入元リポジトリの調査方法は、<a href="os-packages.html">OSパッケージ一覧・導入元確認</a>へ分離して整理しています</p>
-
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
         EOLやサポート期限は変更される可能性があるため、作業前に公式ドキュメントを確認します
@@ -74,7 +71,10 @@
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
         <pre><code>cat /etc/os-release
-dnf repolist --enabled</code></pre>
+uname -r
+rpm -q rpm dnf
+dnf repolist --enabled
+dnf repolist --all</code></pre>
       </div>
 
       <h3>パッケージのバージョンと導入元</h3>
@@ -125,6 +125,50 @@ dnf repoquery --installed --qf '%{name} %{version}-%{release} | %{repoid}' nginx
 # nginx 1.x.x-x.el9.ngx | nginx-stable</code></pre>
         </div>
       </details>
+
+      <h3>主要パッケージの一括確認</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <pre><code>rpm -q httpd php mariadb-server postgresql-server openssl rsyslog
+rpm -qi httpd</code></pre>
+      </div>
+
+      <h3>ファイルを提供するパッケージ</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <pre><code>rpm -qf /usr/sbin/httpd
+rpm -qf /usr/bin/openssl
+dnf provides '*/semanage'</code></pre>
+      </div>
+
+      <h3>DNFの変更履歴</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <pre><code>dnf history list
+dnf history info &lt;TRANSACTION_ID&gt;</code></pre>
+      </div>
+
+      <h3>Module Stream</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <pre><code>dnf module list
+dnf module list php
+dnf module list postgresql
+dnf module info php:8.2</code></pre>
+      </div>
+
+      <h3 id="official-package-lists">公式パッケージ一覧</h3>
+      <table>
+        <thead><tr><th>OS</th><th>一覧</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>Amazon Linux 2023</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html">All packages</a></td><td>リリース別パッケージ一覧への入口</td></tr>
+          <tr><td>Amazon Linux 2023.12</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages-AL2023.12.html">AL2023.12 package list</a></td><td>2023.12リリースで提供されるパッケージ</td></tr>
+          <tr><td>Amazon Linux 2023</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/support-info-by-package.html">Package support statements</a></td><td>パッケージ単位のサポート情報</td></tr>
+          <tr><td>Red Hat Enterprise Linux 8</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+          <tr><td>Red Hat Enterprise Linux 9</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+          <tr><td>Red Hat Enterprise Linux 10</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+        </tbody>
+      </table>
 
       <h2 id="os">OS</h2>
       <table class="lifecycle-table lifecycle-table-os">
@@ -600,6 +644,7 @@ dnf repoquery --installed --qf '%{name} %{version}-%{release} | %{repoid}' nginx
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#package-origin">パッケージと導入元</a>
+      <a href="#official-package-lists">公式パッケージ一覧</a>
       <a href="#os">OS</a>
       <a href="#os-differences">Linux世代差分</a>
       <a href="#rhel-appstream">RHEL Application Streams</a>

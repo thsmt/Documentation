@@ -33,7 +33,6 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -63,7 +62,6 @@
         Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用します
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html">AWS公式: CreateKeyPair</a></p>
 
       <h3 id="launch-values">0.2 構築値</h3>
       <table>
@@ -130,7 +128,6 @@
         Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与します
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/setup-instance-permissions.html">AWS公式: Systems Managerに必要なインスタンス権限</a></p>
 
       <h2 id="local-users">2. ローカルユーザー作成</h2>
 
@@ -194,7 +191,6 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         2018年8月以降のAWS提供Windows AMIは、Amazon Time Sync Serviceを既定で使用します。Windows Server 2025の標準AMIでは追加のNTP設定は不要です。ドメイン参加後は、Active Directoryの時刻階層を含む設計に従います
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html">AWS公式: Amazon Time Sync Service</a></p>
 
       <h3 id="windows-update-policy">3.4 Windows Update自動更新の無効化</h3>
       <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、自動更新を無効化します</p>
@@ -261,7 +257,6 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用します
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-windows-security-best-practices.html">AWS公式: Windowsインスタンスのセキュリティベストプラクティス</a></p>
 
       <h3 id="additional-volume">3.7 追加ボリュームの初期化</h3>
       <ol>
@@ -484,7 +479,6 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
         <code>/rt:false</code>は上限到達時に古いイベントを上書きします。<code>/rt:true</code>は既存イベントを保持し、上限到達後の新規イベントを保存しません。監査要件がある場合はログ転送と保管先を先に設計します
       </div>
 
-      <p><a href="https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil">Microsoft公式: wevtutil</a></p>
 
       <h4 id="pagefile-settings">5.2.2 ページファイル</h4>
       <ol>

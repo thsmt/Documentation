@@ -36,7 +36,6 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -387,45 +386,6 @@ deployments/stg-stack.yaml</code></pre>
   --stack-name sample-stack</code></pre>
       </div>
 
-      <h2 id="delete">削除前チェック</h2>
-      <ul>
-        <li>S3バケットにオブジェクトが残っていないか確認します</li>
-        <li>RDSの削除保護、スナップショット要否を確認します</li>
-        <li>ENI、NAT Gateway、VPC Endpointなど依存関係で削除が詰まるリソースを確認します</li>
-        <li>検証完了後、課金リソースが残っていないか確認します</li>
-      </ul>
-
-      <h2 id="checklist">実務チェックリスト</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>タイミング</th>
-            <th>確認項目</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>作成前</td>
-            <td>リージョン、アカウント、テンプレートソース、パラメータ、IAM権限、コスト影響を確認します</td>
-          </tr>
-          <tr>
-            <td>更新前</td>
-            <td>変更セット、置換リソース、削除リソース、停止影響、ロールバック可否を確認します</td>
-          </tr>
-          <tr>
-            <td>削除前</td>
-            <td>バックアップ要否、保持データ、手動作成リソース、削除保護、課金影響を確認します</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2 id="references">関連ドキュメント</h2>
-      <ul>
-        <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html">Create a stack from the CloudFormation console</a></li>
-        <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resource-import.html">Import AWS resources into a CloudFormation stack</a></li>
-        <li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/git-sync.html">Syncing stacks with source code stored in a Git repository with Git sync</a></li>
-        <li><a href="https://docs.aws.amazon.com/infrastructure-composer/latest/dg/what-is-composer.html">What is AWS Infrastructure Composer?</a></li>
-      </ul>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -442,9 +402,6 @@ deployments/stg-stack.yaml</code></pre>
       <a href="#create-cli">AWS CLI作成</a>
       <a href="#change-set">変更セット</a>
       <a href="#rollback">ロールバック・ドリフト</a>
-      <a href="#delete">削除前チェック</a>
-      <a href="#checklist">実務チェックリスト</a>
-      <a href="#references">関連ドキュメント</a>
     </aside>
   </div>
 

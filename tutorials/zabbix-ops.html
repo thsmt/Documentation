@@ -33,7 +33,6 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -241,42 +240,17 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       </table>
 
       <h2 id="host-registration">5. ホスト登録</h2>
-      <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録します。OSごとに選択するテンプレートやPSKの扱いを確認します</p>
-
-      <div class="tab-group" data-tabs>
-        <div class="tabs" role="tablist" aria-label="Zabbix host registration">
-          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="zabbix-register-rhel">Red Hat Enterprise Linux 9</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="zabbix-register-windows">Windows Server 2022</button>
-        </div>
-
-        <section class="tab-panel active" id="zabbix-register-rhel" role="tabpanel">
-          <h3>Red Hat Enterprise Linux 9</h3>
-          <ol>
-            <li>「設定」から「ホスト」を開きます</li>
-            <li>「ホストの作成」を選択します</li>
-            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します</li>
-            <li>TemplatesにLinux向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Linux (Activeエージェント2)</code></li>
-            <li>Groupsに作成済みのホストグループを追加します</li>
-            <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します</li>
-            <li>暗号化を利用する場合は、PSK identityとPSK valueを設定します</li>
-            <li>保存後、ホスト一覧でStatusが有効になっていることを確認します</li>
-          </ol>
-        </section>
-
-        <section class="tab-panel" id="zabbix-register-windows" role="tabpanel">
-          <h3>Windows Server 2022</h3>
-          <ol>
-            <li>「設定」から「ホスト」を開きます</li>
-            <li>「ホストの作成」を選択します</li>
-            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します</li>
-            <li>TemplatesにWindows向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Windows (Activeエージェント2)</code></li>
-            <li>Groupsに作成済みのホストグループを追加します</li>
-            <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します</li>
-            <li>MSIインストール時に設定したPSK identityとPSK valueを、ホスト側の暗号化設定にも登録します</li>
-            <li>保存後、ホスト一覧でStatusが有効になっていることを確認します</li>
-          </ol>
-        </section>
-      </div>
+      <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録します</p>
+      <ol>
+        <li>「設定」から「ホスト」を開きます</li>
+        <li>「ホストの作成」を選択します</li>
+        <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力します</li>
+        <li>Templatesに対象OS向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Linux (Activeエージェント2)</code>、<code>基本監視 Windows (Activeエージェント2)</code></li>
+        <li>Groupsに作成済みのホストグループを追加します</li>
+        <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定します</li>
+        <li>暗号化を利用する場合は、Agent側と同じPSK identityとPSK valueを設定します</li>
+        <li>保存後、ホスト一覧でStatusが有効になっていることを確認します</li>
+      </ol>
 
       <h2 id="latest-data">6. 最新データ確認</h2>
       <p>ホスト登録後、最新データが取得されるまで1から5分程度待ってから確認します</p>

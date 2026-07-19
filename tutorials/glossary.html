@@ -36,7 +36,6 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="terraform.html">Terraform</a>
-      <a href="os-packages.html">OSパッケージ一覧・導入元確認</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
@@ -55,20 +54,6 @@
       </div>
 
       <h1>用語集</h1>
-      <p class="lead">AWS、IaC、Red Hat Enterprise Linux、Amazon Linux、パッケージ管理で使用する用語を整理します</p>
-
-      <h2 id="aws-iac">AWS・IaC</h2>
-      <table>
-        <thead><tr><th>用語</th><th>意味</th></tr></thead>
-        <tbody>
-          <tr><td>Infrastructure as Code</td><td>インフラストラクチャの構成をコードで定義し、レビュー、再現、変更履歴管理を可能にする考え方</td></tr>
-          <tr><td>冪等性</td><td>同じ操作を複数回実行しても、最終状態が同じになる性質</td></tr>
-          <tr><td>変更セット</td><td>CloudFormationスタック更新前に、追加・変更・削除されるリソースを確認する仕組み</td></tr>
-          <tr><td>ドリフト</td><td>CloudFormationテンプレートの定義と、実際のAWSリソース設定との差分</td></tr>
-          <tr><td>結果整合性</td><td>変更直後は参照結果が揃わず、時間の経過後に整合する分散システムの特性</td></tr>
-          <tr><td>Blast Radius</td><td>変更や障害が影響する範囲</td></tr>
-        </tbody>
-      </table>
 
       <h2 id="rhel-repositories">RHEL・リポジトリ</h2>
       <table>
@@ -157,12 +142,10 @@
         <tbody>
           <tr><td>Versioned Repository</td><td>Amazon Linux 2023が特定リリースのリポジトリへ固定し、更新内容を予測可能にする仕組み。<code>releasever</code>で更新先を指定</td></tr>
           <tr><td>Deterministic Upgrade</td><td>利用するAmazon Linux 2023リリースを明示し、同じ入力から同じパッケージ集合へ更新する考え方</td></tr>
-          <tr><td>SPAL</td><td>Supplemental Packages for Amazon Linux。EPEL 9を基にAmazon Linux 2023向け追加パッケージを専用リポジトリで提供する仕組み。コアOSとはサポート条件が異なる</td></tr>
+          <tr><td>SPAL</td><td><a href="https://docs.aws.amazon.com/ja_jp/linux/al2023/ug/spal.html">Supplemental Packages for Amazon Linux</a>。EPEL 9を基にAmazon Linux 2023向け追加パッケージを専用リポジトリで提供する仕組み。コアOSとはサポート条件が異なる</td></tr>
           <tr><td>AL2023 AMI</td><td>特定のAmazon Linux 2023リリースとカーネル、初期パッケージを組み合わせたEC2用マシンイメージ</td></tr>
         </tbody>
       </table>
-
-      <p><a href="https://docs.aws.amazon.com/ja_jp/linux/al2023/ug/spal.html">AWS公式: Supplemental Packages for Amazon Linux</a></p>
 
       <h2 id="software-ecosystem">ソフトウェア系譜・配布</h2>
       <table>
@@ -183,30 +166,15 @@
         </tbody>
       </table>
 
-      <h2 id="operations">運用</h2>
-      <table>
-        <thead><tr><th>用語</th><th>意味</th></tr></thead>
-        <tbody>
-          <tr><td>Maintenance Window</td><td>変更作業や定期処理を実施する時間帯</td></tr>
-          <tr><td>Rollback</td><td>変更後に問題が発生した場合、変更前の状態へ戻す操作</td></tr>
-          <tr><td>Evidence</td><td>作業対象、実行内容、変更前後の状態を示す記録</td></tr>
-          <tr><td>RTO</td><td>障害発生後、サービスを復旧させるまでの目標時間</td></tr>
-          <tr><td>RPO</td><td>障害時に許容できるデータ損失時間</td></tr>
-          <tr><td>切り分け</td><td>症状をレイヤーごとに確認し、原因範囲を段階的に限定する作業</td></tr>
-        </tbody>
-      </table>
-
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#aws-iac">AWS・IaC</a>
-      <a href="#rhel-repositories">RHEL・リポジトリ</a>
+      <a class="active" href="#rhel-repositories">RHEL・リポジトリ</a>
       <a href="#package-format">RPM・依存関係</a>
       <a href="#linux-foundation">Linux基盤・ストレージ</a>
       <a href="#amazon-linux">Amazon Linux</a>
       <a href="#software-ecosystem">ソフトウェア系譜</a>
-      <a href="#operations">運用</a>
     </aside>
   </div>
 
