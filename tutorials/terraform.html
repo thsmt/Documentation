@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Terraform | Documentation</title>
-  <meta name="description" content="Terraform guide from basics to operations.">
+  <meta name="description" content="Terraformの手順を移行中です">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -13,15 +13,15 @@
     <div class="header-actions">
       <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
       <nav class="nav" aria-label="Global navigation">
-      <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-      <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
-      <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
-    </nav>
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
     </div>
   </header>
 
   <div class="layout">
-    <aside id="site-sidebar" class="sidebar" aria-label="Tutorial navigation">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
       <div class="sidebar-heading">
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
@@ -33,6 +33,8 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a class="active" href="terraform.html">Terraform</a>
+      <a href="container.html">コンテナ</a>
+      <a href="github-actions.html">GitHub Actions</a>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -45,44 +47,19 @@
     </aside>
 
     <main>
-      <div class="breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>&gt;</span><span>トピック</span></div>
+      <div class="breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>&gt;</span><span>Terraform</span></div>
       <h1>Terraform</h1>
-      <p class="lead">Terraformの基本コマンド、状態管理、backend、variables、planレビューの観点を整理します</p>
+      <p class="lead">Terraformの手順は、既存の学習メモから本サイトへ移行しています</p>
 
-      <h2 id="workflow">基本ワークフロー</h2>
-      <div class="code">
-        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>terraform fmt
-terraform init
-terraform validate
-terraform plan
-terraform apply</code></pre>
+      <div class="notice" id="status">
+        <strong>ℹ️ 移行中</strong>
+        <p>内容の精査と動作確認が完了した項目から順次公開します</p>
       </div>
-
-      <h2 id="state">tfstate</h2>
-      <p>tfstateは実環境とコードの対応関係を管理する重要ファイルです。個人PCだけに置かず、S3 backendとDynamoDBロックなどを検討します</p>
-
-      <h2 id="variables">variables</h2>
-      <p>環境差分は `variables.tf` と `terraform.tfvars` に分けます。機密値はGitに含めず、Secret管理サービスや環境変数を検討します</p>
-
-      <h2 id="review">planレビュー</h2>
-      <table>
-        <thead><tr><th>観点</th><th>確認内容</th></tr></thead>
-        <tbody>
-          <tr><td>create</td><td>想定外のリソース作成がないか確認します</td></tr>
-          <tr><td>update</td><td>停止影響や設定変更の範囲を確認します</td></tr>
-          <tr><td>replace</td><td>リソース再作成が発生するため、影響を重点確認します</td></tr>
-          <tr><td>destroy</td><td>削除対象が本当に不要か確認します</td></tr>
-        </tbody>
-      </table>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#workflow">基本ワークフロー</a>
-      <a href="#state">tfstate</a>
-      <a href="#variables">variables</a>
-      <a href="#review">planレビュー</a>
+      <a class="active" href="#status">移行状況</a>
     </aside>
   </div>
 
