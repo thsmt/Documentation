@@ -343,7 +343,51 @@ Get-WindowsCapability -Online |
       <pre><code class="language-powershell">Install-WindowsFeature -Name RSAT-ADDS,GPMC</code></pre>
 
       <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で「別のユーザーとして実行」し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨します。</p>
+
+      <h3 id="aduc-management">OU・ADユーザー管理</h3>
+      <h4>AdminでAD管理ツールを起動する</h4>
+      <ol>
+        <li>スタートメニューから「Active Directory ユーザーとコンピューター」を検索します</li>
+        <li>検索結果を右クリックし、「別のユーザーとして実行」を選択します</li>
+        <li>AWS Managed Microsoft ADのディレクトリ管理者<code>Admin</code>の資格情報を入力します</li>
+        <li>Active Directory ユーザーとコンピューターを開き、管理対象のOUを確認します</li>
+      </ol>
+      <figure>
+        <img src="../assets/workspaces-aduc-launch.png" alt="スタートメニューでActive Directory ユーザーとコンピューターを検索し、別のユーザーとして実行を選択する画面">
+        <figcaption>AD管理ツールは、ディレクトリ管理者で「別のユーザーとして実行」します。</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/workspaces-aduc-run-as-admin.png" alt="Active Directory ユーザーとコンピューターをAdminで別のユーザーとして実行する認証画面。ドメイン値はマスクしている">
+        <figcaption>ディレクトリ管理者<code>Admin</code>で認証します。パスワードとドメイン値は公開しません。</figcaption>
+      </figure>
+
+      <h4>WorkSpaces用OUを作成する</h4>
+      <p>WorkSpacesのコンピューターオブジェクトと利用者を分離して管理するため、専用の親OU配下に<code>Computers</code>と<code>Users</code>を作成します。AWSが作成した<code>AWS Reserved</code>などの定義済みOU、グループ、ユーザーは変更・削除しません。</p>
+      <ol>
+        <li>Active Directory ユーザーとコンピューターで、AWS Managed Microsoft ADのドメインを展開します</li>
+        <li>管理用の親OUを作成します</li>
+        <li>親OUの配下に<code>Computers</code>と<code>Users</code>を作成します</li>
+        <li>GPOは対象となるコンピューターOUまたはユーザーOUへリンクし、適用対象を分離します</li>
+      </ol>
+      <figure>
+        <img src="../assets/workspaces-aduc-ou-structure.png" alt="Active Directory ユーザーとコンピューターで、WorkSpaces用の親OU配下にComputersとUsersを作成した画面。ドメインとホスト名はマスクしている">
+        <figcaption>WorkSpaces用の親OU配下に、コンピューター用とユーザー用のOUを作成した例です。</figcaption>
+      </figure>
+
+      <h4>ADユーザーを作成する</h4>
+      <p>利用者をAD側で管理する場合は、<code>Users</code> OUを選択して「新規作成」から「ユーザー」を選びます。姓名、表示名、ユーザーログオン名を入力し、作成後にWorkSpacesコンソールで対象ユーザーへWorkSpaceを割り当てます。</p>
+      <figure>
+        <img src="../assets/workspaces-aduc-new-user.png" alt="Active Directoryの新しいオブジェクトユーザー画面。ユーザー名testuser1を入力し、ドメインと作成先はマスクしている">
+        <figcaption>ADユーザー作成画面。ユーザーログオン名は作成後に変更できないため、命名規則を確認してから登録します。</figcaption>
+      </figure>
+      <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化します。</p>
+      <figure>
+        <img src="../assets/workspaces-aduc-password-options.png" alt="Active Directoryの新しいユーザー作成ウィザードにおけるパスワード設定画面">
+        <figcaption>パスワード設定画面。通常の利用者アカウントでは、初回パスワード変更を必須にし、無期限パスワードやアカウント無効化を使用しません。</figcaption>
+      </figure>
+
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
+      <p>ユーザーとOUの公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
     </main>
 
@@ -359,6 +403,7 @@ Get-WindowsCapability -Online |
       <a href="#provision">WorkSpaces Personal作成</a>
       <a href="#connect">接続</a>
       <a href="#ad-admin-tools">AD管理ツールとGPMC</a>
+      <a href="#aduc-management">OU・ADユーザー管理</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
