@@ -306,6 +306,49 @@
         <p>カスタムイメージを作成する予定があるWorkSpaceでは、ボリューム暗号化の扱いに注意します。AWS公式ドキュメントでは、暗号化されたWorkSpaceからのイメージ作成はサポートされません</p>
       </div>
 
+      <h3 id="connect">接続</h3>
+      <p>WorkSpaceの作成完了後、利用者には初回接続用メールが届きます。メールの個別リンクと登録コードは接続情報にあたるため、ドキュメントやチケットへ転載しません。利用者自身がメールからプロフィールと初期パスワードを設定します。</p>
+      <ol>
+        <li>WorkSpaceのステータスが<code>AVAILABLE</code>であることを確認します</li>
+        <li>利用者が初回接続用メールからプロフィールと初期パスワードを設定します</li>
+        <li><a href="https://clients.amazonworkspaces.com/ja">Amazon WorkSpaces クライアントのダウンロードページ</a>から、利用端末に合うクライアントを導入します</li>
+        <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインインします</li>
+      </ol>
+      <p>DCV (WSP) ベースの Windows または Linux WorkSpace で、管理者がWeb Accessを有効化している場合は、クライアントを導入せずに<a href="https://clients.amazonworkspaces.com/ja">Web Access</a>を選択して対応ブラウザから接続できます。</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-clients.html">WorkSpaces clients</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
+
+      <h3 id="ad-admin-tools">AD管理ツールとGPMC</h3>
+      <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法は推奨構成です。OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console (GPMC) を導入した、ディレクトリ参加済みの管理端末を用意します。</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ OSに合うコマンドを使用します</strong>
+        <p><code>Install-WindowsFeature</code> は Windows Server の ServerManager モジュールに含まれるコマンドです。Windows 10/11 ベースの WorkSpace で実行すると、コマンドが見つからず失敗します。その場合は、RSATをWindowsの機能として追加します。</p>
+      </div>
+
+      <p>まず、OSとコマンドレットの有無を確認します。<code>Install-WindowsFeature</code>が表示される場合だけWindows Server向けの手順を使用します。表示されない場合は、OS表示にかかわらずWindowsクライアント向けのRSAT導入手順を試します。</p>
+      <pre><code class="language-powershell">Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version
+Get-Command Install-WindowsFeature -ErrorAction SilentlyContinue</code></pre>
+
+      <h4>Windows 10/11 ベースの WorkSpace</h4>
+      <p>管理者としてWindows PowerShellを起動し、利用可能なRSAT機能を確認してから、AD DS/LDSツールとGPMCを追加します。</p>
+      <pre><code class="language-powershell">Get-WindowsCapability -Online |
+  Where-Object Name -match 'Rsat\.(ActiveDirectory|GroupPolicy)' |
+  Format-Table Name, State
+
+Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
+Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
+
+Get-WindowsCapability -Online |
+  Where-Object Name -match 'Rsat\.(ActiveDirectory|GroupPolicy)' |
+  Format-Table Name, State</code></pre>
+
+      <h4>Windows Server ベースの管理端末</h4>
+      <p>Windows Serverでは、管理者としてWindows PowerShellを起動し、ServerManagerの機能として導入します。</p>
+      <pre><code class="language-powershell">Install-WindowsFeature -Name RSAT-ADDS,GPMC</code></pre>
+
+      <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で「別のユーザーとして実行」し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨します。</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
+
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -318,6 +361,8 @@
       <a href="#directory-accounts">アカウントの役割</a>
       <a href="#register-directory">ディレクトリ登録</a>
       <a href="#provision">WorkSpaces Personal作成</a>
+      <a href="#connect">接続</a>
+      <a href="#ad-admin-tools">AD管理ツールとGPMC</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
