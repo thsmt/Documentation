@@ -57,6 +57,12 @@
       <h1>Amazon WorkSpaces</h1>
       <p class="lead">Amazon WorkSpaces Personal の構築、ディレクトリ登録、Web Access、カスタムイメージ、Cost Optimizer、トラブル対応の確認観点を整理します</p>
 
+      <div id="pcoip-eos" class="callout callout-warning">
+        <strong>⚠️ 最新情報: PCoIP ベースの WorkSpaces Personal は 2027 年 10 月 31 日にサポート終了</strong>
+        <p>2026 年 7 月 31 日以降、PCoIP ベースの WorkSpaces Personal は新規顧客の受付を終了します。既存の PCoIP 環境も、2027 年 10 月 31 日以降は作成・接続できません。新規構築は DCV (WorkSpaces Streaming Protocol: WSP) を標準とし、既存 PCoIP 環境は DCV への移行を計画します。</p>
+        <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-pcoip-end-of-support.html">PCoIP-based WorkSpaces Personal end of support</a></p>
+      </div>
+
       <div class="callout">
         <strong>📍 掲載方針</strong>
         <p>実環境名、ディレクトリID、ユーザー名、グローバルIP、顧客固有のドメイン名は記載せず、再利用できる構築・運用手順として一般化しています</p>
@@ -91,6 +97,46 @@
           </tr>
         </tbody>
       </table>
+
+      <h2 id="workshop-overview">ワークショップの前提</h2>
+      <p>実施ワークショップでは、新しい WorkSpaces Personal を起動し、AWS Managed Microsoft AD でユーザーを管理する基本構成を扱います。永続デスクトップを利用者ごとに割り当てる WorkSpaces Personal の構築フローとして、ディレクトリ、ネットワーク、プロトコル、接続方式を順に確認します。</p>
+      <p>参照: <a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/en-US/workspaces">Amazon WorkSpaces Workshop</a></p>
+
+      <h2 id="protocol-selection">ストリーミングプロトコルの選定</h2>
+      <p>WorkSpaces Personal は DCV (WSP) と PCoIP をサポートします。ただし、PCoIP はサポート終了が決定しているため、新規設計の標準は DCV とします。プロトコルは作成後の利用要件、クライアント端末、OS、ネットワーク品質、周辺機器の要件から決定します。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>観点</th>
+            <th>DCV (WSP)</th>
+            <th>PCoIP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>設計方針</td>
+            <td>新規構築の標準です。AWS の新機能開発は DCV に集中しており、既存 PCoIP 環境の移行先になります</td>
+            <td>既存環境の移行計画が必要です。新規設計の選択肢にはしません</td>
+          </tr>
+          <tr>
+            <td>ネットワークと認証</td>
+            <td>高い遅延・パケット損失への耐性が必要な利用者、スマートカード、Web カメラ、WebAuthn 認証器の利用要件に適します</td>
+            <td>既存の PCoIP クライアントや端末との互換性を優先する場合に確認します</td>
+          </tr>
+          <tr>
+            <td>OS・アクセス方式</td>
+            <td>Windows Server 2022 の Web Access、Ubuntu、Windows 11 BYOL、Graphics.g4dn / GraphicsPro.g4dn の利用要件を満たします</td>
+            <td>iPad、Android、Linux クライアント、Teradici PCoIP Zero Client、既存の Graphics / GraphicsPro バンドルなどの要件を個別に確認します</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ 選定時の確認</strong>
+        <p>DCV と PCoIP では、対応クライアント、OS、GPU バンドル、周辺機器のサポート範囲が異なります。既存 PCoIP を移行する場合は、利用者の端末、ネットワーク経路、印刷、周辺機器、アプリケーションを代表ユーザーで事前検証します。</p>
+      </div>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/supported-features.html">Supported features by protocol type for WorkSpaces</a></p>
 
       <h2 id="flow">構築フロー</h2>
       <ol>
@@ -202,7 +248,7 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <p>現在のWorkSpaces Web Accessは、DCVベースのWindows / Linux WorkSpacesで利用できます。PCoIPベースのWorkSpacesにはリージョンや機能の制約があります</p>
+        <p>Web Access は DCV ベースの Windows / Linux WorkSpaces で利用します。PCoIP Web Access は 2025 年 11 月 7 日以降、新規顧客への提供を終了しており、既存利用者向けには重要な機能・セキュリティ更新のみが提供されます。Web Access を新たに設計する場合は DCV を前提に確認します</p>
       </div>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
 
@@ -263,6 +309,8 @@
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#scope">対象範囲</a>
+      <a href="#workshop-overview">ワークショップの前提</a>
+      <a href="#protocol-selection">プロトコル選定</a>
       <a href="#flow">構築フロー</a>
       <a href="#directory">Directory Service連携</a>
       <a href="#register-directory">ディレクトリ登録</a>
