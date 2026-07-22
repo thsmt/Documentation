@@ -55,7 +55,7 @@
       </nav>
 
       <h1>Amazon WorkSpaces</h1>
-      <p class="lead">Amazon WorkSpaces Personal の構築、ディレクトリ登録、Web Access、カスタムイメージ、Cost Optimizer、トラブル対応の確認観点を整理します</p>
+      <p class="lead">Amazon WorkSpaces Personal のディレクトリ作成・登録、ユーザー作成、WorkSpaceプロビジョニング、接続確認の実施手順を整理します</p>
 
       <div id="pcoip-eos" class="callout callout-warning">
         <strong>⚠️ 最新情報: PCoIP ベースの WorkSpaces Personal は 2027 年 10 月 31 日にサポート終了</strong>
@@ -65,7 +65,7 @@
 
       <p class="repo-link"><a href="https://github.com/thsmt/workspaces-ad-foundation-poc">関連リポジトリ: workspaces-ad-foundation-poc</a></p>
 
-      <h2 id="scope">対象範囲</h2>
+      <h2 id="information">情報</h2>
       <table>
         <thead>
           <tr>
@@ -84,11 +84,11 @@
           </tr>
           <tr>
             <td>WorkSpaces</td>
-            <td>ユーザー選択、バンドル選択、WorkSpace起動、クライアント接続、Web Access</td>
+            <td>WorkSpaces Personal、ユーザー選択、バンドル選択、実行モード、WorkSpace起動、クライアント接続、Web Access</td>
           </tr>
           <tr>
             <td>運用</td>
-            <td>カスタムイメージ、カスタムバンドル、Cost Optimizer、エラー時の切り分け</td>
+            <td>カスタムイメージ、カスタムバンドル、ユーザー管理、エラー時の切り分け</td>
           </tr>
         </tbody>
       </table>
@@ -135,13 +135,12 @@
 
       <h2 id="flow">構築フロー</h2>
       <ol>
-        <li>WorkSpaces用VPCと、AD Connectorまたは管理用接続経路のVPCを設計します</li>
-        <li>AWS Managed Microsoft ADを作成し、ディレクトリDNS名、NetBIOS名、管理ユーザーを確認します</li>
-        <li>必要に応じてAD Connectorを作成し、既存ADまたはManaged Microsoft ADへの接続を構成します</li>
-        <li>Amazon WorkSpacesでディレクトリを登録し、利用するサブネット、セルフサービス権限、アクセス制御を設定します</li>
-        <li>ユーザーを選択し、WindowsまたはLinuxのバンドルを選択してWorkSpaceをプロビジョニングします</li>
-        <li>クライアントアプリまたはWeb Accessで接続確認を行います</li>
-        <li>必要に応じて、カスタムイメージ、カスタムバンドル、Cost Optimizerを構成します</li>
+        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備します</li>
+        <li><a href="#register-directory">WorkSpacesディレクトリを作成・登録</a>し、アクセス制御とセルフサービス権限を確認します</li>
+        <li><a href="#provision">WorkSpaces Personalを作成</a>し、バンドル、実行モード、タグを設定します</li>
+        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成します</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
+        <li>WorkSpaceが<code>AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続します</li>
       </ol>
 
       <div class="callout callout-warning">
@@ -178,6 +177,46 @@
           </tr>
         </tbody>
       </table>
+
+      <h3 id="directory-accounts">AWS Managed Microsoft ADのアカウントの役割</h3>
+      <p>WorkSpacesのユーザー選択画面には、利用者アカウントだけでなく、ディレクトリの組み込みアカウントやAWSサービスアカウントも表示されます。WorkSpaceを割り当てる対象は、業務利用者用に作成した通常アカウントに限定します。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>アカウント</th>
+            <th>役割</th>
+            <th>WorkSpaceの割り当て</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Admin</code></td>
+            <td>AWS Managed Microsoft ADの作成時に生成されるディレクトリ管理アカウントです</td>
+            <td>割り当てません。管理操作だけに使用します</td>
+          </tr>
+          <tr>
+            <td><code>Administrator</code></td>
+            <td>ADの組み込み特権アカウントです。AWSが運用管理のために制御します</td>
+            <td>割り当てません。名前変更や削除も行いません</td>
+          </tr>
+          <tr>
+            <td><code>AWS_WorkSpaces</code></td>
+            <td>Amazon WorkSpaces連携用のアプリケーション固有サービスアカウントです</td>
+            <td>割り当てません。削除や無効化を行いません</td>
+          </tr>
+          <tr>
+            <td><code>Guest</code></td>
+            <td>ADの組み込みゲストアカウントです</td>
+            <td>割り当てません。無効状態を維持します</td>
+          </tr>
+          <tr>
+            <td><code>krbtgt</code></td>
+            <td>Kerberos Key Distribution Centerが使用する組み込みサービスアカウントです</td>
+            <td>割り当てません。削除や通常の運用変更を行いません</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
@@ -235,15 +274,32 @@
         </tbody>
       </table>
 
-      <h2 id="provision">WorkSpaces起動</h2>
+      <h2 id="provision">WorkSpaces Personalの作成</h2>
       <ol>
         <li>Amazon WorkSpacesのナビゲーションから、WorkSpacesのプロビジョニングを開始します</li>
-        <li>登録済みディレクトリを選択します</li>
-        <li>対象ユーザーを選択します</li>
-        <li>バンドル、実行モード、暗号化、ルートボリューム、ユーザーボリュームを確認します</li>
-        <li>作成後、ステータスがAvailableになることを確認します</li>
+        <li>WorkSpaceタイプで「個人」を選択し、バンドル、実行モード、タグを設定します</li>
+        <li>登録済みディレクトリを選択し、対象ユーザーを選択または作成します</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
+        <li>作成後、ステータスが<code>AVAILABLE</code>になることを確認します</li>
         <li>WorkSpacesクライアントまたはWeb Accessでサインインします</li>
       </ol>
+
+      <h3>オプションと実行モード</h3>
+      <p>個人向けの永続デスクトップとして作成し、利用者に合うバンドルを選択します。実行モードは、常時利用する端末ではAlwaysOn、利用時間に応じて課金を抑える場合はAutoStopを選択します。</p>
+      <figure>
+        <img src="../assets/workspaces-personal-options-redacted.png" alt="Amazon WorkSpaces Personalの設定画面。個人タイプ、Windowsバンドル、AutoStop実行モードを選択した状態">
+        <figcaption>WorkSpaces Personalの設定例。作成者名は表示し、AWSアカウント番号はマスクしています。</figcaption>
+      </figure>
+
+      <h3>ディレクトリと利用者の選択</h3>
+      <p>登録済みディレクトリから、WorkSpaceを割り当てる利用者を選択します。AWS Managed Microsoft ADを利用する場合、WorkSpacesコンソールの作成フローから利用者を追加できます。通常アカウントだけを選択し、組み込みアカウントやサービスアカウントを選択しないことを確認します。</p>
+      <figure>
+        <img src="../assets/workspaces-personal-directory-user-redacted.png" alt="Amazon WorkSpaces Personalのディレクトリとユーザー選択画面。t_hashimotoを選択し、組み込みアカウントとサービスアカウントが一覧に表示されている状態">
+        <figcaption>ディレクトリと利用者の選択例。作成した<code>t_hashimoto</code>を選択し、ディレクトリ情報、氏名、メールアドレスはマスクしています。</figcaption>
+      </figure>
+
+      <h3>カスタマイズ</h3>
+      <p>要件に応じて、ルートボリュームとユーザーボリュームの暗号化、容量、カスタムバンドルを設定します。後からカスタムイメージを作成する場合は、暗号化とイメージ運用の制約を事前に確認します。</p>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
@@ -302,37 +358,20 @@
       </table>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/create-custom-bundle.html">Create a custom WorkSpaces image and bundle for WorkSpaces Personal</a></p>
 
-      <h2 id="cost-optimizer">Cost Optimizer</h2>
-      <p>Cost Optimizer for Amazon WorkSpacesは、WorkSpacesの利用状況を分析し、利用実績に応じて時間課金または月額課金の適切なモードへ変換するAWS Solutionsです</p>
-
-      <ol>
-        <li>AWS SolutionsのCost OptimizerページからCloudFormationテンプレートを開きます</li>
-        <li>新規VPCに作成するか、既存VPCに配置するかを確認します</li>
-        <li>WorkSpacesが存在するリージョンと、Cost Optimizerをデプロイするリージョンを確認します</li>
-        <li>Dry Runの有無を確認します。初回はDry Runで結果を確認してから本適用する運用にします</li>
-        <li>出力レポート、ECSタスク、EventBridgeスケジュール、S3バケット、CloudWatch Logsを確認します</li>
-      </ol>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        <p>Cost Optimizerのレポートが空になる場合、WorkSpacesの対象リージョン、CloudFormationパラメータ、実行タスクのログ、VPCエンドポイントの通信許可を確認します。VPC Interface Endpointを利用している環境では、ECSタスクやLambdaからWorkSpaces APIへ到達できるセキュリティグループ設定も確認します</p>
-      </div>
-      <p>公式情報: <a href="https://aws.amazon.com/jp/solutions/implementations/cost-optimizer-for-amazon-workspaces/">Cost Optimizer for Amazon WorkSpaces</a></p>
-
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#scope">対象範囲</a>
+      <a class="active" href="#information">情報</a>
       <a href="#workshop-overview">ワークショップの前提</a>
       <a href="#protocol-selection">プロトコル選定</a>
       <a href="#flow">構築フロー</a>
       <a href="#directory">Directory Service連携</a>
+      <a href="#directory-accounts">アカウントの役割</a>
       <a href="#register-directory">ディレクトリ登録</a>
-      <a href="#provision">WorkSpaces起動</a>
+      <a href="#provision">WorkSpaces Personal作成</a>
       <a href="#web-access">Web Access</a>
       <a href="#image-bundle">イメージ・バンドル</a>
-      <a href="#cost-optimizer">Cost Optimizer</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
