@@ -325,10 +325,6 @@
         <p><code>Install-WindowsFeature</code> は Windows Server の ServerManager モジュールに含まれるコマンドです。Windows 10/11 ベースの WorkSpace で実行すると、コマンドが見つからず失敗します。その場合は、RSATをWindowsの機能として追加します。</p>
       </div>
 
-      <p>まず、OSとコマンドレットの有無を確認します。<code>Install-WindowsFeature</code>が表示される場合だけWindows Server向けの手順を使用します。表示されない場合は、OS表示にかかわらずWindowsクライアント向けのRSAT導入手順を試します。</p>
-      <pre><code class="language-powershell">Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version
-Get-Command Install-WindowsFeature -ErrorAction SilentlyContinue</code></pre>
-
       <h4>Windows 10/11 ベースの WorkSpace</h4>
       <p>管理者としてWindows PowerShellを起動し、利用可能なRSAT機能を確認してから、AD DS/LDSツールとGPMCを追加します。</p>
       <pre><code class="language-powershell">Get-WindowsCapability -Online |
