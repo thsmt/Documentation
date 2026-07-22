@@ -63,11 +63,6 @@
         <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-pcoip-end-of-support.html">PCoIP-based WorkSpaces Personal end of support</a></p>
       </div>
 
-      <div class="callout">
-        <strong>📍 掲載方針</strong>
-        <p>実環境名、ディレクトリID、ユーザー名、グローバルIP、顧客固有のドメイン名は記載せず、再利用できる構築・運用手順として一般化しています</p>
-      </div>
-
       <p class="repo-link"><a href="https://github.com/thsmt/workspaces-ad-foundation-poc">関連リポジトリ: workspaces-ad-foundation-poc</a></p>
 
       <h2 id="scope">対象範囲</h2>
@@ -192,6 +187,26 @@
 
       <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
       <p>Directory Serviceで作成または接続したディレクトリを、Amazon WorkSpaces側で登録します。登録後に、利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定します</p>
+
+      <h3>WorkSpacesディレクトリを作成・登録する</h3>
+      <ol>
+        <li>Amazon WorkSpaces コンソールの「ディレクトリ」から「ディレクトリの作成」を選択します</li>
+        <li>WorkSpace タイプは「個人」、WorkSpace デバイス管理は「AWS Directory Service」を選択します</li>
+        <li>AWS Managed Microsoft AD など、登録する未登録ディレクトリを選択します</li>
+        <li>登録用サブネットを2つ選択します。この2つは必ず異なる Availability Zone に配置します</li>
+        <li>必要なセルフサービス権限を確認して登録し、ディレクトリの登録状態が有効になることを確認します</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 同一 Availability Zone のサブネットは選択できません</strong>
+        <p>2つのサブネットが同じ Availability Zone にあると、ディレクトリを作成・登録できません。コンソールには「You tried to choose two subnets that are in the same Availability Zone」というエラーが表示されます。</p>
+        <p>サブネットIDではなく、各サブネットが属する Availability Zone を確認します。異なるAZのサブネットへ選び直してから再試行します。</p>
+      </div>
+
+      <figure>
+        <img src="../assets/workspaces-directory-registration-redacted.png" alt="Amazon WorkSpacesのディレクトリ登録画面。個人、AWS Directory Service、異なるAvailability Zoneの2つのサブネットを選択した状態">
+        <figcaption>WorkSpacesディレクトリ登録画面。ディレクトリ名・ID・サブネットIDなどの識別情報はマスクしています。</figcaption>
+      </figure>
 
       <table>
         <thead>

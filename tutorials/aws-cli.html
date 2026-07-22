@@ -57,10 +57,6 @@
       <h1>AWS CLI 特殊対応</h1>
       <p class="lead">AWS CLI/APIでしか変更・切り戻し・復旧できない運用手順を整理します</p>
 
-      <div class="callout">
-        <strong>📍 掲載方針</strong>
-        <p>このページでは、CLI/APIでしか変更または切り戻しできない操作を扱います。Security GroupやSNSなどの日常的な基本コマンドは、<a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a> に分けています</p>
-      </div>
       <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
       <p>Amazon RDSのエンジンバージョン変更を「次回のメンテナンスウィンドウで適用」として保存した後、コンソール上で保留中の変更を取り消せない場合があります。その場合は、AWS CLIで現在稼働中の値を再指定して、保留中の変更を打ち消します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a> を確認します</p>
       <table>
