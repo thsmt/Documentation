@@ -64,9 +64,7 @@
         <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-pcoip-end-of-support.html">PCoIP-based WorkSpaces Personal end of support</a></p>
       </div>
 
-      <p class="repo-link"><a href="https://github.com/thsmt/workspaces-ad-foundation-poc">関連リポジトリ: workspaces-ad-foundation-poc</a></p>
-
-      <h2 id="information">情報</h2>
+      <h2 id="specifications">仕様</h2>
       <table>
         <thead>
           <tr>
@@ -96,7 +94,7 @@
 
       <p>本ページは、AWS Managed Microsoft ADでユーザーを管理する<a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/en-US/workspaces">Amazon WorkSpaces Workshop</a>の実施内容を基にしています。</p>
 
-      <h2 id="protocol-selection">ストリーミングプロトコルの選定</h2>
+      <h3 id="protocol-selection">ストリーミングプロトコルの選定</h3>
       <p>WorkSpaces Personal は DCV (WSP) と PCoIP をサポートします。PCoIPは終了予定のため、新規構築はDCVを標準とします。既存環境は、端末、ネットワーク、周辺機器を検証して移行します。</p>
 
       <table>
@@ -131,114 +129,6 @@
         <p>DCV と PCoIP では、対応クライアント、OS、GPU バンドル、周辺機器のサポート範囲が異なります。既存 PCoIP を移行する場合は、利用者の端末、ネットワーク経路、印刷、周辺機器、アプリケーションを代表ユーザーで事前検証します。</p>
       </div>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/supported-features.html">Supported features by protocol type for WorkSpaces</a></p>
-
-      <h3 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h3>
-      <p>PCoIPバンドルから作成したWindows WorkSpaceは、既存のWorkSpaceを保持したままストリーミングプロトコルを変更できます。PCoIPのサポート終了に備え、PCoIP WorkSpaceを検証用に作成し、DCV (WSP) へ変更する手順を確認します。</p>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 本番変更前に検証します</strong>
-        <p>プロトコル変更前に、非本番WorkSpaceでクライアント、ネットワーク経路、印刷、周辺機器、アプリケーションを検証します。変更中はセッションのプロビジョニングがブロックされるため、利用者が接続できない時間帯を設けます。</p>
-      </div>
-
-      <p><strong>対象と事前確認:</strong> 直接変更できるのはPCoIPバンドルから作成したWindows WorkSpaceです。</p>
-      <table>
-        <thead>
-          <tr>
-            <th>項目</th>
-            <th>確認内容</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>作成元バンドル</td>
-            <td>直接変更できるのはPCoIPバンドルから作成したWindows WorkSpaceです。現在の表示プロトコルだけでなく、作成元バンドルを確認します</td>
-          </tr>
-          <tr>
-            <td>状態</td>
-            <td>対象WorkSpaceを<code>AVAILABLE</code>にします。保留中の変更、再起動、イメージ作成などの作業は完了させます</td>
-          </tr>
-          <tr>
-            <td>DCVの前提</td>
-            <td>利用者のWorkSpacesクライアント、リージョン、バンドル、DCVに必要なIPアドレスとポートの要件を確認します</td>
-          </tr>
-          <tr>
-            <td>Web Access</td>
-            <td>PCoIPからDCVへ変更した後、再びPCoIPへ戻すとWeb Accessでは接続できなくなります</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p><strong>AWS CLIで変更:</strong></p>
-      <ol>
-        <li>対象WorkSpaceのID、状態、現在のプロトコルを確認します</li>
-        <li>プロトコルを<code>WSP</code>へ変更します。<code>Protocols</code>の値は大文字・小文字を区別するため、<code>WSP</code>または<code>PCOIP</code>を使用します</li>
-        <li>最大40分程度待機し、再度状態とプロトコルを確認します</li>
-      </ol>
-      <pre><code class="language-bash">aws workspaces describe-workspaces \
-  --workspace-id ws-xxxxxxxx \
-  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,BundleId:BundleId,Protocols:WorkspaceProperties.Protocols}' \
-  --output table
-
-aws workspaces modify-workspace-properties \
-  --workspace-id ws-xxxxxxxx \
-  --workspace-properties "Protocols=[WSP]"
-
-aws workspaces describe-workspaces \
-  --workspace-id ws-xxxxxxxx \
-  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' \
-  --output table</code></pre>
-      <p>コンソールから実施する場合は、対象WorkSpaceを選択して「アクション」から「プロトコルの変更」を選びます。完了後は、ステータスが<code>AVAILABLE</code>であり、プロトコルが<code>DCV (WSP)</code>になったことを確認します。</p>
-
-      <p><strong>変更失敗時:</strong> 変更開始前にチェックポイントスナップショットが作成されます。失敗時は<code>RESOURCE: PROTOCOL</code>と<code>STATE: UPDATE_FAILED</code>を確認し、変更前のチェックポイントへ復元してから再試行します。</p>
-
-      <p><strong>WSPバンドルから作成したWorkSpace:</strong> 直接変更の対象外です。バンドルまたはOSを変更する場合は、対応バンドルへの移行を検討します。Cドライブのデータ、アプリケーション、設定、レジストリ変更は保持されません。Dドライブも最後のスナップショット以降の変更が失われます。</p>
-      <p>移行前にCドライブのデータを退避し、最後のユーザーボリュームスナップショットの時刻を確認します。移行後は新しいWorkSpace ID、コンピューター名、IPアドレスが割り当てられ、旧プロファイルは<code>.NotMigrated</code>サフィックス付きで残ります。移行先はDCV (WSP) を前提に選定します。</p>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/modify-workspaces.html#modify_protocols">Modify protocols</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html">IP address and port requirements for WorkSpaces</a>、<a href="https://docs.aws.amazon.com/ja_jp/workspaces/latest/adminguide/migrate-workspaces.html">WorkSpace の移行</a></p>
-
-      <h2 id="flow">構築フロー</h2>
-      <ol>
-        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備します</li>
-        <li><a href="#register-directory">WorkSpacesディレクトリを作成・登録</a>し、アクセス制御とセルフサービス権限を確認します</li>
-        <li><a href="#provision">WorkSpaces Personalを作成</a>し、バンドル、実行モード、タグを設定します</li>
-        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成します</li>
-        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
-        <li>WorkSpaceが<code>AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続します</li>
-      </ol>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        <p>WorkSpacesはディレクトリ、DNS、サブネット、セキュリティグループ、ルートテーブルの影響を強く受けます。WorkSpace単体のステータスだけでなく、Directory Service側のセキュリティグループやVPC DNS設定も合わせて確認します</p>
-      </div>
-
-      <h2 id="directory">Directory Service連携</h2>
-      <p>WorkSpacesでは、AWS Managed Microsoft AD、Simple AD、AD Connectorなどのディレクトリを利用します。AD Connectorを使う場合は、ディレクトリに接続するためのサービスアカウントを用意し、必要最小限の権限を委任します</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>確認項目</th>
-            <th>確認内容</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>DNS</td>
-            <td>WorkSpaces用VPCからディレクトリのDNS名を解決できること</td>
-          </tr>
-          <tr>
-            <td>ルーティング</td>
-            <td>VPC PeeringやClient VPN経由でAD Connector、Domain Controllerへ到達できること</td>
-          </tr>
-          <tr>
-            <td>セキュリティグループ</td>
-            <td>DNS、Kerberos、LDAPなど、AD ConnectorとDomain Controller間に必要な通信が許可されていること</td>
-          </tr>
-          <tr>
-            <td>サービスアカウント</td>
-            <td>Domain Adminsではなく、AD Connector用の最小権限アカウントを作成して利用すること</td>
-          </tr>
-        </tbody>
-      </table>
 
       <h3 id="directory-accounts">AWS Managed Microsoft ADのアカウントの役割</h3>
       <p>WorkSpacesのユーザー選択画面には、利用者アカウントだけでなく、ディレクトリの組み込みアカウントやAWSサービスアカウントも表示されます。WorkSpaceを割り当てる対象は、業務利用者用に作成した通常アカウントに限定します。</p>
@@ -280,11 +170,15 @@ aws workspaces describe-workspaces \
       </table>
       <p>公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
 
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        <p>AD Connectorのサービスアカウントには、ユーザーとグループの読み取り権限が必要です。Seamless Domain JoinやWorkSpacesを使う場合は、ドメイン参加やコンピューターオブジェクト作成に関する権限も確認します</p>
-      </div>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ad_connector_getting_started.html">Getting started with AD Connector</a></p>
+      <h2 id="flow">構築フロー</h2>
+      <ol>
+        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備します</li>
+        <li><a href="#register-directory">WorkSpacesディレクトリを作成・登録</a>し、アクセス制御とセルフサービス権限を確認します</li>
+        <li><a href="#provision">WorkSpaces Personalを作成</a>し、バンドル、実行モード、タグを設定します</li>
+        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成します</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
+        <li>WorkSpaceが<code>AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続します</li>
+      </ol>
 
       <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
       <p>Directory Serviceで作成または接続したディレクトリを、Amazon WorkSpaces側で登録します。登録後に、利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定します</p>
@@ -413,21 +307,89 @@ Get-WindowsCapability -Online |
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
       <p>ユーザーとOUの公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
+      <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
+      <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>ws-7g6w44k9g</code>で変更を確認します。</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 本番変更前に検証します</strong>
+        <p>非本番WorkSpaceでクライアント、ネットワーク経路、印刷、周辺機器、アプリケーションを確認します。変更中は利用者が接続できないため、利用停止時間を設けます。</p>
+      </div>
+
+      <h3>コンソールで変更</h3>
+      <ol>
+        <li>対象WorkSpaceが<code>AVAILABLE</code>で、プロトコルが<code>PCoIP</code>であることを確認します</li>
+        <li>WorkSpaceを選択し、「アクション」から「プロトコルの変更」を選択します</li>
+        <li>変更を開始し、ステータスが「プロトコルを変更中」になることを確認します</li>
+        <li>最大40分待機し、ステータスが「使用可能」、プロトコルが<code>DCV (WSP)</code>になったことを確認します</li>
+      </ol>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/workspaces/workspaces-protocol-pcoip-before-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがPCoIPかつ使用可能であることを確認した画面" width="1716" height="492" loading="lazy">
+        <figcaption>変更前: <code>ws-7g6w44k9g</code>はPCoIPで使用可能です。</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/workspaces/workspaces-protocol-change-in-progress-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gのステータスがプロトコルを変更中になった画面" width="1716" height="492" loading="lazy">
+        <figcaption>変更中: ステータスが「プロトコルを変更中」になります。</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/workspaces/workspaces-protocol-dcv-completed-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがDCV WSPかつ使用可能になった画面" width="1716" height="492" loading="lazy">
+        <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが「使用可能」になったことを確認します。</figcaption>
+      </figure>
+
+      <h3>AWS CLIで変更</h3>
+      <p>コンソールに「プロトコルの変更」が表示されない場合や、GUIから変更できない場合はAWS CLIで実施します。対象WorkSpaceの状態とプロトコルを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces describe-workspaces \
+  --workspace-ids ws-7g6w44k9g \
+  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,BundleId:BundleId,Protocols:WorkspaceProperties.Protocols}' \
+  --output table</code></pre>
+      </div>
+
+      <p>プロトコルをDCV (WSP)へ変更します。<code>Protocols</code>の値は大文字・小文字を区別します。</p>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces modify-workspace-properties \
+  --workspace-id ws-7g6w44k9g \
+  --workspace-properties "Protocols=[WSP]"</code></pre>
+      </div>
+
+      <p>最大40分待機し、変更後の状態を確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces describe-workspaces \
+  --workspace-ids ws-7g6w44k9g \
+  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' \
+  --output table</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ GUIから変更できない場合</strong>
+        <p>CLI手順は<a href="aws-cli.html#workspaces-protocol-change">AWS CLI 特殊対応</a>にも掲載しています。<code>WSP</code>または<code>PCOIP</code>を大文字で指定し、実行後は<code>AVAILABLE</code>になるまで待機します。</p>
+      </div>
+
+      <p><strong>変更失敗時:</strong> WorkSpacesは変更前にチェックポイントスナップショットを取得します。<code>RESOURCE: PROTOCOL</code>と<code>STATE: UPDATE_FAILED</code>を確認し、自動復元後に再試行します。解消しない場合はAWSサポートへ問い合わせます。</p>
+
+      <h3>バンドル移行との違い</h3>
+      <p>WSPバンドルから作成したWorkSpaceは、このプロトコル変更の対象外です。別バンドルへ移行する場合、Cドライブのデータ、アプリケーション、設定、レジストリ変更は保持されません。Dドライブも最後のスナップショット以降の変更が失われるため、事前にデータを退避します。</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/modify-workspaces.html#modify_protocols">Modify protocols</a>、<a href="https://docs.aws.amazon.com/ja_jp/workspaces/latest/adminguide/migrate-workspaces.html">WorkSpace の移行</a></p>
+
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#information">情報</a>
+      <a class="active" href="#specifications">仕様</a>
       <a href="#protocol-selection">プロトコル選定</a>
-      <a href="#protocol-change">PCoIPからWSPへの変更</a>
-      <a href="#flow">構築フロー</a>
-      <a href="#directory">Directory Service連携</a>
       <a href="#directory-accounts">アカウントの役割</a>
+      <a href="#flow">構築フロー</a>
       <a href="#register-directory">ディレクトリ登録</a>
       <a href="#provision">WorkSpaces Personal作成</a>
       <a href="#connect">接続</a>
       <a href="#ad-admin-tools">AD管理ツールとGPMC</a>
       <a href="#aduc-management">OU・ADユーザー管理</a>
+      <a href="#protocol-change">PCoIPからWSPへの変更</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

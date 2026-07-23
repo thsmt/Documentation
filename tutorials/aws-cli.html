@@ -397,6 +397,41 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         Stack Policyは削除ではなく置き換えで管理します。保護を解除する場合も、すべての更新を許可するPolicyへ置き換える運用になります。設定前に、対象Logical IDと更新計画を必ず確認します
       </div>
 
+      <h2 id="workspaces-protocol-change">Amazon WorkSpacesのプロトコル変更</h2>
+      <p>WorkSpacesコンソールに「プロトコルの変更」が表示されない場合や、GUIから変更できない場合は、AWS CLIでPCoIPからDCV (WSP)へ変更します。ここでは検証用WorkSpace <code>ws-7g6w44k9g</code>を対象にします。</p>
+
+      <p>変更前の状態とプロトコルを確認します。<code>describe-workspaces</code>では<code>--workspace-ids</code>を使用します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces describe-workspaces `
+  --workspace-ids ws-7g6w44k9g `
+  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,BundleId:BundleId,Protocols:WorkspaceProperties.Protocols}' `
+  --output table</code></pre>
+      </div>
+
+      <p>プロトコルをDCV (WSP)へ変更します。<code>modify-workspace-properties</code>では<code>--workspace-id</code>を使用します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces modify-workspace-properties `
+  --workspace-id ws-7g6w44k9g `
+  --workspace-properties "Protocols=[WSP]"</code></pre>
+      </div>
+
+      <p>変更後の状態とプロトコルを確認します。</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws workspaces describe-workspaces `
+  --workspace-ids ws-7g6w44k9g `
+  --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' `
+  --output table</code></pre>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 完了まで最大40分かかります</strong>
+        <p>変更中は利用者が接続できません。<code>Protocols</code>には大文字で<code>WSP</code>または<code>PCOIP</code>を指定し、実行後は状態が<code>AVAILABLE</code>になるまで待機します。</p>
+      </div>
+      <p>詳細手順と実行結果は<a href="amazon-workspaces.html#protocol-change">Amazon WorkSpaces</a>を確認します。公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/modify-workspaces.html#modify_protocols">Modify protocols</a></p>
+
       <h2 id="compute-optimizer">Compute Optimizer オプトアウト</h2>
       <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新します。詳細は <a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a> を確認します</p>
 
@@ -428,6 +463,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       <a href="#autoscaling-lifecycle-action">Auto Scaling Lifecycle</a>
       <a href="#cloudwatch-logs-kms">CloudWatch Logs KMS</a>
       <a href="#cloudformation-stack-policy">CloudFormation Stack Policy</a>
+      <a href="#workspaces-protocol-change">WorkSpacesプロトコル変更</a>
       <a href="#compute-optimizer">Compute Optimizer</a>
     </aside>
   </div>
