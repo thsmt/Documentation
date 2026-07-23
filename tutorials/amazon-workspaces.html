@@ -56,11 +56,11 @@
       </nav>
 
       <h1>Amazon WorkSpaces</h1>
-      <p class="lead">Amazon WorkSpaces Personal のディレクトリ設定、ユーザー管理、作成、接続、PCoIPからWSPへの変更手順を整理します。</p>
+      <p class="lead">Amazon WorkSpaces Personal のディレクトリ設定、ユーザー管理、作成、接続、PCoIPからWSPへの変更手順を整理する</p>
 
       <div id="pcoip-eos" class="callout callout-warning">
         <strong>⚠️ 最新情報: PCoIP ベースの WorkSpaces Personal は 2027 年 10 月 31 日にサポート終了</strong>
-        <p>2026 年 7 月 31 日以降、PCoIP ベースの WorkSpaces Personal は新規顧客へ提供されません。2027 年 10 月 31 日以降は作成・接続できません。新規構築は DCV (WorkSpaces Streaming Protocol: WSP) を標準とし、既存環境は移行を計画します。</p>
+        <p>2026 年 7 月 31 日以降、PCoIP ベースの WorkSpaces Personal は新規顧客へ提供されません。2027 年 10 月 31 日以降は作成・接続できません。新規構築は DCV (WorkSpaces Streaming Protocol: WSP) を標準とし、既存環境は移行を計画する</p>
         <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-pcoip-end-of-support.html">PCoIP-based WorkSpaces Personal end of support</a></p>
       </div>
 
@@ -92,10 +92,10 @@
         </tbody>
       </table>
 
-      <p>本ページは、AWS Managed Microsoft ADでユーザーを管理する<a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/en-US/workspaces">Amazon WorkSpaces Workshop</a>の実施内容を基にしています。</p>
+      <p>本ページは、AWS Managed Microsoft ADでユーザーを管理する<a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/en-US/workspaces">Amazon WorkSpaces Workshop</a>の実施内容を基にしている</p>
 
       <h3 id="protocol-selection">ストリーミングプロトコルの選定</h3>
-      <p>WorkSpaces Personal は DCV (WSP) と PCoIP をサポートします。PCoIPは終了予定のため、新規構築はDCVを標準とします。既存環境は、端末、ネットワーク、周辺機器を検証して移行します。</p>
+      <p>WorkSpaces Personal は DCV (WSP) と PCoIP をサポートします。PCoIPは終了予定のため、新規構築はDCVを標準とします。既存環境は、端末、ネットワーク、周辺機器を検証して移行する</p>
 
       <table>
         <thead>
@@ -108,30 +108,30 @@
         <tbody>
           <tr>
             <td>設計方針</td>
-            <td>新規構築の標準です。AWS の新機能開発は DCV に集中しており、既存 PCoIP 環境の移行先になります</td>
-            <td>既存環境の移行計画が必要です。新規設計の選択肢にはしません</td>
+            <td>新規構築の標準です。AWS の新機能開発は DCV に集中しており、既存 PCoIP 環境の移行先となる</td>
+            <td>既存環境の移行計画が必要です。新規設計の選択肢にはしない</td>
           </tr>
           <tr>
             <td>ネットワークと認証</td>
-            <td>高い遅延・パケット損失への耐性が必要な利用者、スマートカード、Web カメラ、WebAuthn 認証器の利用要件に適します</td>
-            <td>既存の PCoIP クライアントや端末との互換性を優先する場合に確認します</td>
+            <td>高い遅延・パケット損失への耐性が必要な利用者、スマートカード、Web カメラ、WebAuthn 認証器の利用要件に適する</td>
+            <td>既存の PCoIP クライアントや端末との互換性を優先する場合に確認する</td>
           </tr>
           <tr>
             <td>OS・アクセス方式</td>
-            <td>Windows Server 2022 の Web Access、Ubuntu、Windows 11 BYOL、Graphics.g4dn / GraphicsPro.g4dn の利用要件を満たします</td>
-            <td>iPad、Android、Linux クライアント、Teradici PCoIP Zero Client、既存の Graphics / GraphicsPro バンドルなどの要件を個別に確認します</td>
+            <td>Windows Server 2022 の Web Access、Ubuntu、Windows 11 BYOL、Graphics.g4dn / GraphicsPro.g4dn の利用要件を満たす</td>
+            <td>iPad、Android、Linux クライアント、Teradici PCoIP Zero Client、既存の Graphics / GraphicsPro バンドルなどの要件を個別に確認する</td>
           </tr>
         </tbody>
       </table>
 
       <div class="callout">
         <strong>ℹ️ 選定時の確認</strong>
-        <p>DCV と PCoIP では、対応クライアント、OS、GPU バンドル、周辺機器のサポート範囲が異なります。既存 PCoIP を移行する場合は、利用者の端末、ネットワーク経路、印刷、周辺機器、アプリケーションを代表ユーザーで事前検証します。</p>
+        <p>DCV と PCoIP では、対応クライアント、OS、GPU バンドル、周辺機器のサポート範囲が異なります。既存 PCoIP を移行する場合は、利用者の端末、ネットワーク経路、印刷、周辺機器、アプリケーションを代表ユーザーで事前検証する</p>
       </div>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/supported-features.html">Supported features by protocol type for WorkSpaces</a></p>
 
       <h3 id="directory-accounts">AWS Managed Microsoft ADのアカウントの役割</h3>
-      <p>WorkSpacesのユーザー選択画面には、利用者アカウントだけでなく、ディレクトリの組み込みアカウントやAWSサービスアカウントも表示されます。WorkSpaceを割り当てる対象は、業務利用者用に作成した通常アカウントに限定します。</p>
+      <p>WorkSpacesのユーザー選択画面には、利用者アカウントだけでなく、ディレクトリの組み込みアカウントやAWSサービスアカウントも表示されます。WorkSpaceを割り当てる対象は、業務利用者用に作成した通常アカウントに限定する</p>
       <table>
         <thead>
           <tr>
@@ -143,28 +143,28 @@
         <tbody>
           <tr>
             <td><code>Admin</code></td>
-            <td>AWS Managed Microsoft ADの作成時に生成されるディレクトリ管理アカウントです</td>
-            <td>割り当てません。管理操作だけに使用します</td>
+            <td>AWS Managed Microsoft ADの作成時に生成されるディレクトリ管理アカウント</td>
+            <td>割り当てません。管理操作だけに使用する</td>
           </tr>
           <tr>
             <td><code>Administrator</code></td>
-            <td>ADの組み込み特権アカウントです。AWSが運用管理のために制御します</td>
-            <td>割り当てません。名前変更や削除も行いません</td>
+            <td>ADの組み込み特権アカウントです。AWSが運用管理のために制御する</td>
+            <td>割り当てません。名前変更や削除も行わない</td>
           </tr>
           <tr>
             <td><code>AWS_WorkSpaces</code></td>
-            <td>Amazon WorkSpaces連携用のアプリケーション固有サービスアカウントです</td>
-            <td>割り当てません。削除や無効化を行いません</td>
+            <td>Amazon WorkSpaces連携用のアプリケーション固有サービスアカウント</td>
+            <td>割り当てません。削除や無効化を行わない</td>
           </tr>
           <tr>
             <td><code>Guest</code></td>
-            <td>ADの組み込みゲストアカウントです</td>
-            <td>割り当てません。無効状態を維持します</td>
+            <td>ADの組み込みゲストアカウント</td>
+            <td>割り当てません。無効状態を維持する</td>
           </tr>
           <tr>
             <td><code>krbtgt</code></td>
-            <td>Kerberos Key Distribution Centerが使用する組み込みサービスアカウントです</td>
-            <td>割り当てません。削除や通常の運用変更を行いません</td>
+            <td>Kerberos Key Distribution Centerが使用する組み込みサービスアカウント</td>
+            <td>割り当てません。削除や通常の運用変更を行わない</td>
           </tr>
         </tbody>
       </table>
@@ -172,89 +172,89 @@
 
       <h2 id="flow">構築フロー</h2>
       <ol>
-        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備します</li>
-        <li><a href="#register-directory">WorkSpacesディレクトリを作成・登録</a>し、アクセス制御とセルフサービス権限を確認します</li>
-        <li><a href="#provision">WorkSpaces Personalを作成</a>し、バンドル、実行モード、タグを設定します</li>
-        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成します</li>
-        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
-        <li>WorkSpaceが<code>AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続します</li>
+        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備</li>
+        <li><a href="#register-directory">WorkSpacesディレクトリを作成・登録</a>し、アクセス制御とセルフサービス権限を確認</li>
+        <li><a href="#provision">WorkSpaces Personalを作成</a>し、バンドル、実行モード、タグを設定</li>
+        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズ</li>
+        <li>WorkSpaceが<code>AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続</li>
       </ol>
 
       <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
-      <p>Directory Serviceで作成または接続したディレクトリを、Amazon WorkSpaces側で登録します。登録後に、利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定します</p>
+      <p>Directory Serviceで作成または接続したディレクトリを、Amazon WorkSpaces側で登録します。登録後に、利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定する</p>
 
       <h3>WorkSpacesディレクトリを作成・登録する</h3>
       <ol>
-        <li>Amazon WorkSpaces コンソールの「ディレクトリ」から「ディレクトリの作成」を選択します</li>
-        <li>WorkSpace タイプは「個人」、WorkSpace デバイス管理は「AWS Directory Service」を選択します</li>
-        <li>AWS Managed Microsoft AD など、登録する未登録ディレクトリを選択します</li>
-        <li>登録用サブネットを2つ選択します。この2つは必ず異なる Availability Zone に配置します</li>
-        <li>必要なセルフサービス権限を確認して登録し、ディレクトリの登録状態が有効になることを確認します</li>
+        <li>Amazon WorkSpaces コンソールの「ディレクトリ」から「ディレクトリの作成」を選択</li>
+        <li>WorkSpace タイプは「個人」、WorkSpace デバイス管理は「AWS Directory Service」を選択</li>
+        <li>AWS Managed Microsoft AD など、登録する未登録ディレクトリを選択</li>
+        <li>異なる Availability Zone にある登録用サブネットを2つ選択</li>
+        <li>必要なセルフサービス権限を確認して登録し、ディレクトリの登録状態が有効になることを確認</li>
       </ol>
 
       <div class="callout callout-warning">
-        <strong>⚠️ 同一 Availability Zone のサブネットは選択できません</strong>
-        <p>2つのサブネットが同じ Availability Zone にあると、ディレクトリを作成・登録できません。コンソールには「You tried to choose two subnets that are in the same Availability Zone」というエラーが表示されます。</p>
-        <p>サブネットIDではなく、各サブネットが属する Availability Zone を確認します。異なるAZのサブネットへ選び直してから再試行します。</p>
+        <strong>⚠️ 同一 Availability Zone のサブネットは選択不可</strong>
+        <p>2つのサブネットが同じ Availability Zone にあると、ディレクトリを作成・登録できません。コンソールには「You tried to choose two subnets that are in the same Availability Zone」というエラーが表示される</p>
+        <p>サブネットIDではなく、各サブネットが属する Availability Zone を確認します。異なるAZのサブネットへ選び直してから再試行する</p>
       </div>
 
       <figure class="screenshot-wide">
         <img src="../assets/workspaces-directory-registration-redacted.png" alt="Amazon WorkSpacesのディレクトリ登録画面。個人、AWS Directory Service、異なるAvailability Zoneの2つのサブネットを選択した状態" width="1439" height="1093" loading="lazy">
-        <figcaption>ディレクトリ名・ID・サブネットIDはマスクしています。</figcaption>
+        <figcaption>ディレクトリ名・ID・サブネットIDはマスク済み</figcaption>
       </figure>
 
       <h2 id="provision">WorkSpaces Personalの作成</h2>
       <ol>
-        <li>Amazon WorkSpacesのナビゲーションから、WorkSpacesのプロビジョニングを開始します</li>
-        <li>WorkSpaceタイプで「個人」を選択し、バンドル、実行モード、タグを設定します</li>
-        <li>登録済みディレクトリを選択し、対象ユーザーを選択または作成します</li>
-        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズします</li>
-        <li>作成後、ステータスが<code>AVAILABLE</code>になることを確認します</li>
-        <li>WorkSpacesクライアントまたはWeb Accessでサインインします</li>
+        <li>Amazon WorkSpacesのナビゲーションから、WorkSpacesのプロビジョニングを開始</li>
+        <li>WorkSpaceタイプで「個人」を選択し、バンドル、実行モード、タグを設定</li>
+        <li>登録済みディレクトリを選択し、対象ユーザーを選択または作成</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズ</li>
+        <li>作成後、ステータスが<code>AVAILABLE</code>になることを確認</li>
+        <li>WorkSpacesクライアントまたはWeb Accessでサインイン</li>
       </ol>
 
       <h3>オプションと実行モード</h3>
-      <p>個人向けの永続デスクトップとして作成し、利用者に合うバンドルを選択します。実行モードは、常時利用する端末ではAlwaysOn、利用時間に応じて課金を抑える場合はAutoStopを選択します。</p>
+      <p>個人向けの永続デスクトップとして作成し、利用者に合うバンドルを選択します。実行モードは、常時利用する端末ではAlwaysOn、利用時間に応じて課金を抑える場合はAutoStopを選択する</p>
       <figure class="screenshot-wide">
         <img src="../assets/workspaces-personal-options-redacted.png" alt="Amazon WorkSpaces Personalの設定画面。個人タイプ、Windowsバンドル、AutoStop実行モードを選択した状態" width="1439" height="1093" loading="lazy">
-        <figcaption>個人タイプ、WSPバンドル、AutoStopの設定例です。</figcaption>
+        <figcaption>個人タイプ、WSPバンドル、AutoStopの設定例</figcaption>
       </figure>
 
       <h3>ディレクトリと利用者の選択</h3>
-      <p>登録済みディレクトリから、WorkSpaceを割り当てる利用者を選択します。AWS Managed Microsoft ADを利用する場合、WorkSpacesコンソールの作成フローから利用者を追加できます。通常アカウントだけを選択し、組み込みアカウントやサービスアカウントを選択しないことを確認します。</p>
+      <p>登録済みディレクトリから、WorkSpaceを割り当てる利用者を選択します。AWS Managed Microsoft ADを利用する場合、WorkSpacesコンソールの作成フローから利用者を追加できます。通常アカウントだけを選択し、組み込みアカウントやサービスアカウントを選択しないことを確認する</p>
       <figure class="screenshot-wide">
         <img src="../assets/workspaces-personal-directory-user-redacted.png" alt="Amazon WorkSpaces Personalのディレクトリとユーザー選択画面。t_hashimotoを選択し、組み込みアカウントとサービスアカウントが一覧に表示されている状態" width="1441" height="1091" loading="lazy">
-        <figcaption><code>t_hashimoto</code>を選択した例です。ディレクトリ情報、氏名、メールアドレスはマスクしています。</figcaption>
+        <figcaption><code>t_hashimoto</code>を選択した例。ディレクトリ情報、氏名、メールアドレスはマスク済み</figcaption>
       </figure>
 
       <h3>カスタマイズ</h3>
-      <p>要件に応じて、ルートボリュームとユーザーボリュームの暗号化、容量、カスタムバンドルを設定します。後からカスタムイメージを作成する場合は、暗号化とイメージ運用の制約を事前に確認します。</p>
+      <p>要件に応じて、ルートボリュームとユーザーボリュームの暗号化、容量、カスタムバンドルを設定します。後からカスタムイメージを作成する場合は、暗号化とイメージ運用の制約を事前に確認する</p>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        <p>カスタムイメージを作成する予定があるWorkSpaceでは、ボリューム暗号化の扱いに注意します。AWS公式ドキュメントでは、暗号化されたWorkSpaceからのイメージ作成はサポートされません</p>
+        <p>カスタムイメージを作成する予定があるWorkSpaceでは、ボリューム暗号化の扱いに注意します。AWS公式ドキュメントでは、暗号化されたWorkSpaceからのイメージ作成はサポートされない</p>
       </div>
 
       <h3 id="connect">接続</h3>
-      <p>WorkSpaceの作成完了後、利用者には初回接続用メールが届きます。メールの個別リンクと登録コードは接続情報にあたるため、ドキュメントやチケットへ転載しません。利用者自身がメールからプロフィールと初期パスワードを設定します。</p>
+      <p>WorkSpaceの作成完了後、利用者には初回接続用メールが届きます。メールの個別リンクと登録コードは接続情報にあたるため、ドキュメントやチケットへ転載しません。利用者自身がメールからプロフィールと初期パスワードを設定する</p>
       <ol>
-        <li>WorkSpaceのステータスが<code>AVAILABLE</code>であることを確認します</li>
-        <li>利用者が初回接続用メールからプロフィールと初期パスワードを設定します</li>
-        <li><a href="https://clients.amazonworkspaces.com/ja">Amazon WorkSpaces クライアントのダウンロードページ</a>から、利用端末に合うクライアントを導入します</li>
-        <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインインします</li>
+        <li>WorkSpaceのステータスが<code>AVAILABLE</code>であることを確認</li>
+        <li>利用者が初回接続用メールからプロフィールと初期パスワードを設定</li>
+        <li><a href="https://clients.amazonworkspaces.com/ja">Amazon WorkSpaces クライアントのダウンロードページ</a>から、利用端末に合うクライアントを導入</li>
+        <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインイン</li>
       </ol>
-      <p>DCV (WSP) ベースの Windows または Linux WorkSpace で、管理者がWeb Accessを有効化している場合は、クライアントを導入せずに<a href="https://clients.amazonworkspaces.com/ja">Web Access</a>を選択して対応ブラウザから接続できます。</p>
+      <p>DCV (WSP) ベースの Windows または Linux WorkSpace で、管理者がWeb Accessを有効化している場合は、クライアントを導入せずに<a href="https://clients.amazonworkspaces.com/ja">Web Access</a>を選択して対応ブラウザから接続できる</p>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-clients.html">WorkSpaces clients</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
 
       <h3 id="ad-admin-tools">AD管理ツールとGPMC</h3>
-      <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法は推奨構成です。OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console (GPMC) を導入した、ディレクトリ参加済みの管理端末を用意します。</p>
+      <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法は推奨構成です。OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console (GPMC) を導入した、ディレクトリ参加済みの管理端末を用意する</p>
 
       <div class="callout callout-warning">
-        <strong>⚠️ OSに合うコマンドを使用します</strong>
-        <p><code>Install-WindowsFeature</code> は Windows Server の ServerManager モジュールに含まれるコマンドです。Windows 10/11 ベースの WorkSpace で実行すると、コマンドが見つからず失敗します。その場合は、RSATをWindowsの機能として追加します。</p>
+        <strong>⚠️ OSに合うコマンドを使用</strong>
+        <p><code>Install-WindowsFeature</code> は Windows Server の ServerManager モジュールに含まれるコマンドです。Windows 10/11 ベースの WorkSpace で実行すると、コマンドが見つからず失敗します。その場合は、RSATをWindowsの機能として追加する</p>
       </div>
 
-      <p><strong>Windows 10/11ベース:</strong> 管理者としてWindows PowerShellを起動し、利用可能なRSAT機能を確認してから、AD DS/LDSツールとGPMCを追加します。</p>
+      <p><strong>Windows 10/11ベース:</strong> 管理者としてWindows PowerShellを起動し、利用可能なRSAT機能を確認してから、AD DS/LDSツールとGPMCを追加する</p>
       <pre><code class="language-powershell">Get-WindowsCapability -Online |
   Where-Object Name -match 'Rsat\.(ActiveDirectory|GroupPolicy)' |
   Format-Table Name, State
@@ -266,80 +266,80 @@ Get-WindowsCapability -Online |
   Where-Object Name -match 'Rsat\.(ActiveDirectory|GroupPolicy)' |
   Format-Table Name, State</code></pre>
 
-      <p><strong>Windows Serverベース:</strong> 管理者としてWindows PowerShellを起動し、ServerManagerの機能として導入します。</p>
+      <p><strong>Windows Serverベース:</strong> 管理者としてWindows PowerShellを起動し、ServerManagerの機能として導入する</p>
       <pre><code class="language-powershell">Install-WindowsFeature -Name RSAT-ADDS,GPMC</code></pre>
 
-      <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で「別のユーザーとして実行」し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨します。</p>
+      <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で「別のユーザーとして実行」し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨する</p>
 
       <h3 id="aduc-management">OU・ADユーザー管理</h3>
       <p><strong>AdminでAD管理ツールを起動:</strong></p>
       <ol>
-        <li>スタートメニューから「Active Directory ユーザーとコンピューター」を検索します</li>
-        <li>検索結果を右クリックし、「別のユーザーとして実行」を選択します</li>
-        <li>AWS Managed Microsoft ADのディレクトリ管理者<code>Admin</code>の資格情報を入力します</li>
-        <li>Active Directory ユーザーとコンピューターを開き、管理対象のOUを確認します</li>
+        <li>スタートメニューから「Active Directory ユーザーとコンピューター」を検索</li>
+        <li>検索結果を右クリックし、「別のユーザーとして実行」を選択</li>
+        <li>AWS Managed Microsoft ADのディレクトリ管理者<code>Admin</code>の資格情報を入力</li>
+        <li>Active Directory ユーザーとコンピューターを開き、管理対象のOUを確認</li>
       </ol>
       <figure class="screenshot-compact">
         <img src="../assets/workspaces-aduc-run-as-admin.png" alt="Active Directory ユーザーとコンピューターをAdminで別のユーザーとして実行する認証画面。ドメイン値はマスクしている" width="1341" height="1173" loading="lazy">
-        <figcaption>Adminで認証します。パスワードとドメイン値は公開しません。</figcaption>
+        <figcaption>Adminで認証します。パスワードとドメイン値は公開しない</figcaption>
       </figure>
 
       <p><strong>WorkSpaces用OUを作成:</strong></p>
-      <p>WorkSpacesのコンピューターオブジェクトと利用者を分離して管理するため、専用の親OU配下に<code>Computers</code>と<code>Users</code>を作成します。AWSが作成した<code>AWS Reserved</code>などの定義済みOU、グループ、ユーザーは変更・削除しません。</p>
+      <p>WorkSpacesのコンピューターオブジェクトと利用者を分離して管理するため、専用の親OU配下に<code>Computers</code>と<code>Users</code>を作成します。AWSが作成した<code>AWS Reserved</code>などの定義済みOU、グループ、ユーザーは変更・削除しない</p>
       <ol>
-        <li>Active Directory ユーザーとコンピューターで、AWS Managed Microsoft ADのドメインを展開します</li>
-        <li>管理用の親OUを作成します</li>
-        <li>親OUの配下に<code>Computers</code>と<code>Users</code>を作成します</li>
-        <li>GPOは対象となるコンピューターOUまたはユーザーOUへリンクし、適用対象を分離します</li>
+        <li>Active Directory ユーザーとコンピューターで、AWS Managed Microsoft ADのドメインを展開</li>
+        <li>管理用の親OUを作成</li>
+        <li>親OUの配下に<code>Computers</code>と<code>Users</code>を作成</li>
+        <li>GPOは対象となるコンピューターOUまたはユーザーOUへリンクし、適用対象を分離</li>
       </ol>
       <figure class="screenshot-medium">
         <img src="../assets/workspaces-aduc-ou-structure.png" alt="Active Directory ユーザーとコンピューターで、WorkSpaces用の親OU配下にComputersとUsersを作成した画面。ドメインとホスト名はマスクしている" width="1782" height="883" loading="lazy">
-        <figcaption>親OU配下に、コンピューター用とユーザー用のOUを作成した例です。</figcaption>
+        <figcaption>親OU配下に、コンピューター用とユーザー用のOUを作成した例</figcaption>
       </figure>
 
       <p><strong>ADユーザーを作成:</strong></p>
-      <p>利用者をAD側で管理する場合は、<code>Users</code> OUを選択して「新規作成」から「ユーザー」を選びます。姓名、表示名、ユーザーログオン名を入力し、作成後にWorkSpacesコンソールで対象ユーザーへWorkSpaceを割り当てます。</p>
+      <p>利用者をAD側で管理する場合は、<code>Users</code> OUを選択して「新規作成」から「ユーザー」を選びます。姓名、表示名、ユーザーログオン名を入力し、作成後にWorkSpacesコンソールで対象ユーザーへWorkSpaceを割り当てる</p>
       <figure class="screenshot-compact">
         <img src="../assets/workspaces-aduc-new-user.png" alt="Active Directoryの新しいオブジェクトユーザー画面。ユーザー名testuser1を入力し、ドメインと作成先はマスクしている" width="1358" height="1158" loading="lazy">
-        <figcaption>ユーザーログオン名は作成後に変更できないため、命名規則を確認してから登録します。</figcaption>
+        <figcaption>ユーザーログオン名は作成後に変更できないため、命名規則を確認してから登録する</figcaption>
       </figure>
-      <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化します。</p>
+      <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化する</p>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
       <p>ユーザーとOUの公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
       <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
-      <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>ws-7g6w44k9g</code>で変更を確認します。</p>
+      <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>ws-7g6w44k9g</code>で変更を確認する</p>
 
       <div class="callout callout-warning">
-        <strong>⚠️ 本番変更前に検証します</strong>
-        <p>非本番WorkSpaceでクライアント、ネットワーク経路、印刷、周辺機器、アプリケーションを確認します。変更中は利用者が接続できないため、利用停止時間を設けます。</p>
+        <strong>⚠️ 本番変更前に検証</strong>
+        <p>非本番WorkSpaceでクライアント、ネットワーク経路、印刷、周辺機器、アプリケーションを確認します。変更中は利用者が接続できないため、利用停止時間を設ける</p>
       </div>
 
       <h3>コンソールで変更</h3>
       <ol>
-        <li>対象WorkSpaceが<code>AVAILABLE</code>で、プロトコルが<code>PCoIP</code>であることを確認します</li>
-        <li>WorkSpaceを選択し、「アクション」から「プロトコルの変更」を選択します</li>
-        <li>変更を開始し、ステータスが「プロトコルを変更中」になることを確認します</li>
-        <li>最大40分待機し、ステータスが「使用可能」、プロトコルが<code>DCV (WSP)</code>になったことを確認します</li>
+        <li>対象WorkSpaceが<code>AVAILABLE</code>で、プロトコルが<code>PCoIP</code>であることを確認</li>
+        <li>WorkSpaceを選択し、「アクション」から「プロトコルの変更」を選択</li>
+        <li>変更を開始し、ステータスが「プロトコルを変更中」になることを確認</li>
+        <li>最大40分待機し、ステータスが「使用可能」、プロトコルが<code>DCV (WSP)</code>になったことを確認</li>
       </ol>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-protocol-pcoip-before-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがPCoIPかつ使用可能であることを確認した画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更前: <code>ws-7g6w44k9g</code>はPCoIPで使用可能です。</figcaption>
+        <figcaption>変更前: <code>ws-7g6w44k9g</code>はPCoIPで使用可能</figcaption>
       </figure>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-protocol-change-in-progress-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gのステータスがプロトコルを変更中になった画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更中: ステータスが「プロトコルを変更中」になります。</figcaption>
+        <figcaption>変更中: ステータスが「プロトコルを変更中」になる</figcaption>
       </figure>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-protocol-dcv-completed-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがDCV WSPかつ使用可能になった画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが「使用可能」になったことを確認します。</figcaption>
+        <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが「使用可能」になったことを確認</figcaption>
       </figure>
 
       <h3>AWS CLIで変更</h3>
-      <p>コンソールに「プロトコルの変更」が表示されない場合や、GUIから変更できない場合はAWS CLIで実施します。対象WorkSpaceの状態とプロトコルを確認します。</p>
+      <p>AWS CLIでもプロトコルを変更できます。対象WorkSpaceの状態とプロトコルを確認する</p>
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
@@ -348,7 +348,7 @@ Get-WindowsCapability -Online |
   --output table</code></pre>
       </div>
 
-      <p>プロトコルをDCV (WSP)へ変更します。<code>Protocols</code>の値は大文字・小文字を区別します。</p>
+      <p>プロトコルをDCV (WSP)へ変更します。<code>Protocols</code>の値は大文字・小文字を区別する</p>
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces modify-workspace-properties \
@@ -356,7 +356,7 @@ Get-WindowsCapability -Online |
   --workspace-properties "Protocols=[WSP]"</code></pre>
       </div>
 
-      <p>最大40分待機し、変更後の状態を確認します。</p>
+      <p>最大40分待機し、変更後の状態を確認する</p>
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
@@ -365,16 +365,6 @@ Get-WindowsCapability -Online |
   --output table</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>ℹ️ GUIから変更できない場合</strong>
-        <p>CLI手順は<a href="aws-cli.html#workspaces-protocol-change">AWS CLI 特殊対応</a>にも掲載しています。<code>WSP</code>または<code>PCOIP</code>を大文字で指定し、実行後は<code>AVAILABLE</code>になるまで待機します。</p>
-      </div>
-
-      <p><strong>変更失敗時:</strong> WorkSpacesは変更前にチェックポイントスナップショットを取得します。<code>RESOURCE: PROTOCOL</code>と<code>STATE: UPDATE_FAILED</code>を確認し、自動復元後に再試行します。解消しない場合はAWSサポートへ問い合わせます。</p>
-
-      <h3>バンドル移行との違い</h3>
-      <p>WSPバンドルから作成したWorkSpaceは、このプロトコル変更の対象外です。別バンドルへ移行する場合、Cドライブのデータ、アプリケーション、設定、レジストリ変更は保持されません。Dドライブも最後のスナップショット以降の変更が失われるため、事前にデータを退避します。</p>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/modify-workspaces.html#modify_protocols">Modify protocols</a>、<a href="https://docs.aws.amazon.com/ja_jp/workspaces/latest/adminguide/migrate-workspaces.html">WorkSpace の移行</a></p>
 
     </main>
 
