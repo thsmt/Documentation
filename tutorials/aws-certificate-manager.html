@@ -60,7 +60,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 2026年7月時点の重要な変更</strong>
-        <p>ACMパブリック証明書の有効期間は、2026年2月18日以降、従来の395日から198日へ短縮されています。ACMが更新を開始する時期も期限60日前から45日前へ変わりました。2025年の記事にある「395日」「1 FQDNあたり15 USD」「ワイルドカード149 USD」は現在の仕様・価格ではありません。</p>
+        <p>ACMパブリック証明書の有効期間は、2026年2月18日以降、従来の395日から198日へ短縮されています。ACMが更新を開始する時期も期限60日前から45日前へ変わりました。2025年の記事にある395日の有効期間は現在の仕様と異なります。</p>
       </div>
 
       <div class="callout">
@@ -116,7 +116,10 @@
 
       <h2 id="export">エクスポート可能な証明書</h2>
       <p>エクスポート可能なパブリック証明書は、2025年6月17日以降に、エクスポートを有効にして新規発行した証明書が対象です。発行後にエクスポート可否を変更できないため、既存の非エクスポート証明書は新しくリクエストします。</p>
-      <p>2026年7月時点の料金は、発行時と更新時にFQDNごとに7 USD、ワイルドカード名ごとに79 USDです。月10,000回までの証明書エクスポートAPI呼び出しは無料です。料金は変更される可能性があるため、導入時にAWS公式料金ページを確認します。</p>
+      <div class="callout">
+        <strong>ℹ️ エクスポート可能な証明書の料金</strong>
+        <p>2026年7月時点では、発行時と更新時にFQDNごとに7 USD、ワイルドカード名ごとに79 USDです。証明書エクスポートAPIは、アカウントごとに月10,000回まで無料です。料金は変更される可能性があるため、導入時にAWS公式料金ページを確認します。</p>
+      </div>
       <div class="code"><div class="code-header"><span>request</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm request-certificate \
   --domain-name example.com \
   --subject-alternative-names www.example.com \
@@ -234,33 +237,6 @@ openssl s_client \
         </tbody>
       </table>
 
-      <h2 id="checklist">運用チェックリスト</h2>
-      <table>
-        <thead><tr><th>タイミング</th><th>確認内容</th></tr></thead>
-        <tbody>
-          <tr><td>設計時</td><td>発行方式、ドメインとSAN、リージョン、検証方式、利用先、更新責任、費用、失効手順</td></tr>
-          <tr><td>発行時</td><td>DNS検証、CAA、キーアルゴリズム、エクスポート可否、タグ、所有者、監視登録</td></tr>
-          <tr><td>配置時</td><td>証明書チェーン、秘密鍵権限、構文確認、reload、外部接続、切り戻しファイル</td></tr>
-          <tr><td>定常運用</td><td>ACM期限、外部期限、自動更新ジョブ、EventBridge、CloudWatchアラーム、検証CNAME</td></tr>
-          <tr><td>更新時</td><td>新旧シリアル番号、SAN、有効期限、全配布先、サービス状態、外部監視、旧証明書の退避</td></tr>
-          <tr><td>秘密鍵漏えい時</td><td>証明書失効、鍵の再生成、再発行、全配布先の入れ替え、アクセスログとCloudTrailの調査</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="references">公式情報と参考記事</h2>
-      <ul>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html">AWS Certificate Manager public certificates</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/managed-renewal.html">Managed certificate renewal in AWS Certificate Manager</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-exportable-certificates.html">AWS Certificate Manager exportable public certificates</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate-automation.html">AWS Workload Credentials Provider</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-acme.html">ACME certificate automation</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/supported-events.html">Amazon EventBridge support for ACM</a></li>
-        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/cloudwatch-metrics.html">Supported CloudWatch metrics</a></li>
-        <li><a href="https://aws.amazon.com/certificate-manager/pricing/">AWS Certificate Manager pricing</a></li>
-        <li><a href="https://blog.serverworks.co.jp/acm-export">サーバーワークス: ACM証明書をEC2上のApacheで使用する例</a></li>
-        <li><a href="https://blog.serverworks.co.jp/acm-exported-certificate-nginx-ssl-auto-renewal-on-ec2">サーバーワークス: EventBridge、Lambda、Systems Managerによる更新例</a></li>
-        <li><a href="https://qiita.com/teshima_daichi/items/8a2bf99de53f238f48b6">Qiita: ACM証明書をエクスポートしてEC2で使用する例</a></li>
-      </ul>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -274,8 +250,6 @@ openssl s_client \
       <a href="#acme">ACM ACME</a>
       <a href="#monitoring">期限監視と更新確認</a>
       <a href="#troubleshooting">トラブルシューティング</a>
-      <a href="#checklist">運用チェックリスト</a>
-      <a href="#references">公式情報と参考記事</a>
     </aside>
   </div>
 
