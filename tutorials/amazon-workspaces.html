@@ -56,7 +56,7 @@
       </nav>
 
       <h1>Amazon WorkSpaces</h1>
-      <p class="lead">Amazon WorkSpaces Personal のディレクトリ設定、ユーザー管理、作成、接続、PCoIPからWSPへの変更手順を整理する</p>
+      <p class="lead">Amazon WorkSpaces Personal のディレクトリ設定、ユーザー管理、作成、接続、復旧操作、グループポリシー、PCoIPからWSPへの変更手順を整理する</p>
 
       <div id="pcoip-eos" class="callout callout-warning">
         <strong>⚠️ 最新情報: PCoIP ベースの WorkSpaces Personal は 2027 年 10 月 31 日にサポート終了</strong>
@@ -87,7 +87,7 @@
           </tr>
           <tr>
             <td>運用</td>
-            <td>カスタムイメージ、カスタムバンドル、ユーザー管理、エラー時の切り分け</td>
+            <td>Web Access、グループポリシー、復元、再構築、移行、プロトコル変更</td>
           </tr>
         </tbody>
       </table>
@@ -242,8 +242,75 @@
         <li><a href="https://clients.amazonworkspaces.com/ja">Amazon WorkSpaces クライアントのダウンロードページ</a>から、利用端末に合うクライアントを導入</li>
         <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインイン</li>
       </ol>
-      <p>DCV (WSP) ベースの Windows または Linux WorkSpace で、管理者がWeb Accessを有効化している場合は、クライアントを導入せずに<a href="https://clients.amazonworkspaces.com/ja">Web Access</a>を選択して対応ブラウザから接続できる</p>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-clients.html">WorkSpaces clients</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
+      <p>DCV (WSP) ベースの Windows または Linux WorkSpace でWeb Accessを有効化すると、クライアントを導入せずに対応ブラウザから接続できる</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-clients.html">WorkSpaces clients</a></p>
+
+      <h3 id="web-access">Web Accessを有効化</h3>
+      <p>Web Accessはディレクトリ単位で許可します。同じディレクトリへ登録したWorkSpaceに設定が適用されるため、対象ユーザーと接続元ネットワークへの影響を確認してから変更する</p>
+      <ol>
+        <li>Amazon WorkSpacesコンソールで「ディレクトリ」を開き、対象のディレクトリIDを選択</li>
+        <li>ディレクトリ詳細の「他のプラットフォーム」で「編集」を選択</li>
+        <li>「Web Access」を選択して保存</li>
+        <li>対象WorkSpaceを再起動して設定を反映</li>
+        <li><a href="https://clients.amazonworkspaces.com/ja">WorkSpacesクライアントページ</a>で「Webアクセス」を選択し、登録コードとディレクトリ資格情報で接続</li>
+      </ol>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/workspaces/workspaces-web-access-enabled-redacted.png" alt="Amazon WorkSpacesディレクトリの他のプラットフォーム設定でWeb Accessを有効にした画面" width="1716" height="492" loading="lazy">
+        <figcaption>ディレクトリの「他のプラットフォーム」でWeb Accessを有効化。<code>t_hashimoto</code>を残し、AWSアカウントIDのみマスク済み</figcaption>
+      </figure>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 有効化だけでは接続できない場合がある</strong>
+        <p>Web Accessに必要なアウトバウンド通信とポートを許可します。Windowsのログオンポリシーが合わない場合は、ログオン遅延や黒い画面が発生するため、GPOも合わせて確認する</p>
+      </div>
+
+      <h4>Windowsのログオンポリシー</h4>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>設定</th>
+              <th>値</th>
+              <th>目的</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hide entry points for Fast User Switching</td>
+              <td>Disabled</td>
+              <td>WorkSpacesログオンエージェントが正しい利用者を選択できる状態にする</td>
+            </tr>
+            <tr>
+              <td>Interactive logon: Do not display last user name</td>
+              <td>Enabled</td>
+              <td>前回利用者ではなく、接続ユーザーの資格情報を入力できる状態にする</td>
+            </tr>
+            <tr>
+              <td>Interactive logon: Do not require CTRL+ALT+DEL</td>
+              <td>Disabled</td>
+              <td>ログオン前にCTRL+ALT+DELを要求する</td>
+            </tr>
+            <tr>
+              <td>Interactive logon: Display user information when the session is locked</td>
+              <td>User display name, domain and user names</td>
+              <td>ロック画面にドメインとユーザー情報を表示する</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>GPO変更後は、管理者のコマンドプロンプトでポリシーを更新し、WorkSpaceのセッションを再起動する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>gpupdate /force</code></pre>
+      </div>
+
+      <figure class="screenshot-medium">
+        <img src="../assets/img/workspaces/workspaces-web-access-browser.png" alt="Google ChromeからAmazon WorkSpaces Web Accessへ接続し、Windowsデスクトップを表示した画面" width="1718" height="1391" loading="lazy">
+        <figcaption>DCV (WSP) のWorkSpaceへブラウザから接続した状態</figcaption>
+      </figure>
+      <p>DCVのWeb Accessは、WindowsとLinuxのWorkSpacesで利用できます。対応ブラウザはChrome、Edge、Safari、Firefoxの最新3バージョンです。PCoIP Web Accessは新規設計に使用しない</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/web-access.html">Enable and configure WorkSpaces Web Access</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html">IP address and port requirements</a></p>
 
       <h3 id="ad-admin-tools">AD管理ツールとGPMC</h3>
       <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法は推奨構成です。OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console (GPMC) を導入した、ディレクトリ参加済みの管理端末を用意する</p>
@@ -311,6 +378,143 @@ Get-WindowsCapability -Online |
       <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化する</p>
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
       <p>ユーザーとOUの公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
+
+      <h2 id="group-policy">WorkSpaces固有のグループポリシー</h2>
+      <p>Windows WorkSpacesへプロトコル固有の設定を適用するには、使用中のプロトコルに対応する管理用テンプレートをActive Directoryの中央ストアへ配置します。新規環境はDCV用テンプレートを使用し、PCoIP用テンプレートは既存環境だけで使用する</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>プロトコル</th>
+              <th>コピー元</th>
+              <th>テンプレート</th>
+              <th>GPMCでの確認先</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>DCV (WSP)</td>
+              <td><code>C:\Program Files\Amazon\WSP</code></td>
+              <td><code>wsp.admx</code><br><code>wsp.adml</code></td>
+              <td>Computer Configuration → Policies → Administrative Templates → Amazon → DCV / WSP</td>
+            </tr>
+            <tr>
+              <td>PCoIP</td>
+              <td><code>C:\Program Files\Teradici\PCoIP Agent\configuration\policyDefinitions</code></td>
+              <td><code>PCoIP.admx</code><br><code>en-US\PCoIP.adml</code></td>
+              <td>Computer Configuration → Policies → Administrative Templates → PCoIP Session Variables</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>DCVテンプレートを中央ストアへ配置</h3>
+      <ol>
+        <li>実行中のDCV Windows WorkSpaceで<code>C:\Program Files\Amazon\WSP</code>を開き、<code>wsp.admx</code>と<code>wsp.adml</code>を取得</li>
+        <li>ディレクトリ参加済みの管理用WorkSpaceまたはEC2 Windowsインスタンスへ、委任された管理者アカウントでサインイン</li>
+        <li>エクスプローラーで<code>\\&lt;domain-fqdn&gt;\sysvol</code>へ接続</li>
+        <li><code>\\&lt;domain-fqdn&gt;\sysvol\&lt;domain-fqdn&gt;\Policies</code>を開き、<code>PolicyDefinitions</code>と配下の<code>en-US</code>を作成</li>
+        <li><code>wsp.admx</code>を<code>PolicyDefinitions</code>、<code>wsp.adml</code>を<code>PolicyDefinitions\en-US</code>へコピー</li>
+        <li><code>gpmc.msc</code>を開き、WorkSpacesコンピューター用GPOから管理用テンプレートが表示されることを確認</li>
+        <li>専用GPOをWorkSpacesのコンピューターOUへリンクし、<code>gpupdate /force</code>またはWorkSpace再起動で反映</li>
+      </ol>
+
+      <figure class="screenshot-medium">
+        <img src="../assets/img/workspaces/workspaces-dcv-policy-files.png" alt="DCV Windows WorkSpaceのCドライブにあるAmazon WSPフォルダでwsp.admxとwsp.admlを確認した画面" width="1920" height="1102" loading="lazy">
+        <figcaption>DCV用の<code>wsp.admx</code>と<code>wsp.adml</code>は<code>C:\Program Files\Amazon\WSP</code>から取得</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/workspaces/workspaces-sysvol-map-drive.png" alt="Windowsのネットワークドライブ割り当てでWorkSpacesディレクトリのSYSVOLを指定した画面" width="613" height="456" loading="lazy">
+        <figcaption>エクスプローラーから<code>\\&lt;domain-fqdn&gt;\sysvol</code>へ接続。画面例では<code>workspaces.labx.com</code>を使用</figcaption>
+      </figure>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 中央ストアの変更権限</strong>
+        <p>SYSVOLへの書き込みには適切なドメイン管理権限が必要です。AWS Managed Microsoft ADの<code>Admin</code>または権限を委任した管理アカウントを使用し、認証情報を手順書やスクリプトへ保存しない</p>
+      </div>
+
+      <h3>PCoIPテンプレートを使用する場合</h3>
+      <p>既存PCoIP環境では、PCoIP Agentのビット数に合うテンプレートを取得し、同じ中央ストアへ<code>PCoIP.admx</code>と<code>PCoIP.adml</code>を配置します。32ビットエージェントの場合、コピー元は<code>C:\Program Files (x86)\Teradici\PCoIP Agent\configuration\policyDefinitions</code>となる</p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a></p>
+
+      <h2 id="recovery-operations">復元・再構築・移行</h2>
+      <p>3つの操作は、ルートボリュームをどの状態から作り直すかが異なります。実行前にスナップショット時刻と消失するデータを確認し、利用者をログオフさせてから開始する</p>
+
+      <div class="callout">
+        <strong>ℹ️ 自動スナップショット</strong>
+        <p>通常利用時の自動スナップショットは約12時間ごとに作成されます。WorkSpaceが正常な場合はルートボリュームとユーザーボリューム、異常な場合はユーザーボリュームだけが対象となります。作成時刻は固定ではないため、コンソールに表示される復元ポイントを必ず確認する</p>
+      </div>
+
+      <div class="table-scroll table-scroll-wide">
+        <table>
+          <thead>
+            <tr>
+              <th>操作</th>
+              <th>主な用途</th>
+              <th>ルートボリューム<br>Windows: C</th>
+              <th>ユーザーボリューム<br>Windows: D</th>
+              <th>ネットワーク</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>復元</td>
+              <td>正常だったスナップショット時点へ戻す</td>
+              <td>指定したスナップショットへ戻る。以後のアプリケーションと設定変更は消失</td>
+              <td>同じ時点のスナップショットから再作成。現在の内容は上書き</td>
+              <td>既存構成を維持</td>
+            </tr>
+            <tr>
+              <td>再構築</td>
+              <td>OS破損や設定不良を解消し、作成元バンドルへ戻す</td>
+              <td>作成元バンドルの最新イメージから再作成。追加アプリケーションと設定変更は消失</td>
+              <td>最新スナップショットから再作成。スナップショット以後の変更は消失</td>
+              <td>プライマリENIを再作成し、新しいプライベートIPを割り当て</td>
+            </tr>
+            <tr>
+              <td>移行</td>
+              <td>別バンドル、OS、コンピューティング構成へ変更</td>
+              <td>移行先バンドルのイメージから再作成。Cドライブのデータは消失</td>
+              <td>最後のスナップショットから再作成。新しいユーザープロファイルを生成し、旧プロファイルは<code>.NotMigrated</code>へ変更</td>
+              <td>移行中に新しいIPアドレスを割り当て</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 実行前に退避</strong>
+        <p>開いているファイルを保存し、Cドライブの必要データを外部へ退避します。Dドライブも最後のスナップショット以後の変更は失われる可能性があるため、重要データをバックアップする</p>
+      </div>
+
+      <h3>操作の選び方</h3>
+      <ul>
+        <li><strong>復元:</strong> アプリケーションや設定を含め、直近の正常時点へ戻したい場合</li>
+        <li><strong>再構築:</strong> ユーザーデータを直近スナップショットから戻し、OSを作成元バンドルの状態へ入れ直したい場合</li>
+        <li><strong>移行:</strong> バンドルやOSを変更したい場合。プロトコルだけをPCoIPからDCVへ変える場合は移行ではなく「プロトコルの変更」を使用</li>
+      </ul>
+
+      <h3>コンソール操作</h3>
+      <p><strong>復元:</strong></p>
+      <ol>
+        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの再構築 / 復元」を選択</li>
+        <li>使用するスナップショットの日時を選択</li>
+        <li>影響を確認して「復元」を選択</li>
+      </ol>
+      <p><strong>再構築:</strong></p>
+      <ol>
+        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの再構築 / 復元」を選択</li>
+        <li>使用するユーザーボリュームのスナップショット日時を確認</li>
+        <li>影響を確認して「再構築」を選択</li>
+      </ol>
+      <p><strong>移行:</strong></p>
+      <ol>
+        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの移行」を選択</li>
+        <li>移行先バンドルと最後のスナップショット日時を確認</li>
+        <li>影響を確認して「WorkSpaceの移行」を選択</li>
+      </ol>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
 
       <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
       <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>ws-7g6w44k9g</code>で変更を確認する</p>
@@ -382,8 +586,11 @@ Get-WindowsCapability -Online |
       <a href="#register-directory">ディレクトリ登録</a>
       <a href="#provision">WorkSpaces Personal作成</a>
       <a href="#connect">接続</a>
+      <a href="#web-access">Web Access</a>
       <a href="#ad-admin-tools">AD管理ツールとGPMC</a>
       <a href="#aduc-management">OU・ADユーザー管理</a>
+      <a href="#group-policy">グループポリシー</a>
+      <a href="#recovery-operations">復元・再構築・移行</a>
       <a href="#protocol-change">PCoIPからWSPへの変更</a>
     </aside>
   </div>
