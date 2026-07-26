@@ -4,6 +4,8 @@ $root = Split-Path -Parent $PSScriptRoot
 $files = Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.html'
 $errors = [System.Collections.Generic.List[string]]::new()
 
+& (Join-Path $PSScriptRoot 'sync-page-list.ps1') -Check
+
 foreach ($file in $files) {
     $content = Get-Content -LiteralPath $file.FullName -Raw -Encoding utf8
     $ids = @{}
