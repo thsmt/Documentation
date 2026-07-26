@@ -411,11 +411,13 @@ Get-WindowsCapability -Online |
       <h3>DCVテンプレートを中央ストアへ配置</h3>
       <ol>
         <li>実行中のDCV Windows WorkSpaceで<code>C:\Program Files\Amazon\WSP</code>を開き、<code>wsp.admx</code>と<code>wsp.adml</code>を取得</li>
-        <li>ディレクトリ参加済みの管理用WorkSpaceまたはEC2 Windowsインスタンスへ、委任された管理者アカウントでサインイン</li>
-        <li>エクスプローラーのアドレスバーへ<code>\\&lt;domain-fqdn&gt;</code>を入力</li>
+        <li>ディレクトリ参加済みの管理用WorkSpaceまたはEC2 Windowsインスタンスで、エクスプローラーを起動</li>
+        <li>アドレスバーへ<code>\\&lt;domain-fqdn&gt;</code>を入力</li>
         <li><code>SYSVOL</code>、<code>&lt;domain-fqdn&gt;</code>、<code>Policies</code>の順に開き、<code>\\&lt;domain-fqdn&gt;\SYSVOL\&lt;domain-fqdn&gt;\Policies</code>へ移動</li>
-        <li><code>PolicyDefinitions</code>と配下の<code>en-US</code>を作成</li>
-        <li><code>wsp.admx</code>を<code>PolicyDefinitions</code>、<code>wsp.adml</code>を<code>PolicyDefinitions\en-US</code>へコピー</li>
+        <li><code>PolicyDefinitions</code>が存在しない場合は作成し、フォルダーを開く</li>
+        <li><code>wsp.admx</code>を<code>PolicyDefinitions</code>へコピー</li>
+        <li><code>PolicyDefinitions</code>配下に<code>en-US</code>が存在しない場合は作成</li>
+        <li><code>wsp.adml</code>を<code>PolicyDefinitions\en-US</code>へコピー</li>
         <li><code>gpmc.msc</code>を開き、WorkSpacesコンピューター用GPOから管理用テンプレートが表示されることを確認</li>
         <li>専用GPOをWorkSpacesのコンピューターOUへリンクし、<code>gpupdate /force</code>またはWorkSpace再起動で反映</li>
       </ol>
@@ -447,8 +449,16 @@ Test-NetConnection $domain -Port 445</code></pre>
 
       <div class="callout callout-warning">
         <strong>⚠️ 中央ストアの変更権限</strong>
-        <p>SYSVOLを参照できても、中央ストアへ書き込めるとは限りません。<code>PolicyDefinitions</code>を作成できない場合は、AWS Managed Microsoft ADの<code>&lt;NetBIOS名&gt;\Admin</code>または権限を委任した管理アカウントで接続し直す。<code>Get-SmbConnection</code>は管理者権限のないPowerShellではアクセス拒否になるため、接続確認に使う場合は管理者として実行する。認証情報は手順書やスクリプトへ保存しない</p>
+        <p><code>Policies</code>を表示できても、中央ストアへの書き込み権限があるとは限りません。<code>PolicyDefinitions</code>を作成できれば、そのまま作業を継続する。アクセス拒否になった場合だけ、AWS Managed Microsoft ADの<code>&lt;NetBIOS名&gt;\Admin</code>または権限を委任した管理アカウントでSYSVOLを割り当て直す</p>
       </div>
+
+      <p><strong>書き込み時だけ管理資格情報へ切り替える例:</strong> 管理者としてコマンドプロンプトを開き、未使用のドライブ文字へSYSVOLを割り当てる。パスワードはコマンドへ記載せず、プロンプトで入力する</p>
+      <div class="code">
+        <div class="code-header"><span>cmd</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>net use Z: /delete
+net use Z: \\workspaces.labx.com\SYSVOL /user:WORKSPACES\Admin *</code></pre>
+      </div>
+      <p>資格情報の競合を示すシステムエラー1219が表示された場合は、<code>net use</code>で既存接続を確認し、<code>workspaces.labx.com</code>への接続だけを削除してから再実行する。作業後は<code>net use Z: /delete</code>で割り当てを解除する。<code>Get-SmbConnection</code>は管理者権限のないPowerShellではアクセス拒否になるため、接続確認に使う場合は管理者として実行する</p>
 
       <h3>PCoIPテンプレートを使用する場合</h3>
       <p>既存PCoIP環境では、PCoIP Agentのビット数に合うテンプレートを取得し、同じ中央ストアへ<code>PCoIP.admx</code>と<code>PCoIP.adml</code>を配置します。32ビットエージェントの場合、コピー元は<code>C:\Program Files (x86)\Teradici\PCoIP Agent\configuration\policyDefinitions</code>となる</p>
