@@ -412,8 +412,9 @@ Get-WindowsCapability -Online |
       <ol>
         <li>実行中のDCV Windows WorkSpaceで<code>C:\Program Files\Amazon\WSP</code>を開き、<code>wsp.admx</code>と<code>wsp.adml</code>を取得</li>
         <li>ディレクトリ参加済みの管理用WorkSpaceまたはEC2 Windowsインスタンスへ、委任された管理者アカウントでサインイン</li>
-        <li>エクスプローラーで<code>\\&lt;domain-fqdn&gt;\sysvol</code>へ接続</li>
-        <li><code>\\&lt;domain-fqdn&gt;\sysvol\&lt;domain-fqdn&gt;\Policies</code>を開き、<code>PolicyDefinitions</code>と配下の<code>en-US</code>を作成</li>
+        <li>エクスプローラーのアドレスバーへ<code>\\&lt;domain-fqdn&gt;</code>を入力</li>
+        <li><code>SYSVOL</code>、<code>&lt;domain-fqdn&gt;</code>、<code>Policies</code>の順に開き、<code>\\&lt;domain-fqdn&gt;\SYSVOL\&lt;domain-fqdn&gt;\Policies</code>へ移動</li>
+        <li><code>PolicyDefinitions</code>と配下の<code>en-US</code>を作成</li>
         <li><code>wsp.admx</code>を<code>PolicyDefinitions</code>、<code>wsp.adml</code>を<code>PolicyDefinitions\en-US</code>へコピー</li>
         <li><code>gpmc.msc</code>を開き、WorkSpacesコンピューター用GPOから管理用テンプレートが表示されることを確認</li>
         <li>専用GPOをWorkSpacesのコンピューターOUへリンクし、<code>gpupdate /force</code>またはWorkSpace再起動で反映</li>
@@ -424,14 +425,29 @@ Get-WindowsCapability -Online |
         <figcaption>DCV用の<code>wsp.admx</code>と<code>wsp.adml</code>は<code>C:\Program Files\Amazon\WSP</code>から取得</figcaption>
       </figure>
 
-      <figure class="screenshot-compact">
-        <img src="../assets/img/workspaces/workspaces-sysvol-map-drive.png" alt="Windowsのネットワークドライブ割り当てでWorkSpacesディレクトリのSYSVOLを指定した画面" width="613" height="456" loading="lazy">
-        <figcaption>エクスプローラーから<code>\\&lt;domain-fqdn&gt;\sysvol</code>へ接続。画面例では<code>workspaces.labx.com</code>を使用</figcaption>
+      <figure class="screenshot-medium">
+        <img src="../assets/img/workspaces/workspaces-sysvol-policies.png" alt="WorkSpacesからSYSVOL内のPoliciesフォルダーを表示した画面" width="1366" height="768" loading="lazy">
+        <figcaption><code>\\workspaces.labx.com\SYSVOL\workspaces.labx.com\Policies</code>への接続を確認</figcaption>
       </figure>
+
+      <div class="callout callout-info">
+        <strong>ℹ️ 到達確認</strong>
+        <p><code>Policies</code>配下のGUIDフォルダーが表示されれば、ドメイン参加、DNS名前解決、ドメインコントローラー検出、TCP 445の通信は正常。ここで確認できるのは参照可否であり、<code>PolicyDefinitions</code>を作成できる書き込み権限は別途確認する</p>
+      </div>
+
+      <p><strong>接続できない場合:</strong> WorkSpace上のWindows PowerShellで、実行ユーザー、ドメイン、DNS、ドメインコントローラー、SMB通信の順に確認する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>whoami
+$domain = $env:USERDNSDOMAIN.ToLower()
+Resolve-DnsName $domain
+nltest "/dsgetdc:$domain"
+Test-NetConnection $domain -Port 445</code></pre>
+      </div>
 
       <div class="callout callout-warning">
         <strong>⚠️ 中央ストアの変更権限</strong>
-        <p>SYSVOLへの書き込みには適切なドメイン管理権限が必要です。AWS Managed Microsoft ADの<code>Admin</code>または権限を委任した管理アカウントを使用し、認証情報を手順書やスクリプトへ保存しない</p>
+        <p>SYSVOLを参照できても、中央ストアへ書き込めるとは限りません。<code>PolicyDefinitions</code>を作成できない場合は、AWS Managed Microsoft ADの<code>&lt;NetBIOS名&gt;\Admin</code>または権限を委任した管理アカウントで接続し直す。<code>Get-SmbConnection</code>は管理者権限のないPowerShellではアクセス拒否になるため、接続確認に使う場合は管理者として実行する。認証情報は手順書やスクリプトへ保存しない</p>
       </div>
 
       <h3>PCoIPテンプレートを使用する場合</h3>
