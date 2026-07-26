@@ -376,7 +376,7 @@ Get-WindowsCapability -Online |
         <figcaption>ユーザーログオン名は作成後に変更できないため、命名規則を確認してから登録する</figcaption>
       </figure>
       <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化する</p>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
       <p>ユーザーとOUの公式情報: <a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
       <h2 id="group-policy">WorkSpaces固有のグループポリシー</h2>
@@ -445,10 +445,10 @@ Get-WindowsCapability -Online |
         <strong>ℹ️ 中央ストアへの配置結果</strong>
         <p><code>\\&lt;domain-fqdn&gt;\SYSVOL\&lt;domain-fqdn&gt;\Policies\PolicyDefinitions</code>に<code>wsp.admx</code>、その配下の<code>en-US</code>に<code>wsp.adml</code>があれば配置完了。<code>workspaces.labx.com</code>のように、ドメイン名のドットを省略しない</p>
       </div>
+      <p>テンプレートの配置場所とGPOの設定項目は、AWS公式の<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Windows WorkSpacesのグループポリシー管理</a>を参照する。<code>admx</code>と<code>adml</code>のXML内容を編集する必要はない</p>
 
       <h3>PCoIPテンプレートを使用する場合</h3>
       <p>既存PCoIP環境では、PCoIP Agentのビット数に合うテンプレートを取得し、同じ中央ストアへ<code>PCoIP.admx</code>と<code>PCoIP.adml</code>を配置します。32ビットエージェントの場合、コピー元は<code>C:\Program Files (x86)\Teradici\PCoIP Agent\configuration\policyDefinitions</code>となる</p>
-      <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Manage your Windows WorkSpaces in WorkSpaces Personal</a></p>
 
       <h2 id="recovery-operations">復元・再構築・移行</h2>
       <p>3つの操作は、ルートボリュームをどの状態から作り直すかが異なります。実行前にスナップショット時刻と消失するデータを確認し、利用者をログオフさせてから開始する</p>
