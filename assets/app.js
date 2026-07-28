@@ -60,10 +60,15 @@ document.querySelectorAll("[data-tabs]").forEach((group) => {
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       tabs.forEach((item) => item.setAttribute("aria-selected", "false"));
-      panels.forEach((panel) => panel.classList.remove("active"));
+      panels.forEach((panel) => {
+        panel.classList.remove("active");
+        panel.hidden = true;
+      });
 
       tab.setAttribute("aria-selected", "true");
-      group.querySelector(`#${tab.getAttribute("aria-controls")}`).classList.add("active");
+      const activePanel = group.querySelector(`#${tab.getAttribute("aria-controls")}`);
+      activePanel.classList.add("active");
+      activePanel.hidden = false;
     });
   });
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MariaDB on RHEL 8 / 9 | Documentation</title>
+  <title>MariaDB | Documentation</title>
   <meta name="description" content="Red Hat Enterprise Linux 8 / 9でMariaDBをインストール、設定、バックアップ、Galera Clusterを運用するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -26,27 +26,31 @@
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
       </div>
+      <p class="sidebar-group">AWS／クラウド</p>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a class="active" href="mariadb-rhel8-rhel9.html">MariaDB on RHEL 8 / 9</a>
-      <a href="apache-rhel8-rhel9.html">Apache HTTP Server on RHEL 8 / 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a class="active" href="mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
-      <a href="eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="glossary.html">用語集</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
       <a href="terraform.html">Terraform ※移行中</a>
       <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
       <a href="container.html">コンテナ ※移行中</a>
       <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
     </aside>
 
     <main class="content">
@@ -55,7 +59,7 @@
         <span>トピック</span>
       </nav>
 
-      <h1>MariaDB on RHEL 8 / 9</h1>
+      <h1>MariaDB</h1>
       <p class="lead">Red Hat Enterprise Linux 8 / 9でMariaDBを導入し、初期設定、アプリケーション用ユーザー、バックアップ、Galera Clusterの基本運用を行う手順</p>
 
       <div class="callout callout-warning">
@@ -77,15 +81,29 @@
       <p>RHEL 8ではMariaDBをモジュールストリームとして導入します。RHEL 9では標準の<code>mariadb-server</code>に加え、OSのマイナーバージョンによって追加ストリームを選択できます。導入前に利用可能なストリームを必ず確認する</p>
 
       <h2 id="install">インストールと初期設定</h2>
-      <p class="procedure-step"><strong>1. OS、既存パッケージ、利用可能なストリームを確認</strong></p>
+      <p class="procedure-step"><strong>1. OSと既存パッケージを確認</strong></p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/redhat-release
-rpm -qa | grep -Ei '^(mariadb|mysql)'
-dnf module list mariadb</code></pre></div>
+rpm -qa | grep -Ei '^(mariadb|mysql)'</code></pre></div>
 
       <p class="procedure-step"><strong>2. MariaDB Serverを導入</strong></p>
-      <p>RHEL 8では、確認したストリーム名を指定します。RHEL 9で標準ストリームを使用する場合は<code>mariadb-server</code>を導入します。既存環境では、運用中のストリームを切り替えず、サポート期限とアプリケーション互換性を確認する</p>
-      <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
-      <div class="code"><div class="code-header"><span>RHEL 9 standard stream</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server</code></pre></div>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBのOS別インストール手順">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-rhel8" role="tabpanel">
+          <p>利用可能なモジュールストリームを確認し、要件に合うストリームを指定して導入する</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list mariadb
+sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-rhel9" role="tabpanel" hidden>
+          <p>標準パッケージを利用する場合は<code>mariadb-server</code>を導入します。追加ストリームを利用する場合は、利用可能なストリームを確認してから指定する</p>
+          <div class="code"><div class="code-header"><span>RHEL 9 標準パッケージ</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server</code></pre></div>
+          <div class="code"><div class="code-header"><span>RHEL 9 追加ストリーム</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list mariadb
+sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
+        </section>
+      </div>
+      <p>既存環境では運用中のストリームを安易に切り替えず、サポート期限とアプリケーション互換性を確認する</p>
 
       <p class="procedure-step"><strong>3. サービスを有効化して状態を確認</strong></p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now mariadb.service

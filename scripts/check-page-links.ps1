@@ -5,6 +5,9 @@ $files = Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.html'
 $errors = [System.Collections.Generic.List[string]]::new()
 
 & (Join-Path $PSScriptRoot 'sync-page-list.ps1') -Check
+& (Join-Path $PSScriptRoot 'sync-home-groups.ps1') -Check
+& (Join-Path $PSScriptRoot 'sync-page-shell.ps1') -Check
+& (Join-Path $PSScriptRoot 'check-page-consistency.ps1')
 
 foreach ($file in $files) {
     $content = Get-Content -LiteralPath $file.FullName -Raw -Encoding utf8
@@ -17,7 +20,7 @@ foreach ($file in $files) {
     foreach ($match in [regex]::Matches($content, 'href="#([^"]+)"')) {
         $target = $match.Groups[1].Value
         if (-not $ids.ContainsKey($target)) {
-            $relativePath = [System.IO.Path]::GetRelativePath($root, $file.FullName)
+            $relativePath = $file.FullName.Substring($root.Length).TrimStart('\', '/')
             $errors.Add("$relativePath`: missing #$target")
         }
     }

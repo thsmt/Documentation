@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>障害切り分けチェックリスト | Documentation</title>
-  <meta name="description" content="Linux and EC2 troubleshooting checklist for operations.">
+  <meta name="description" content="LinuxとAmazon EC2の障害をレイヤー別に切り分けるための確認手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -29,37 +29,41 @@
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
       </div>
+      <p class="sidebar-group">AWS／クラウド</p>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a class="active" href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="mariadb-rhel8-rhel9.html">MariaDB on RHEL 8 / 9</a>
-      <a href="apache-rhel8-rhel9.html">Apache HTTP Server on RHEL 8 / 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
-      <a href="eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="glossary.html">用語集</a>
+      <a class="active" href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
       <a href="terraform.html">Terraform ※移行中</a>
       <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
       <a href="container.html">コンテナ ※移行中</a>
       <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
     </aside>
 
     <main class="content aws-cli-guide">
-      <div class="breadcrumb">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <span>&gt;</span>
-        <span>障害切り分けチェックリスト</span>
-      </div>
+        <span>トピック</span>
+      </nav>
 
       <h1>障害切り分けチェックリスト</h1>
+      <p class="lead">LinuxとAmazon EC2の障害発生時に、事象、リソース、サービス、ネットワーク、ログを順番に確認する手順を整理する</p>
       <div class="callout">
         <strong>ℹ️ 情報</strong>
         <p>
@@ -570,7 +574,7 @@ sudo journalctl -u amazon-ssm-agent --since "-2 hours" --no-pager</code></pre>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>ページ内目次</h2>
+      <h2>ページ内</h2>
       <a class="active" href="#initial-record">初動記録</a>
       <a href="#quick-check">基本状態</a>
       <a href="#logs">ログ確認</a>

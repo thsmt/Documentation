@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>[構築] Red Hat Enterprise Linux 9 | Documentation</title>
-  <meta name="description" content="Red Hat Enterprise Linux 9 manual build guide for AWS EC2.">
+  <meta name="description" content="Amazon EC2上でRed Hat Enterprise Linux 9を初期構築・運用するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="../"><img src="../assets/icon.jpg" alt=""><span>Documentation</span></a>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
     <div class="header-actions">
       <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
       <nav class="nav" aria-label="Global navigation">
@@ -26,38 +26,41 @@
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
       </div>
+      <p class="sidebar-group">AWS／クラウド</p>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
       <a class="active" href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="mariadb-rhel8-rhel9.html">MariaDB on RHEL 8 / 9</a>
-      <a href="apache-rhel8-rhel9.html">Apache HTTP Server on RHEL 8 / 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
-      <a href="eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="glossary.html">用語集</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
       <a href="terraform.html">Terraform ※移行中</a>
       <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
       <a href="container.html">コンテナ ※移行中</a>
       <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
     </aside>
 
-    <main>
-      <div class="breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>&gt;</span><span>トピック</span></div>
-      <h1>[構築] Red Hat Enterprise Linux 9</h1>
-      <p class="lead">AWS EC2上のRed Hat Enterprise Linux 9を手動構築する際の初期設定、SSH、cloud-init、swap、ミドルウェア、Apache、Postfix、logrotateを整理します。root権限で実行する前提のため、コマンド例では <code>sudo</code> を省略している</p>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
 
-      <div class="callout">
-        <strong>ℹ️ 前提</strong>
-        実環境名、IPアドレス、顧客固有値は扱わず、再利用できる手順として一般化しています。<code>&lt;HOSTNAME&gt;</code>、<code>&lt;FQDN&gt;</code>、<code>&lt;PRIVATE_IP&gt;</code> などは環境に合わせて置き換える
-      </div>
+      <h1>[構築] Red Hat Enterprise Linux 9</h1>
+      <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 9を初期構築し、SELinux、パッケージ、ログ、時刻同期、セキュリティ設定を確認する手順を整理する</p>
 
       <h2 id="step-01">1. 起動時の確認</h2>
       <p>Amazon EC2はLinuxインスタンスでRSAとED25519をサポートしています。この手順の対象環境では、組織の暗号鍵ポリシーでRSAキーペアを許可していないため、<code>ED25519</code>キーペアを使用する</p>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Apache HTTP Server on RHEL 8 / 9 | Documentation</title>
+  <title>Apache HTTP Server | Documentation</title>
   <meta name="description" content="Red Hat Enterprise Linux 8 / 9でApache HTTP Serverを安全に構築・運用するための実務ガイドです。VirtualHost、TLS、SELinux、認証、リバースプロキシ、トラブルシューティングを扱います。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -26,36 +26,40 @@
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
       </div>
+      <p class="sidebar-group">AWS／クラウド</p>
       <a href="cloudformation.html">CloudFormation</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="mariadb-rhel8-rhel9.html">MariaDB on RHEL 8 / 9</a>
-      <a class="active" href="apache-rhel8-rhel9.html">Apache HTTP Server on RHEL 8 / 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
       <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
       <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a class="active" href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0</a>
-      <a href="eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="glossary.html">用語集</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
       <a href="terraform.html">Terraform ※移行中</a>
       <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
       <a href="container.html">コンテナ ※移行中</a>
       <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
     </aside>
 
     <main class="content">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <span>チュートリアル</span>
+        <span>トピック</span>
       </nav>
 
-      <h1>Apache HTTP Server on RHEL 8 / 9</h1>
+      <h1>Apache HTTP Server</h1>
       <p class="lead">Red Hat Enterprise Linux 8 / 9 で Apache HTTP Server を構築・運用するための実務ガイドです。OS 標準パッケージによる導入から VirtualHost、TLS、SELinux、認証、リバースプロキシ、日常運用までを整理する</p>
 
       <div class="callout callout-warning">
@@ -112,20 +116,33 @@
       <p>製品名だけで優劣を決めず、既存構成、チームの運用経験、必要な認証方式、同時接続数、ベンダーサポートを基準に選択する</p>
 
       <h2 id="install">導入と初期確認</h2>
-      <p class="procedure-step"><strong>1. 基本パッケージを導入し、サービスを起動</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install httpd
-sudo systemctl enable --now httpd.service
+      <p class="procedure-step"><strong>1. OS標準の基本パッケージを導入</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Apache HTTP ServerのOS別インストール手順">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="apache-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="apache-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="apache-rhel8" role="tabpanel">
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo yum install httpd</code></pre></div>
+        </section>
+        <section class="tab-panel" id="apache-rhel9" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install httpd</code></pre></div>
+        </section>
+      </div>
+
+      <p class="procedure-step"><strong>2. サービスを起動して状態を確認</strong></p>
+      <div class="code"><div class="code-header"><span>共通</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now httpd.service
 sudo systemctl status httpd.service --no-pager
 httpd -v
 sudo httpd -M</code></pre></div>
 
-      <p class="procedure-step"><strong>2. 必要な通信だけを許可</strong></p>
+      <p class="procedure-step"><strong>3. 必要な通信だけを許可</strong></p>
       <div class="code"><div class="code-header"><span>firewalld</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 sudo firewall-cmd --list-services</code></pre></div>
 
-      <p class="procedure-step"><strong>3. ローカルで応答を確認</strong></p>
+      <p class="procedure-step"><strong>4. ローカルで応答を確認</strong></p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I http://127.0.0.1/
 sudo ss -lntp | grep -E ':(80|443)'
 sudo httpd -S</code></pre></div>
@@ -407,7 +424,7 @@ curl -I -H 'Host: www.example.com' http://127.0.0.1/</code></pre></div>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
-      <h2>目次</h2>
+      <h2>ページ内</h2>
       <a class="active" href="#scope">対象と基本構成</a>
       <a href="#selection">Apache と NGINX</a>
       <a href="#install">導入と初期確認</a>

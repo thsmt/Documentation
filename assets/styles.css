@@ -215,8 +215,20 @@ body.sidebar-collapsed .sidebar-heading {
 }
 
 body.sidebar-collapsed .sidebar-heading h2,
+body.sidebar-collapsed .sidebar-group,
 body.sidebar-collapsed .sidebar a {
   display: none;
+}
+
+.sidebar-group {
+  margin: 18px 0 5px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-heading + .sidebar-group {
+  margin-top: 0;
 }
 
 .sidebar a,

@@ -6,28 +6,55 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $tutorialsRoot = Join-Path $root 'tutorials'
+$groups = @(
+    [pscustomobject]@{
+        Label = 'AWS／クラウド'
+        Pages = @(
+            [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation' }
+            [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
+            [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
+            [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
+            [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
+            [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'ACM / TLS証明書' }
+        )
+    }
+    [pscustomobject]@{
+        Label = 'OS／サーバー'
+        Pages = @(
+            [pscustomobject]@{ File = 'rhel9-ops.html'; Label = '[構築] Red Hat Enterprise Linux 9' }
+            [pscustomobject]@{ File = 'rhel10-ops.html'; Label = '[構築] Red Hat Enterprise Linux 10' }
+            [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = '[構築] Amazon Linux 2023' }
+            [pscustomobject]@{ File = 'windows-server-2022.html'; Label = '[構築] Windows Server 2022' }
+            [pscustomobject]@{ File = 'windows-server-2025.html'; Label = '[構築] Windows Server 2025' }
+            [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server' }
+            [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
+            [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0' }
+            [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
+        )
+    }
+    [pscustomobject]@{
+        Label = '自動化／基盤'
+        Pages = @(
+            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform ※移行中' }
+            [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible ※移行中' }
+            [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ ※移行中' }
+            [pscustomobject]@{ File = 'github-actions.html'; Label = 'GitHub Actions ※移行中' }
+        )
+    }
+    [pscustomobject]@{
+        Label = 'リファレンス'
+        Pages = @(
+            [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
+            [pscustomobject]@{ File = 'glossary.html'; Label = '用語集' }
+        )
+    }
+)
 $pages = @(
-    [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation' }
-    [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
-    [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
-    [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
-    [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
-    [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
-    [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'ACM / TLS証明書' }
-    [pscustomobject]@{ File = 'rhel9-ops.html'; Label = '[構築] Red Hat Enterprise Linux 9' }
-    [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB on RHEL 8 / 9' }
-    [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server on RHEL 8 / 9' }
-    [pscustomobject]@{ File = 'rhel10-ops.html'; Label = '[構築] Red Hat Enterprise Linux 10' }
-    [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = '[構築] Amazon Linux 2023' }
-    [pscustomobject]@{ File = 'windows-server-2022.html'; Label = '[構築] Windows Server 2022' }
-    [pscustomobject]@{ File = 'windows-server-2025.html'; Label = '[構築] Windows Server 2025' }
-    [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0' }
-    [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
-    [pscustomobject]@{ File = 'glossary.html'; Label = '用語集' }
-    [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform ※移行中' }
-    [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible ※移行中' }
-    [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ ※移行中' }
-    [pscustomobject]@{ File = 'github-actions.html'; Label = 'GitHub Actions ※移行中' }
+    foreach ($group in $groups) {
+        foreach ($page in $group.Pages) {
+            $page
+        }
+    }
 )
 
 $errors = [System.Collections.Generic.List[string]]::new()
@@ -76,9 +103,13 @@ foreach ($target in $targets) {
     $lines.Add('        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>')
     $lines.Add('      </div>')
 
-    foreach ($page in $pages) {
-        $activeClass = if ($page.File -eq $activeFile) { ' class="active"' } else { '' }
-        $lines.Add("      <a$activeClass href=`"$hrefPrefix$($page.File)`">$($page.Label)</a>")
+    foreach ($group in $groups) {
+        $lines.Add("      <p class=`"sidebar-group`">$($group.Label)</p>")
+
+        foreach ($page in $group.Pages) {
+            $activeClass = if ($page.File -eq $activeFile) { ' class="active"' } else { '' }
+            $lines.Add("      <a$activeClass href=`"$hrefPrefix$($page.File)`">$($page.Label)</a>")
+        }
     }
 
     $lines.Add('    </aside>')
