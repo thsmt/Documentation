@@ -107,6 +107,45 @@
 code --version
 gh --version</code></pre></div>
 
+      <h3>1.1 実行例（既存環境の更新・確認）</h3>
+
+      <p>2026年7月31日に通常のWindows環境で実行した結果、3製品はすでに導入済みで、GitとGitHub CLIは更新、Visual Studio Codeは導入済みの最新版として判定された</p>
+
+      <table>
+        <thead><tr><th>対象</th><th>実行結果</th><th>確認結果</th></tr></thead>
+        <tbody>
+          <tr><td>Git</td><td>既存パッケージを更新</td><td><code>git --version</code>で確認</td></tr>
+          <tr><td>Visual Studio Code</td><td>利用可能な更新なし</td><td><code>code --version</code>で確認</td></tr>
+          <tr><td>GitHub CLI</td><td>既存パッケージを更新</td><td><code>gh --version</code>で確認</td></tr>
+        </tbody>
+      </table>
+
+      <div class="notice">
+        <strong>ℹ️ 情報</strong>
+        <p>今回の実行では<code>winget install</code>が既存パッケージを検出し、更新可能な製品だけをアップグレードした</p>
+        <p><code>ソースを更新できませんでした: winget</code>と表示されても、パッケージ検索と更新が続行され、最後にインストール完了が表示されていれば今回の処理は成功している</p>
+      </div>
+
+      <p>同じ警告が繰り返される場合は、登録済みソースと更新結果を確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>winget source list
+winget source update</code></pre></div>
+
+      <h3>1.2 別ユーザーでの実行確認</h3>
+
+      <p>別のWindowsユーザーで検証する場合は、コマンドを実行しているユーザーとユーザープロファイルを最初に確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>whoami
+$env:USERNAME
+$env:USERPROFILE
+git config --global --list --show-origin</code></pre></div>
+
+      <div class="notice notice-warning">
+        <strong>⚠️ 注意</strong>
+        <p>別ユーザーのグローバル設定は<code>C:\Users\&lt;WINDOWS_USER&gt;\.gitconfig</code>に保存される</p>
+        <p>以前のユーザーの<code>.gitconfig</code>や<code>safe.directory</code>が表示された場合は、実行ユーザーと<code>USERPROFILE</code>を再確認する</p>
+      </div>
+
       <h2 id="configuration">2. Gitの初期設定</h2>
 
       <p>コミットに記録するユーザー名とメールアドレスを設定</p>
@@ -150,7 +189,15 @@ git config --global init.defaultBranch main</code></pre></div>
 
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth login</code></pre></div>
 
-      <p><code>GitHub.com</code>、<code>HTTPS</code>、<code>Login with a web browser</code>を選択し、画面に表示されたワンタイムコードで認証</p>
+      <p><code>GitHub.com</code>、<code>HTTPS</code>を選択</p>
+
+      <p><code>Authenticate Git with your GitHub credentials?</code>は<code>Yes</code>を選択し、<code>Login with a web browser</code>から認証</p>
+
+      <div class="notice">
+        <strong>ℹ️ 情報</strong>
+        <p><code>Yes</code>を選択すると、GitHub CLIの認証情報をHTTPSによる<code>clone</code>、<code>pull</code>、<code>push</code>にも利用できる</p>
+        <p>ワンタイムコードは認証画面だけで使用し、手順書、Git、スクリーンショットへ記録しない</p>
+      </div>
 
       <p>認証先アカウントとGitプロトコルを確認</p>
 
