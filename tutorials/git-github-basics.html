@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Git / GitHub 基本編 | Documentation</title>
+  <meta name="description" content="GitとGitHubの導入、認証、ブランチ作業、Pull Request、レビュー、IaC開発での注意点を実務フローで整理する">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a class="active" href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>Git / GitHub 基本編</h1>
+
+      <p class="lead">GitとGitHubの導入、認証、ブランチ操作、Pull Request、レビュー、IaC開発で必要な基本操作を整理する</p>
+
+      <h2 id="concepts">0. GitとGitHub</h2>
+
+      <table>
+        <thead><tr><th>名称</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td>Git</td><td>ファイルの変更履歴をローカルで記録し、差分、ブランチ、コミットを管理するバージョン管理システム</td></tr>
+          <tr><td>GitHub</td><td>Gitリポジトリを共有し、Pull Request、レビュー、Issue、Actionsなどで共同作業するサービス</td></tr>
+          <tr><td>ローカルリポジトリ</td><td>作業端末にある履歴管理済みのディレクトリ</td></tr>
+          <tr><td>リモートリポジトリ</td><td>GitHubなどに置かれた共有先のリポジトリ</td></tr>
+        </tbody>
+      </table>
+
+      <p>実務では次の順番を一つの流れとして扱う</p>
+
+      <ol>
+        <li>最新の<code>main</code>を取得</li>
+        <li>作業用ブランチを作成</li>
+        <li>VS Codeで変更</li>
+        <li>差分を確認してステージング</li>
+        <li>コミットしてGitHubへpush</li>
+        <li>Pull Requestを作成</li>
+        <li>レビュー指摘を同じブランチで修正</li>
+        <li>マージ後にローカルの<code>main</code>を同期</li>
+      </ol>
+
+      <h2 id="install">1. GitとVS Codeのインストール</h2>
+
+      <p>PowerShellを開き、Gitをインストール</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>winget install --id Git.Git -e --source winget</code></pre></div>
+
+      <p>Visual Studio CodeとGitHub CLIをインストール</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>winget install --id Microsoft.VisualStudioCode -e --source winget</code></pre></div>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>winget install --id GitHub.cli -e --source winget</code></pre></div>
+
+      <p>PowerShellを開き直し、バージョンを確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git --version
+code --version
+gh --version</code></pre></div>
+
+      <h2 id="configuration">2. Gitの初期設定</h2>
+
+      <p>コミットに記録するユーザー名とメールアドレスを設定</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git config --global user.name "thsmt"
+git config --global user.email "&lt;GITHUB_EMAIL&gt;"
+git config --global init.defaultBranch main</code></pre></div>
+
+      <p>設定値と設定元ファイルを確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git config --global --list --show-origin</code></pre></div>
+
+      <div class="notice">
+        <strong>ℹ️ メールアドレス</strong>
+        <p>GitHubのプロフィールへコミットを反映する場合は、GitHubへ登録済みのメールアドレスまたはGitHubが提供する<code>noreply</code>アドレスを使用する</p>
+      </div>
+
+      <div class="notice notice-warning">
+        <strong>⚠️ 改行コード</strong>
+        <p><code>core.autocrlf</code>を既存リポジトリの方針を確認せず変更すると、大量の改行差分が発生する</p>
+        <p>チームで管理する<code>.gitattributes</code>を優先し、設定変更前にリポジトリの規約を確認する</p>
+      </div>
+
+      <h2 id="authentication">3. GitHub認証</h2>
+
+      <table>
+        <thead><tr><th>方式</th><th>主な用途</th></tr></thead>
+        <tbody>
+          <tr><td>HTTPS</td><td>Git Credential ManagerやGitHub CLIを利用する一般的な認証</td></tr>
+          <tr><td>SSH</td><td>端末の秘密鍵とGitHubへ登録した公開鍵を使う認証</td></tr>
+          <tr><td>Personal Access Token</td><td>HTTPSやAPIでパスワードの代わりに利用するトークン</td></tr>
+          <tr><td>Deploy key</td><td>特定リポジトリへサーバーや自動処理からアクセスする鍵</td></tr>
+        </tbody>
+      </table>
+
+      <p>初学時はGit Credential Managerが連携するHTTPSが扱いやすく、複数環境や自動処理ではSSHやGitHub Appを要件に合わせて選択する</p>
+
+      <h3>3.1 GitHub CLIでHTTPS認証</h3>
+
+      <p>ブラウザ認証を開始</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth login</code></pre></div>
+
+      <p><code>GitHub.com</code>、<code>HTTPS</code>、<code>Login with a web browser</code>を選択し、画面に表示されたワンタイムコードで認証</p>
+
+      <p>認証先アカウントとGitプロトコルを確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth status</code></pre></div>
+
+      <h3 id="ssh">3.2 SSH認証を利用する場合</h3>
+
+      <p>既存の鍵を確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-ChildItem "$env:USERPROFILE\.ssh" -Force</code></pre></div>
+
+      <p>既存鍵と重複しないことを確認してED25519鍵を作成</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh-keygen -t ed25519 -C "&lt;GITHUB_EMAIL&gt;"</code></pre></div>
+
+      <p>管理者としてPowerShellを開き、SSH Agentを自動起動に設定して開始</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-Service ssh-agent
+Set-Service -Name ssh-agent -StartupType Automatic
+Start-Service ssh-agent</code></pre></div>
+
+      <p>通常権限のPowerShellへ戻り、秘密鍵を登録</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh-add "$env:USERPROFILE\.ssh\id_ed25519"</code></pre></div>
+
+      <p>GitHubへ登録する公開鍵を表示</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"</code></pre></div>
+
+      <p>GitHubの<code>Settings</code>、<code>SSH and GPG keys</code>、<code>New SSH key</code>から公開鍵だけを登録し、接続を確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh -T git@github.com</code></pre></div>
+
+      <p>詳細はGitHub公式の<a href="https://docs.github.com/ja/authentication/connecting-to-github-with-ssh?platform=windows">SSHを使用したGitHubへの接続</a>と<a href="https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection?platform=windows">SSH接続のテスト</a>を確認する</p>
+
+      <div class="notice notice-warning">
+        <strong>⚠️ 秘密鍵</strong>
+        <p><code>id_ed25519</code>は秘密鍵のため、GitHub、チャット、Issue、リポジトリへ貼り付けない</p>
+        <p>GitHubへ登録するのは<code>id_ed25519.pub</code>の内容だけとする</p>
+      </div>
+
+      <h2 id="clone">4. リポジトリのclone</h2>
+
+      <p>ローカルリポジトリを置くディレクトリを作成</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>New-Item -ItemType Directory -Path "$env:USERPROFILE\Documents\Git" -Force
+Set-Location "$env:USERPROFILE\Documents\Git"</code></pre></div>
+
+      <p>HTTPSまたはSSHのURLでclone</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git clone https://github.com/&lt;OWNER&gt;/&lt;REPOSITORY&gt;.git
+Set-Location &lt;REPOSITORY&gt;</code></pre></div>
+
+      <p>ブランチ、リモート、作業ツリーを確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git branch --show-current
+git remote -v
+git status</code></pre></div>
+
+      <h2 id="branch-workflow">5. ブランチでの変更作業</h2>
+
+      <h3>5.1 mainを最新化</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git switch main
+git pull --ff-only origin main</code></pre></div>
+
+      <p><code>--ff-only</code>は意図しないマージコミットを作らず、fast-forwardできない場合に処理を停止する</p>
+
+      <h3>5.2 作業ブランチを作成</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git switch -c docs/git-basics</code></pre></div>
+
+      <p>ブランチ名は<code>feature/</code>、<code>fix/</code>、<code>docs/</code>などの種別と作業内容を組み合わせる</p>
+
+      <h3>5.3 VS Codeで編集</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>code .</code></pre></div>
+
+      <h3>5.4 変更内容を確認</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git status
+git diff</code></pre></div>
+
+      <h3>5.5 必要なファイルだけをステージング</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git add README.md
+git add docs/learning-log.md
+git diff --staged</code></pre></div>
+
+      <p><code>git add</code>はコミット対象を選ぶ操作であり、GitHubへ送信する操作ではない</p>
+
+      <h3>5.6 コミット</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git commit -m "Add Git workflow learning log"</code></pre></div>
+
+      <p>コミットメッセージは変更内容が一目で分かる命令形または簡潔な現在形で記載する</p>
+
+      <h3>5.7 GitHubへpush</h3>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git push -u origin docs/git-basics</code></pre></div>
+
+      <p>2回目以降は追跡先が設定されているため<code>git push</code>で更新できる</p>
+
+      <h2 id="pull-request">6. Pull Request</h2>
+
+      <ol>
+        <li>GitHubで対象リポジトリを開く</li>
+        <li><code>Compare &amp; pull request</code>を選択</li>
+        <li>baseが<code>main</code>、compareが作業ブランチであることを確認</li>
+        <li>目的、変更内容、確認結果、影響範囲を記載</li>
+        <li>必要なReviewerを指定してPull Requestを作成</li>
+      </ol>
+
+      <table>
+        <thead><tr><th>記載項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>目的</td><td>なぜ変更するのか</td></tr>
+          <tr><td>変更内容</td><td>どのファイルと動作を変更したのか</td></tr>
+          <tr><td>確認結果</td><td>実行したテスト、validate、plan、diffの結果</td></tr>
+          <tr><td>影響範囲</td><td>停止、置換、削除、料金、後方互換性への影響</td></tr>
+          <tr><td>切り戻し</td><td>問題発生時に元へ戻す方法</td></tr>
+        </tbody>
+      </table>
+
+      <p>GitHub CLIを利用する場合</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh pr create --fill</code></pre></div>
+
+      <p>レビュー方法と各判定の使い分けはGitHub公式の<a href="https://docs.github.com/ja/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request">Pull Requestで提案された変更をレビューする</a>も参照する</p>
+
+      <h2 id="review">7. レビュー対応</h2>
+
+      <p>Reviewerは<code>Files changed</code>で差分を確認し、コメント、Approve、Request changesを選択する</p>
+
+      <p>修正依頼を受けた場合は同じ作業ブランチで修正し、再度コミットとpushを実行</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git status
+git diff
+git add &lt;CHANGED_FILE&gt;
+git diff --staged
+git commit -m "Address review feedback"
+git push</code></pre></div>
+
+      <p>同じブランチへpushすると、既存のPull Requestへコミットが自動追加される</p>
+
+      <p>GitHub CLIでPull Requestとチェックを確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh pr view --web
+gh pr diff
+gh pr checks</code></pre></div>
+
+      <h2 id="after-merge">8. マージ後の同期</h2>
+
+      <p>Pull Requestがマージされた後、ローカルの<code>main</code>を最新化</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git switch main
+git pull --ff-only origin main
+git branch -d docs/git-basics
+git fetch --prune</code></pre></div>
+
+      <p><code>git branch -d</code>はマージ済みブランチだけを削除し、未マージの場合は停止する</p>
+
+      <h2 id="vscode">9. VS Codeでの操作</h2>
+
+      <table>
+        <thead><tr><th>操作</th><th>VS Code</th><th>CLI</th></tr></thead>
+        <tbody>
+          <tr><td>変更確認</td><td>Source Controlでファイルを選択</td><td><code>git diff</code></td></tr>
+          <tr><td>ステージング</td><td>対象ファイルの<code>+</code>を選択</td><td><code>git add &lt;FILE&gt;</code></td></tr>
+          <tr><td>コミット</td><td>メッセージを入力してCommit</td><td><code>git commit -m</code></td></tr>
+          <tr><td>ブランチ切り替え</td><td>左下のブランチ名を選択</td><td><code>git switch</code></td></tr>
+          <tr><td>同期</td><td>Sync ChangesまたはPush</td><td><code>git push</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>VS CodeとCLIは同じ<code>.git</code>ディレクトリを操作するため、片方で行った変更はもう片方にも反映される</p>
+
+      <p>画面操作はVisual Studio Code公式の<a href="https://code.visualstudio.com/docs/sourcecontrol/overview">Source Control in VS Code</a>で確認できる</p>
+
+      <h2 id="iac">10. IaC開発での確認</h2>
+
+      <table>
+        <thead><tr><th>対象</th><th>コミット前の主な確認</th><th>Gitへ含めないもの</th></tr></thead>
+        <tbody>
+          <tr><td>Terraform</td><td><code>terraform fmt -check</code>、<code>terraform validate</code>、<code>terraform plan</code></td><td><code>.terraform/</code>、<code>*.tfstate</code>、認証情報を含む変数ファイル</td></tr>
+          <tr><td>AWS CDK</td><td>テスト、<code>cdk synth</code>、<code>cdk diff</code></td><td><code>cdk.out/</code>、一時生成物、認証情報</td></tr>
+          <tr><td>CloudFormation</td><td><code>validate-template</code>、変更セット、作成・置換・削除対象</td><td>機密パラメータ、実環境の秘密値</td></tr>
+        </tbody>
+      </table>
+
+      <div class="notice notice-warning">
+        <strong>⚠️ シークレット</strong>
+        <p>アクセスキー、秘密鍵、パスワード、トークン、顧客情報を一度でもpushした場合は、履歴から削除するだけでなく認証情報を失効・再発行する</p>
+      </div>
+
+      <h2 id="avoid">11. 避ける操作</h2>
+
+      <table>
+        <thead><tr><th>操作</th><th>問題</th><th>代替</th></tr></thead>
+        <tbody>
+          <tr><td><code>main</code>へ直接コミット</td><td>レビューと自動テストを経由できない</td><td>作業ブランチとPull Requestを使用</td></tr>
+          <tr><td>確認せず<code>git add .</code></td><td>秘密情報や無関係な変更を含めやすい</td><td><code>git status</code>後にファイル単位で追加</td></tr>
+          <tr><td>共有ブランチへの<code>push --force</code></td><td>他メンバーの履歴を上書きする</td><td>チームルールを確認し、必要時は<code>--force-with-lease</code>を限定利用</td></tr>
+          <tr><td>理由を確認しない<code>reset --hard</code></td><td>未コミットの変更を失う</td><td><code>status</code>、<code>diff</code>、<code>stash</code>、<code>restore</code>を用途別に選択</td></tr>
+          <tr><td>複数目的を一つのコミットへ混在</td><td>レビューと切り戻しが難しい</td><td>一つの目的ごとに小さくコミット</td></tr>
+          <tr><td>説明のないPull Request</td><td>影響範囲と確認結果を判断できない</td><td>目的、変更、検証、影響、切り戻しを記載</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="exercise">12. 初回演習</h2>
+
+      <p>練習用のPrivateリポジトリを作成し、次のファイル構成を用意する</p>
+
+      <div class="code"><div class="code-header"><span>text</span><button class="copy" type="button">Copy</button></div><pre><code>git-github-practice/
+├─ README.md
+├─ .gitignore
+└─ docs/
+   └─ learning-log.md</code></pre></div>
+
+      <ol>
+        <li>リポジトリをclone</li>
+        <li><code>docs/first-pull-request</code>ブランチを作成</li>
+        <li><code>docs/learning-log.md</code>へ学習内容を追記</li>
+        <li><code>status</code>と<code>diff</code>を確認</li>
+        <li>対象ファイルだけをステージング</li>
+        <li>コミットしてpush</li>
+        <li>Pull Requestを作成</li>
+        <li>自身でFiles changedを確認し、コメントを一つ追加</li>
+        <li>追加修正をpushしてPull Requestを更新</li>
+        <li>マージ後にローカルの<code>main</code>を同期</li>
+      </ol>
+
+      <p>最後にブランチと直近のコミット履歴を確認</p>
+
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git branch --show-current
+git log --oneline --decorate -5
+git status</code></pre></div>
+
+      <h3>12.1 学習記録用の画像</h3>
+
+      <table>
+        <thead><tr><th>番号</th><th>取得する画面</th><th>確認できる内容</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>GitとVS Codeのバージョン</td><td>作業環境</td></tr>
+          <tr><td>2</td><td>Git初期設定</td><td>ユーザー名とメール設定。公開時はメールをマスク</td></tr>
+          <tr><td>3</td><td><code>remote -v</code>と<code>status</code></td><td>対象リポジトリと現在ブランチ</td></tr>
+          <tr><td>4</td><td>VS CodeのSource Control</td><td>作業ブランチと変更ファイル</td></tr>
+          <tr><td>5</td><td><code>git diff</code></td><td>コミット前の差分確認</td></tr>
+          <tr><td>6</td><td>コミット履歴</td><td>意図した単位での履歴</td></tr>
+          <tr><td>7</td><td>Pull Request</td><td>目的、変更内容、確認結果</td></tr>
+          <tr><td>8</td><td>レビューとChecks</td><td>レビュー対応と自動テスト</td></tr>
+          <tr><td>9</td><td>マージ完了</td><td>Pull Requestの完了状態</td></tr>
+          <tr><td>10</td><td>同期後の<code>main</code></td><td>ローカルとリモートの同期</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="roadmap">13. 学習ロードマップ</h2>
+
+      <table>
+        <thead><tr><th>段階</th><th>習得内容</th></tr></thead>
+        <tbody>
+          <tr><td>基本編</td><td>導入、初期設定、認証、clone、branch、commit、push、Pull Request、レビュー</td></tr>
+          <tr><td>中級編</td><td>競合解消、rebase、stash、restore、revert、ブランチ保護、GitHub Actions</td></tr>
+          <tr><td>上級編</td><td>interactive rebase、cherry-pick、bisect、reflog、署名、CODEOWNERS、release、worktree、GitOps</td></tr>
+        </tbody>
+      </table>
+
+      <p>基本編の演習結果と画像を確認した後、中級編では競合を意図的に発生させ、Pull Request上で安全に解消する演習へ進む</p>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#concepts">GitとGitHub</a>
+      <a href="#install">インストール</a>
+      <a href="#configuration">初期設定</a>
+      <a href="#authentication">GitHub認証</a>
+      <a href="#clone">clone</a>
+      <a href="#branch-workflow">ブランチ作業</a>
+      <a href="#pull-request">Pull Request</a>
+      <a href="#review">レビュー対応</a>
+      <a href="#after-merge">マージ後</a>
+      <a href="#vscode">VS Code</a>
+      <a href="#iac">IaC</a>
+      <a href="#avoid">避ける操作</a>
+      <a href="#exercise">初回演習</a>
+      <a href="#roadmap">ロードマップ</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
