@@ -107,45 +107,6 @@
 code --version
 gh --version</code></pre></div>
 
-      <h3>1.1 実行例（既存環境の更新・確認）</h3>
-
-      <p>2026年7月31日に通常のWindows環境で実行した結果、3製品はすでに導入済みで、GitとGitHub CLIは更新、Visual Studio Codeは導入済みの最新版として判定された</p>
-
-      <table>
-        <thead><tr><th>対象</th><th>実行結果</th><th>確認結果</th></tr></thead>
-        <tbody>
-          <tr><td>Git</td><td>既存パッケージを更新</td><td><code>git --version</code>で確認</td></tr>
-          <tr><td>Visual Studio Code</td><td>利用可能な更新なし</td><td><code>code --version</code>で確認</td></tr>
-          <tr><td>GitHub CLI</td><td>既存パッケージを更新</td><td><code>gh --version</code>で確認</td></tr>
-        </tbody>
-      </table>
-
-      <div class="notice">
-        <strong>ℹ️ 情報</strong>
-        <p>今回の実行では<code>winget install</code>が既存パッケージを検出し、更新可能な製品だけをアップグレードした</p>
-        <p><code>ソースを更新できませんでした: winget</code>と表示されても、パッケージ検索と更新が続行され、最後にインストール完了が表示されていれば今回の処理は成功している</p>
-      </div>
-
-      <p>同じ警告が繰り返される場合は、登録済みソースと更新結果を確認</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>winget source list
-winget source update</code></pre></div>
-
-      <h3>1.2 別ユーザーでの実行確認</h3>
-
-      <p>別のWindowsユーザーで検証する場合は、コマンドを実行しているユーザーとユーザープロファイルを最初に確認</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>whoami
-$env:USERNAME
-$env:USERPROFILE
-git config --global --list --show-origin</code></pre></div>
-
-      <div class="notice notice-warning">
-        <strong>⚠️ 注意</strong>
-        <p>別ユーザーのグローバル設定は<code>C:\Users\&lt;WINDOWS_USER&gt;\.gitconfig</code>に保存される</p>
-        <p>以前のユーザーの<code>.gitconfig</code>や<code>safe.directory</code>が表示された場合は、実行ユーザーと<code>USERPROFILE</code>を再確認する</p>
-      </div>
-
       <h2 id="configuration">2. Gitの初期設定</h2>
 
       <p>コミットに記録するユーザー名とメールアドレスを設定</p>
@@ -169,21 +130,11 @@ git config --global init.defaultBranch main</code></pre></div>
         <p>チームで管理する<code>.gitattributes</code>を優先し、設定変更前にリポジトリの規約を確認する</p>
       </div>
 
-      <h2 id="authentication">3. GitHub認証</h2>
+      <h2 id="authentication">3. GitHub認証（HTTPS）</h2>
 
-      <table>
-        <thead><tr><th>方式</th><th>主な用途</th></tr></thead>
-        <tbody>
-          <tr><td>HTTPS</td><td>Git Credential ManagerやGitHub CLIを利用する一般的な認証</td></tr>
-          <tr><td>SSH</td><td>端末の秘密鍵とGitHubへ登録した公開鍵を使う認証</td></tr>
-          <tr><td>Personal Access Token</td><td>HTTPSやAPIでパスワードの代わりに利用するトークン</td></tr>
-          <tr><td>Deploy key</td><td>特定リポジトリへサーバーや自動処理からアクセスする鍵</td></tr>
-        </tbody>
-      </table>
+      <p>この基本編では、GitHub CLIのブラウザ認証とHTTPSを使用</p>
 
-      <p>初学時はGit Credential Managerが連携するHTTPSが扱いやすく、複数環境や自動処理ではSSHやGitHub Appを要件に合わせて選択する</p>
-
-      <h3>3.1 GitHub CLIでHTTPS認証</h3>
+      <h3>3.1 ブラウザで認証</h3>
 
       <p>ブラウザ認証を開始</p>
 
@@ -199,44 +150,25 @@ git config --global init.defaultBranch main</code></pre></div>
         <p>ワンタイムコードは認証画面だけで使用し、手順書、Git、スクリーンショットへ記録しない</p>
       </div>
 
-      <p>認証先アカウントとGitプロトコルを確認</p>
+      <h3>3.2 認証状態の確認</h3>
+
+      <p>PowerShellで認証先アカウント、Gitプロトコル、認証状態を確認</p>
 
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth status</code></pre></div>
 
-      <h3 id="ssh">3.2 SSH認証を利用する場合</h3>
+      <p>GitHubの画面では、プロフィール画像、<code>Settings</code>、<code>Applications</code>、<code>Authorized OAuth Apps</code>から<code>GitHub CLI</code>の認可を確認</p>
 
-      <p>既存の鍵を確認</p>
+      <h3>3.3 再認証</h3>
 
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-ChildItem "$env:USERPROFILE\.ssh" -Force</code></pre></div>
+      <p>認証期限切れ、認証エラー、利用アカウント変更時は、ローカルの認証情報を削除して再認証</p>
 
-      <p>既存鍵と重複しないことを確認してED25519鍵を作成</p>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth logout -h github.com -u &lt;GITHUB_USER&gt;
+gh auth login -h github.com --git-protocol https --web</code></pre></div>
 
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh-keygen -t ed25519 -C "&lt;GITHUB_EMAIL&gt;"</code></pre></div>
-
-      <p>管理者としてPowerShellを開き、SSH Agentを自動起動に設定して開始</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-Service ssh-agent
-Set-Service -Name ssh-agent -StartupType Automatic
-Start-Service ssh-agent</code></pre></div>
-
-      <p>通常権限のPowerShellへ戻り、秘密鍵を登録</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh-add "$env:USERPROFILE\.ssh\id_ed25519"</code></pre></div>
-
-      <p>GitHubへ登録する公開鍵を表示</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"</code></pre></div>
-
-      <p>GitHubの<code>Settings</code>、<code>SSH and GPG keys</code>、<code>New SSH key</code>から公開鍵だけを登録し、接続を確認</p>
-
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>ssh -T git@github.com</code></pre></div>
-
-      <p>詳細はGitHub公式の<a href="https://docs.github.com/ja/authentication/connecting-to-github-with-ssh?platform=windows">SSHを使用したGitHubへの接続</a>と<a href="https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection?platform=windows">SSH接続のテスト</a>を確認する</p>
-
-      <div class="notice notice-warning">
-        <strong>⚠️ 秘密鍵</strong>
-        <p><code>id_ed25519</code>は秘密鍵のため、GitHub、チャット、Issue、リポジトリへ貼り付けない</p>
-        <p>GitHubへ登録するのは<code>id_ed25519.pub</code>の内容だけとする</p>
+      <div class="notice">
+        <strong>ℹ️ 情報</strong>
+        <p><code>gh auth logout</code>は端末内の認証情報を削除する操作であり、GitHub側のOAuth認可は取り消さない</p>
+        <p>GitHub側の認可も取り消す場合は、<code>Authorized OAuth Apps</code>の<code>GitHub CLI</code>から<code>Revoke</code>を実行</p>
       </div>
 
       <h2 id="clone">4. リポジトリのclone</h2>
@@ -246,7 +178,7 @@ Start-Service ssh-agent</code></pre></div>
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>New-Item -ItemType Directory -Path "$env:USERPROFILE\Documents\Git" -Force
 Set-Location "$env:USERPROFILE\Documents\Git"</code></pre></div>
 
-      <p>HTTPSまたはSSHのURLでclone</p>
+      <p>HTTPSのURLでclone</p>
 
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>git clone https://github.com/&lt;OWNER&gt;/&lt;REPOSITORY&gt;.git
 Set-Location &lt;REPOSITORY&gt;</code></pre></div>
