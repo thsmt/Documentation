@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amazon SES | Documentation</title>
-  <meta name="description" content="Amazon SESのID作成、PostfixからのSMTPリレー、カスタムMAIL FROM、Virtual Deliverability Managerを整理した構築手順">
+  <meta name="description" content="Amazon SESのID作成、Postfix SMTPリレー、カスタムMAIL FROM、VDMを整理した構築手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -64,107 +64,89 @@
       </nav>
 
       <h1>Amazon SES</h1>
-      <p class="lead">Amazon SESによるメール送信と配信運用の手順を整理する</p>
+      <p class="lead">Amazon SESの送信ドメインを作成し、Amazon Linux上のPostfixからSES SMTPへメールをリレーする手順を整理する。カスタムMAIL FROMとVirtual Deliverability Manager（VDM）の設定も扱う</p>
 
-      <section aria-labelledby="ses-build">
-        <h2 id="ses-build">Amazon SES作成</h2>
-        <p>送信経路は、アプリケーション → Postfix → SES SMTPエンドポイント（TCP 587）→ 宛先メールサーバーとなる。SES IDが未作成または削除済みの場合は、ドメインIDの作成から開始する</p>
+      <h2 id="ses-identity">Amazon SES作成</h2>
+      <ol>
+        <li>Amazon SESコンソールの「ID」から「IDの作成」を選択</li>
+        <li>IDタイプは「ドメイン」を選択し、送信元として使用するドメインを入力</li>
+        <li>Easy DKIMを選択し、DKIM署名を有効化</li>
+        <li>「DNSレコードのRoute 53への発行」を有効にしてIDを作成</li>
+        <li>IDステータスが「検証済み」になることを確認</li>
+      </ol>
 
-        <p class="procedure-step"><strong>1. ドメインIDとEasy DKIMを作成</strong></p>
-        <ol>
-          <li>Amazon SESコンソールで利用リージョンを選択</li>
-          <li>「設定」→「ID」→「IDの作成」を選択</li>
-          <li>IDタイプで「ドメイン」を選択し、送信ドメインを入力</li>
-          <li>Easy DKIMを選択し、DNSレコードの発行方法を指定</li>
-          <li>SESが提示するDKIM用CNAMEレコードをDNSへ登録</li>
-          <li>IDのステータスが「検証済み」、DKIMが「成功」になることを確認</li>
-        </ol>
+      <div class="callout">
+        <strong>ℹ️ Route 53を利用する場合</strong>
+        <p>「DNSレコードのRoute 53への発行」を有効にすると、SESがEasy DKIM用のCNAMEレコードを3件自動作成する。外部DNSを利用する場合、または自動発行を無効にした場合だけ、SESが提示する3件のCNAMEレコードを手動登録する</p>
+      </div>
 
-        <div class="callout">
-          <strong>ℹ️ SESサンドボックス</strong>
-          <p>サンドボックスでは、検証済みIDから検証済み宛先へだけ送信できる。外部の任意アドレスへ送信する本番用途では、SESコンソールから本稼働アクセスを申請する</p>
-        </div>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dkim-easy.html">Easy DKIM in Amazon SES</a></p>
 
-        <h3 id="smtp-credentials">SMTP認証情報</h3>
-        <p class="procedure-step"><strong>2. Postfix専用のSMTP認証情報を作成</strong></p>
-        <ol>
-          <li>Amazon SESコンソールの「SMTP設定」を選択</li>
-          <li>「SMTP認証情報の作成」を選択</li>
-          <li>用途を識別できるSMTP用IAMユーザー名を入力</li>
-          <li>ユーザーを作成し、SMTPユーザー名とSMTPパスワードを安全な保管先へ保存</li>
-        </ol>
+      <h2 id="smtp-credentials">IAM SMTP認証情報</h2>
+      <p>PostfixからSES SMTPエンドポイントへ接続するため、IAM SMTP認証情報を作成する。Mail Manager SMTPは、Secrets Managerによるローテーションやトラフィックポリシーを含む別機能であり、このリレー手順では使用しない</p>
 
-        <div class="callout callout-warning">
-          <strong>⚠️ リージョンとパスワード</strong>
-          <p>SMTP認証情報はリージョンごとに異なる。SMTPパスワードはAWSシークレットアクセスキーとは別の値であり、画面を閉じた後は再表示できない</p>
-        </div>
+      <ol>
+        <li>Amazon SESコンソールの「SMTP設定」を選択</li>
+        <li>「IAM SMTP認証情報」の「IAM認証情報を作成する」を選択</li>
+        <li>用途を識別できるIAMユーザー名を入力。例: <code>ses-smtp-user</code></li>
+        <li>ユーザーを作成し、生成されたSMTPユーザー名とSMTPパスワードを保存</li>
+      </ol>
 
-        <h3 id="postfix">PostfixからSES SMTPへリレー</h3>
-        <p>AWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/postfix.html">Integrating Amazon SES with Postfix</a>を基に、SASL認証とSTARTTLSを設定する</p>
+      <div class="callout">
+        <strong>ℹ️ 作成されるIAMグループ</strong>
+        <p>ウィザードで作成したSMTP用IAMユーザーは<code>AWSSESSendingGroupDoNotRename</code>へ追加される。このグループはSESがSMTP送信用権限を割り当てるために作成するため、名前を変更しない</p>
+      </div>
 
-        <p class="procedure-step"><strong>3. Postfix、SASL認証、メール送信テスト用パッケージを導入</strong></p>
-        <p>LinuxサーバーからSES経由でメール送信するため、Postfix、SASL認証パッケージ、メール送信テスト用コマンドを導入する</p>
-        <div class="tab-group" data-tabs>
-          <div class="tabs" role="tablist" aria-label="Postfix packages by operating system">
-            <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ses-rhel-packages">RHEL / Amazon Linux</button>
-            <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ses-debian-packages">Debian / Ubuntu</button>
-          </div>
-          <section class="tab-panel active" id="ses-rhel-packages" role="tabpanel">
-            <div class="code">
-              <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>dnf install -y postfix cyrus-sasl-plain mailx ca-certificates</code></pre>
-            </div>
-          </section>
-          <section class="tab-panel" id="ses-debian-packages" role="tabpanel" hidden>
-            <div class="code">
-              <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y postfix libsasl2-modules mailutils ca-certificates</code></pre>
-            </div>
-          </section>
-        </div>
+      <div class="callout callout-warning">
+        <strong>⚠️ SMTP認証情報の扱い</strong>
+        <p>SMTPパスワードは作成時だけ確認できる。SMTPユーザー名はアクセスキーIDのように<code>AKIA</code>から始まる形式だが、組み合わせる値はIAMのシークレットアクセスキーではなく、SESが生成したSMTPパスワード</p>
+      </div>
 
-        <p class="procedure-step"><strong>4. 変更前の稼働状態と設定を記録</strong></p>
-        <p><code>systemctl status</code>で、Postfixサービスが稼働中か、停止・失敗していないかを確認する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>systemctl status postfix --no-pager</code></pre>
-        </div>
-        <p><code>postconf -n</code>で、初期値から変更されているPostfixの有効な設定を記録する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>postconf -n</code></pre>
-        </div>
-        <p><code>postqueue -p</code>で、作業前から送信待ちまたは配送できていないメールがないかを確認する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>postqueue -p</code></pre>
-        </div>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/smtp-credentials.html">Obtaining Amazon SES SMTP credentials</a></p>
 
-        <p class="procedure-step"><strong>5. Postfix設定ファイルのバックアップ取得</strong></p>
-        <p>バックアップ取得前に既存ファイルを確認し、コピー後に日付付きファイルが作成されたことを確認する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>ls -la /etc/postfix/main.cf*
-ls -la /etc/postfix/master.cf*
-cp -pi /etc/postfix/main.cf /etc/postfix/main.cf.`date +%Y%m%d`
-cp -pi /etc/postfix/master.cf /etc/postfix/master.cf.`date +%Y%m%d`
-ls -la /etc/postfix/main.cf*
-ls -la /etc/postfix/master.cf*</code></pre>
-        </div>
+      <h2 id="postfix">PostfixからSES SMTPへリレー</h2>
 
-        <p class="procedure-step"><strong>6. main.cfを編集</strong></p>
-        <p><code>hostname -f</code>でOSが認識するFQDN、<code>postconf myhostname</code>でPostfixが使用するホスト名を確認する。値が実際のサーバーFQDNと異なる場合は、<code>myhostname</code>を設定する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>hostname -f
-postconf myhostname
-vi /etc/postfix/main.cf</code></pre>
-        </div>
-        <p>次の例は東京リージョンを使用する。<code>mail.example.com</code>は実際のサーバーFQDNへ変更し、別リージョンではSMTPエンドポイントを変更する</p>
-        <div class="code">
-          <div class="code-header"><span>/etc/postfix/main.cf</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>myhostname = mail.example.com
+      <h3>1. 必要なパッケージを導入</h3>
+      <p>Postfix、SMTP AUTHに必要なSASL認証パッケージ、送信テスト用のmailxを導入</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>dnf install -y postfix cyrus-sasl-plain mailx</code></pre>
+      </div>
+
+      <h3>2. 変更前の状態を記録</h3>
+      <p><code>systemctl status</code>で稼働状態、<code>postconf -n</code>で初期値から変更されたPostfix設定、<code>postqueue -p</code>で滞留メールを確認</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>systemctl status postfix --no-pager
+postconf -n
+postqueue -p</code></pre>
+      </div>
+
+      <h3>3. main.cfをバックアップ</h3>
+        <p>変更対象の<code>main.cf</code>だけを退避し、作成結果を確認</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>cp -pi /etc/postfix/main.cf /etc/postfix/main.cf.`date +%Y%m%d`
+ls -la /etc/postfix/main.cf*</code></pre>
+      </div>
+
+      <h3>4. ホスト名を確認</h3>
+      <p>OSが認識するFQDNとPostfixの<code>myhostname</code>を確認。異なる場合は、実際のサーバーFQDNへ統一</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>hostname -f
+postconf myhostname</code></pre>
+      </div>
+
+      <h3>5. main.cfを編集</h3>
+      <p>東京リージョンのSES SMTPエンドポイントをリレー先に設定。<code>myhostname</code>は例示名ではなく、対象サーバーが実際に使用するFQDNを指定</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>vi /etc/postfix/main.cf</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>/etc/postfix/main.cf</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>myhostname = ses-relay.zexample.com
 
 relayhost = [email-smtp.ap-northeast-1.amazonaws.com]:587
 smtp_sasl_auth_enable = yes
@@ -172,276 +154,182 @@ smtp_sasl_security_options = noanonymous
 smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
 smtp_use_tls = yes
 smtp_tls_security_level = secure
-smtp_tls_note_starttls_offer = yes</code></pre>
-        </div>
+smtp_tls_note_starttls_offer = yes
+smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt</code></pre>
+      </div>
 
-        <p class="procedure-step"><strong>7. フォールバックリレー設定を確認</strong></p>
-        <p><code>/etc/postfix/master.cf</code>に<code>-o smtp_fallback_relay=</code>がある場合は、その行をコメントアウトする</p>
+      <div class="callout">
+        <strong>ℹ️ smtp_tls_security_levelの重複を解消</strong>
+        <p>Amazon Linuxの初期設定に<code>smtp_tls_security_level = may</code>がある状態で<code>secure</code>を追記すると、次の警告が発生する</p>
         <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>grep -n 'smtp_fallback_relay' /etc/postfix/master.cf
-vi /etc/postfix/master.cf</code></pre>
+          <div class="code-header"><span>warning</span><button class="copy-button" type="button">Copy</button></div>
+          <pre><code>postfix: warning: /etc/postfix/main.cf, line 755: overriding earlier entry: smtp_tls_security_level=may</code></pre>
         </div>
+        <p>既存の<code>may</code>を削除またはコメントアウトし、<code>secure</code>を1行だけ残す。後続の<code>postfix check</code>が無出力になることを確認</p>
+      </div>
 
-        <p class="procedure-step"><strong>8. SMTP認証情報を登録してハッシュDBを作成</strong></p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>vi /etc/postfix/sasl_passwd</code></pre>
-        </div>
-        <div class="code">
-          <div class="code-header"><span>/etc/postfix/sasl_passwd</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>[email-smtp.ap-northeast-1.amazonaws.com]:587 SES_SMTP_USERNAME:SES_SMTP_PASSWORD</code></pre>
-        </div>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>postmap hash:/etc/postfix/sasl_passwd
+      <h3>6. SMTP認証情報を設定</h3>
+      <p><code>sasl_passwd</code>を作成し、SES SMTPエンドポイント、SMTPユーザー名、SMTPパスワードを1行で記載</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>vi /etc/postfix/sasl_passwd</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>/etc/postfix/sasl_passwd</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>[email-smtp.ap-northeast-1.amazonaws.com]:587 AKIAxxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+      </div>
+      <p><code>AKIA...</code>の部分にSMTPユーザー名、コロンの右側にSESが生成したSMTPパスワードを記載。山括弧は記載しない</p>
+
+      <h3>7. 認証情報DBと権限を設定</h3>
+      <p><code>postmap</code>でPostfixが参照するハッシュDBを生成し、平文ファイルとDBをrootだけが読み書きできる状態へ変更</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>postmap hash:/etc/postfix/sasl_passwd
 chown root:root /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
 chmod 0600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
-ls -la /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db</code></pre>
-        </div>
+ls -la /etc/postfix/sasl_passwd*</code></pre>
+      </div>
 
-        <p class="procedure-step"><strong>9. CA証明書ファイルを設定</strong></p>
-        <div class="tab-group" data-tabs>
-          <div class="tabs" role="tablist" aria-label="Postfix CA file by operating system">
-            <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ses-rhel-ca">RHEL / Amazon Linux</button>
-            <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ses-debian-ca">Debian / Ubuntu</button>
-          </div>
-          <section class="tab-panel active" id="ses-rhel-ca" role="tabpanel">
-            <div class="code">
-              <div class="code-header"><span>/etc/postfix/main.cf</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt</code></pre>
-            </div>
-          </section>
-          <section class="tab-panel" id="ses-debian-ca" role="tabpanel" hidden>
-            <div class="code">
-              <div class="code-header"><span>/etc/postfix/main.cf</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt</code></pre>
-            </div>
-          </section>
-        </div>
+      <h3>8. CA証明書を確認</h3>
+      <p><code>postconf</code>でPostfixが参照するCAバンドル、<code>grep</code>で設定行、<code>test -r</code>でファイルの読み取り可否を確認</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>postconf smtp_tls_CAfile
+grep -n '^smtp_tls_CAfile' /etc/postfix/main.cf
+test -r /etc/pki/tls/certs/ca-bundle.crt &amp;&amp; echo "CA bundle: OK"</code></pre>
+      </div>
 
-        <p class="procedure-step"><strong>10. 設定差分と構文を確認してPostfixへ反映</strong></p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>diff -u /etc/postfix/main.cf.`date +%Y%m%d` /etc/postfix/main.cf
-diff -u /etc/postfix/master.cf.`date +%Y%m%d` /etc/postfix/master.cf
+      <h3>9. 設定を検証</h3>
+      <p><code>postfix check</code>は設定構文と権限を検査する。正常時は何も表示されない。続けて有効値を確認</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>postfix check
+postconf relayhost smtp_sasl_auth_enable smtp_sasl_security_options \
+  smtp_sasl_password_maps smtp_use_tls smtp_tls_security_level \
+  smtp_tls_note_starttls_offer smtp_tls_CAfile</code></pre>
+      </div>
 
-postfix check
-postconf -n | grep -E '^(myhostname|relayhost|smtp_sasl|smtp_use_tls|smtp_tls)'
-systemctl enable postfix
-systemctl restart postfix
+      <h3>10. Postfixを再起動</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>systemctl restart postfix
 systemctl status postfix --no-pager</code></pre>
-        </div>
+      </div>
 
-        <h3 id="send-test">送信テスト</h3>
-        <p class="procedure-step"><strong>11. 検証済みの送信元からテストメールを送信</strong></p>
-        <p>SESサンドボックスでは、検証済みの宛先を指定する</p>
-        <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>echo "This message was sent using Amazon SES" | \
-  mailx -v -r no-reply@example.com -s "Amazon SES relay test" recipient@example.net</code></pre>
-        </div>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/postfix.html">Integrating Amazon SES with Postfix</a></p>
 
-        <h3 id="post-send">送信後の確認</h3>
-        <p class="procedure-step"><strong>12. Postfixログ、メールキュー、受信メールヘッダーを確認</strong></p>
-        <div class="tab-group" data-tabs>
-          <div class="tabs" role="tablist" aria-label="Postfix logs by operating system">
-            <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ses-rhel-logs">RHEL / Amazon Linux</button>
-            <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ses-debian-logs">Debian / Ubuntu</button>
-          </div>
-          <section class="tab-panel active" id="ses-rhel-logs" role="tabpanel">
-            <div class="code">
-              <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>tail -n 100 /var/log/maillog
-journalctl -u postfix -n 100 --no-pager
+      <h2 id="send-test">送信テスト</h2>
+      <p>本番アクセスが付与されたSESアカウントでは、検証済みドメインの送信元から通常の宛先へ送信できる。サンドボックスでは宛先も検証済みであることが必要</p>
+
+      <h3>1. 実際のメールアドレスへ送信</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>echo "This message was sent using Amazon SES" | \
+  mailx -v -r no-reply@zexample.com \
+  -s "Amazon SES relay test" \
+  recipient@example.net</code></pre>
+      </div>
+
+      <h3>2. SESメールボックスシミュレーターへ送信</h3>
+      <p><code>success@simulator.amazonses.com</code>は正常配信を模擬する宛先。メールボックスで受信するのではなく、Postfixログの<code>status=sent</code>とSESメトリクスで結果を確認</p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>echo "This message was sent using Amazon SES" | \
+  mailx -v -r no-reply@zexample.com \
+  -s "Amazon SES relay test" \
+  success@simulator.amazonses.com</code></pre>
+      </div>
+
+      <h2 id="send-check">送信後の確認</h2>
+      <h3>1. Postfixログとキューを確認</h3>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>journalctl -u postfix --since "10 minutes ago" --no-pager
 postqueue -p</code></pre>
-            </div>
-          </section>
-          <section class="tab-panel" id="ses-debian-logs" role="tabpanel" hidden>
-            <div class="code">
-              <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>tail -n 100 /var/log/mail.log
-journalctl -u postfix -n 100 --no-pager
-postqueue -p</code></pre>
-            </div>
-          </section>
-        </div>
+      </div>
+      <p>ログの<code>relay=email-smtp.ap-northeast-1.amazonaws.com</code>、<code>dsn=2.0.0</code>、<code>status=sent</code>、SESの応答<code>250 Ok</code>を確認。<code>Mail queue is empty</code>は滞留メールがない状態</p>
 
-        <table>
-          <thead>
-            <tr><th>確認箇所</th><th>正常時の目安</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Postfixログ</td><td><code>relay=email-smtp.ap-northeast-1.amazonaws.com</code>と<code>status=sent</code>を確認</td></tr>
-            <tr><td>メールキュー</td><td>滞留なし。滞留時はQueue IDを使ってログを追跡</td></tr>
-            <tr><td>受信メール</td><td>送信元、件名、本文が想定どおりであることを確認</td></tr>
-            <tr><td>認証結果</td><td>詳細ヘッダーでSPF、DKIM、DMARCの結果を確認</td></tr>
-          </tbody>
-        </table>
+      <div class="callout">
+        <strong>ℹ️ 今回の501は元メールの送信失敗ではない</strong>
+        <p>Gmail宛てとSESシミュレーター宛ての元メールは、どちらも<code>status=sent (250 Ok ...)</code>で正常にSESへ引き渡された。その後の<code>from=&lt;&gt;</code>と<code>501 Invalid MAIL FROM address provided</code>は、mailxが要求した配送状況通知をPostfixが生成し、空のエンベロープ送信者でSESへ再送しようとして拒否された記録。元メールの成否とは分けて確認する</p>
+      </div>
 
-        <h3>Postfixリレーのトラブルシューティング</h3>
-        <table>
-          <thead>
-            <tr><th>症状</th><th>確認内容</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>接続タイムアウト</td><td>DNS、セキュリティグループ、NACL、OSファイアウォール、TCP 587への経路</td></tr>
-            <tr><td><code>SASL authentication failure</code></td><td>SASLパッケージ、SMTP認証情報、リージョン、<code>sasl_passwd.db</code>の再作成</td></tr>
-            <tr><td><code>535 Authentication Credentials Invalid</code></td><td>AWSアクセスキーではなくSES SMTP認証情報を使用しているか、発行リージョンが一致するか</td></tr>
-            <tr><td><code>554 Message rejected</code></td><td>送信元ID、DKIM、SESサンドボックス、宛先検証、本稼働アクセス</td></tr>
-            <tr><td>TLSエラー</td><td>CA証明書ファイルのパス、CAパッケージ、サーバー時刻、<code>smtp_tls_security_level</code></td></tr>
-          </tbody>
-        </table>
-      </section>
+      <h3>2. Gmailで受信結果を確認</h3>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/amazon-ses/ses-gmail-received.png" alt="Amazon SES経由でGmailへ到着したテストメール">
+        <figcaption>PostfixからAmazon SESを経由して受信したテストメール</figcaption>
+      </figure>
 
-      <section aria-labelledby="mail-from">
-        <h2 id="mail-from">カスタムMAIL FROM設定</h2>
-        <p>SESの既定MAIL FROMを、自社が管理する専用サブドメインへ変更する。表示用のFromアドレスではなく、バウンス処理とSPF認証に使うエンベロープFromを変更する設定となる</p>
+      <h3>3. メールソースを確認</h3>
+      <p>Gmailの「メッセージのソースを表示」で、SPF、DKIM、DMARCが<code>PASS</code>であること、受信IPがAmazon SESの送信基盤であることを確認</p>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/amazon-ses/ses-gmail-original-redacted.png" alt="宛先をマスクしたGmailのメールソースとSPF DKIM DMARCの確認結果">
+        <figcaption>宛先だけをマスクしたメールソース。SPF、DKIM、DMARCはいずれもPASS</figcaption>
+      </figure>
 
-        <h3 id="mail-from-effects">設定すると何が変わるか</h3>
-        <table>
-          <thead>
-            <tr><th>観点</th><th>設定前</th><th>設定後</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>受信者に表示されるFrom</td><td><code>no-reply@example.com</code></td><td>通常は変わらない</td></tr>
-            <tr><td>Return-Path</td><td>SESが用意する<code>amazonses.com</code>配下</td><td><code>bounce.example.com</code>など自社管理のサブドメイン</td></tr>
-            <tr><td>SPF</td><td>SES既定MAIL FROMに対して検証</td><td>自社のMAIL FROMサブドメインに公開したSPFで検証</td></tr>
-            <tr><td>DMARC</td><td>主にDKIM整合で成立</td><td>Header Fromと親ドメインをそろえることで、SPF整合も利用可能</td></tr>
-            <tr><td>受信者からの見え方</td><td colspan="2">通常のメール画面に大きな差はなく、詳細ヘッダーを開くとReturn-PathとSPF認証ドメインの違いを確認できる</td></tr>
-          </tbody>
-        </table>
+      <h2 id="mail-from">カスタムMAIL FROM設定</h2>
+      <p>カスタムMAIL FROMを設定すると、受信者に表示されるFromアドレスは変えずに、Return-PathとエンベロープMAIL FROMを自ドメイン配下へ変更できる。SPFのドメインをHeader Fromと同じ組織ドメインへ揃えられるため、DMARCのSPFアライメントを成立させやすくなる</p>
 
-        <div class="callout">
-          <strong>ℹ️ 到達率への影響</strong>
-          <p>カスタムMAIL FROMを設定しただけで到達率が上がるわけではない。SPF、DKIM、DMARCの整合性を高め、受信側が送信元を検証しやすくするため、到達性の基盤を整える設定となる。DNSレコードが誤っている場合は、選択したMX障害時動作によりSES既定MAIL FROMへ戻るか、送信自体が拒否される</p>
-        </div>
+      <table>
+        <thead><tr><th>項目</th><th>未設定</th><th>設定後</th></tr></thead>
+        <tbody>
+          <tr><td>表示上のFrom</td><td><code>no-reply@zexample.com</code></td><td>通常は変わらない</td></tr>
+          <tr><td>Return-Path</td><td>Amazon SES管理ドメイン</td><td><code>bounce.zexample.com</code>など</td></tr>
+          <tr><td>SPFアライメント</td><td>Header Fromと一致しない場合がある</td><td>同一組織ドメインへ整合可能</td></tr>
+        </tbody>
+      </table>
 
-        <p class="procedure-step"><strong>1. 検証済みドメインIDでカスタムMAIL FROMを有効化</strong></p>
-        <ol>
-          <li>SESコンソールの「ID」から検証済みドメインIDを選択</li>
-          <li>「カスタムMAIL FROMドメイン」の「編集」を選択</li>
-          <li>「カスタムMAIL FROMドメインを使用」を有効化</li>
-          <li>専用サブドメインを入力</li>
-          <li>MX障害時の動作として、SES既定MAIL FROMの使用またはメッセージ拒否を選択</li>
-          <li>変更を保存</li>
-        </ol>
+      <div class="callout">
+        <strong>ℹ️ 到達率との関係</strong>
+        <p>カスタムMAIL FROMは認証整合性とブランド一貫性を高めるが、受信トレイへの到達を保証しない。到達性は送信レピュテーション、バウンス率、苦情率、コンテンツ、送信量などにも左右される</p>
+      </div>
 
-        <div class="callout callout-warning">
-          <strong>⚠️ 専用サブドメイン</strong>
-          <p>カスタムMAIL FROMは検証済み親ドメインのサブドメインとし、通常の送信元や受信先には使用しない。MAIL FROMサブドメインに登録するMXレコードはSES用の1件だけとする</p>
-        </div>
+      <ol>
+        <li>Amazon SESコンソールで対象IDを開く</li>
+        <li>「カスタムMAIL FROMドメイン」の「編集」を選択</li>
+        <li>MAIL FROM用サブドメインを入力。例: <code>bounce.zexample.com</code></li>
+        <li>MX障害時の動作を選択して保存</li>
+      </ol>
 
-        <h3 id="mail-from-dns">DNSレコード登録</h3>
-        <p class="procedure-step"><strong>2. SESが提示するMXレコードとSPF用TXTレコードを登録</strong></p>
-        <table>
-          <thead>
-            <tr><th>種類</th><th>名前の例</th><th>値</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>MX</td><td><code>bounce.example.com</code></td><td><code>10 feedback-smtp.ap-northeast-1.amazonses.com</code></td></tr>
-            <tr><td>TXT</td><td><code>bounce.example.com</code></td><td><code>"v=spf1 include:amazonses.com ~all"</code></td></tr>
-          </tbody>
-        </table>
-        <p>Route 53を同じAWSアカウントで管理している場合は、SESの「Route 53を使用してレコードを発行」から登録できる。別のDNS事業者を利用する場合は、表示された値をDNS管理画面へ登録する</p>
+      <h2 id="dns">DNSレコード登録</h2>
+      <p>SESが提示するMXレコードとSPF用TXTレコードを、MAIL FROMサブドメインへ登録。Route 53への自動発行を利用できる場合はコンソールから発行し、外部DNSでは表示値を手動登録</p>
 
-        <h3 id="mail-from-verify">DNS反映確認</h3>
-        <p class="procedure-step"><strong>3. MXとTXTの応答を確認</strong></p>
-        <div class="tab-group" data-tabs>
-          <div class="tabs" role="tablist" aria-label="MAIL FROM DNS check commands">
-            <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ses-dns-linux">Linux / macOS</button>
-            <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ses-dns-windows">Windows</button>
-          </div>
-          <section class="tab-panel active" id="ses-dns-linux" role="tabpanel">
-            <div class="code">
-              <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>dig MX bounce.example.com
-dig TXT bounce.example.com</code></pre>
-            </div>
-          </section>
-          <section class="tab-panel" id="ses-dns-windows" role="tabpanel" hidden>
-            <div class="code">
-              <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-              <pre><code>Resolve-DnsName bounce.example.com -Type MX
-Resolve-DnsName bounce.example.com -Type TXT</code></pre>
-            </div>
-          </section>
-        </div>
+      <h2 id="dns-check">DNS反映確認</h2>
+      <div class="code">
+        <div class="code-header"><span>shell</span><button class="copy-button" type="button">Copy</button></div>
+        <pre><code>dig MX bounce.zexample.com +short
+dig TXT bounce.zexample.com +short</code></pre>
+      </div>
+      <p>MXがリージョンの<code>feedback-smtp</code>エンドポイント、TXTが<code>v=spf1 include:amazonses.com ~all</code>を返し、SESのMAIL FROMステータスが「成功」になることを確認</p>
 
-        <p class="procedure-step"><strong>4. SESの状態と受信メールのReturn-Pathを確認</strong></p>
-        <ol>
-          <li>SESのカスタムMAIL FROM状態が「成功」になることを確認</li>
-          <li>テストメールを再送</li>
-          <li>受信メールの詳細ヘッダーを開き、Return-Pathが設定したサブドメインであることを確認</li>
-          <li>SPF、DKIM、DMARCの結果を確認</li>
-        </ol>
-        <p>DNS事業者によっては、SESがMXレコードを検出するまで最大72時間かかる。手順の根拠: <a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a>、<a href="https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dmarc.html">Complying with DMARC authentication protocol in Amazon SES</a></p>
-      </section>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
-      <section aria-labelledby="vdm">
-        <h2 id="vdm">Virtual Deliverability Manager（VDM）</h2>
-        <p>VDMは、SESの配信状況と送信者評価を分析し、到達性の改善に使う。アカウント単位で有効化した後、構成セット単位でエンゲージメント追跡と最適化された共有配信を上書きできる</p>
+      <h2 id="vdm">Virtual Deliverability Manager（VDM）</h2>
+      <p>VDMは、送信レピュテーションや配信結果を可視化し、配信性能を分析する機能。利用前に追加料金、対象リージョン、収集するメトリクスを確認する</p>
 
-        <p class="procedure-step"><strong>1. アカウントでVDMを有効化</strong></p>
-        <ol>
-          <li>SESコンソールから「Virtual Deliverability Manager」を選択</li>
-          <li>「Virtual Deliverability Managerの使用を開始する」を選択</li>
-          <li>エンゲージメント追跡の有効または無効を選択</li>
-          <li>最適化された共有配信の有効または無効を選択</li>
-          <li>設定内容を確認してVDMを有効化</li>
-        </ol>
+      <ol>
+        <li>Amazon SESコンソールの「Virtual Deliverability Manager」から概要を開く</li>
+        <li>VDMの使用を開始</li>
+        <li>エンゲージメント追跡の有効化を選択</li>
+        <li>最適化された共有配信の有効化を選択</li>
+        <li>設定を確認して有効化</li>
+        <li>ダッシュボードで配信、バウンス、苦情、エンゲージメントを確認</li>
+      </ol>
 
-        <table>
-          <thead>
-            <tr><th>機能</th><th>効果</th><th>設計上の注意</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>エンゲージメント追跡</td><td>開封とクリックのイベントを収集</td><td>トラッキングピクセルとラップURLにより、本文内のURLが変化</td></tr>
-            <tr><td>最適化された共有配信</td><td>送信先に応じて共有IPの選択を最適化</td><td>送信者評価を保護するため、送信が事前に遅延する場合あり</td></tr>
-            <tr><td>構成セット</td><td>メール種別ごとにVDM設定を上書き</td><td>マーケティングメールと即時性が必要な通知を分離</td></tr>
-          </tbody>
-        </table>
+      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/vdm.html">Virtual Deliverability Manager</a></p>
 
-        <p class="procedure-step"><strong>2. 用途別の構成セットを作成</strong></p>
-        <ol>
-          <li>SESコンソールの「構成セット」から用途別の構成セットを作成</li>
-          <li>構成セットのVirtual Deliverability Managerオプションを開く</li>
-          <li>エンゲージメント追跡と最適化された共有配信について、アカウント設定の継承または個別設定を選択</li>
-          <li>遅延を許容できない通知では最適化された共有配信を無効化し、マーケティングメールと分離</li>
-        </ol>
-
-        <p class="procedure-step"><strong>3. SMTP送信時に構成セットを指定</strong></p>
-        <div class="code">
-          <div class="code-header"><span>mail header</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>X-SES-CONFIGURATION-SET: transactional-mail</code></pre>
-        </div>
-
-        <p class="procedure-step"><strong>4. VDMダッシュボードで送信結果を確認</strong></p>
-        <ol>
-          <li>構成セットを指定したテストメールを送信</li>
-          <li>VDMダッシュボードで配信、バウンス、苦情の指標を確認</li>
-          <li>エンゲージメント追跡を有効化した場合は、開封とクリックの記録を確認</li>
-        </ol>
-
-        <div class="callout callout-warning">
-          <strong>⚠️ 即時性と料金</strong>
-          <p>遅延を許容できない通知では、最適化された共有配信を一律に有効化せず、構成セットで対象を分離する。VDMを含むSESの料金体系は変更されるため、有効化前に<a href="https://aws.amazon.com/ses/pricing/">Amazon SES料金</a>を確認する</p>
-        </div>
-        <p>手順の根拠: <a href="https://docs.aws.amazon.com/ses/latest/dg/vdm-get-started.html">Getting started with Virtual Deliverability Manager</a>、<a href="https://docs.aws.amazon.com/ses/latest/dg/vdm-settings.html">Virtual Deliverability Manager settings</a>、<a href="https://docs.aws.amazon.com/ses/latest/dg/using-configuration-sets-in-email.html">Specifying a configuration set when you send email</a></p>
-      </section>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#ses-build">Amazon SES作成</a>
-      <a href="#smtp-credentials">SMTP認証情報</a>
+      <a class="active" href="#ses-identity">Amazon SES作成</a>
+      <a href="#smtp-credentials">IAM SMTP認証情報</a>
       <a href="#postfix">Postfixリレー</a>
       <a href="#send-test">送信テスト</a>
-      <a href="#post-send">送信後の確認</a>
+      <a href="#send-check">送信後の確認</a>
       <a href="#mail-from">カスタムMAIL FROM</a>
-      <a href="#mail-from-effects">設定による変化</a>
-      <a href="#mail-from-dns">DNSレコード登録</a>
-      <a href="#mail-from-verify">DNS反映確認</a>
+      <a href="#dns">DNSレコード登録</a>
+      <a href="#dns-check">DNS反映確認</a>
       <a href="#vdm">VDM</a>
     </aside>
   </div>
