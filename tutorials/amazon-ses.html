@@ -284,6 +284,21 @@ postqueue -p</code></pre>
         <p>カスタムMAIL FROMは認証整合性とブランド一貫性を高めるが、受信トレイへの到達を保証しない。到達性は送信レピュテーション、バウンス率、苦情率、コンテンツ、送信量などにも左右される</p>
       </div>
 
+      <div class="callout">
+        <strong>ℹ️ MX障害時の動作</strong>
+        <p>カスタムMAIL FROMのMXレコードをSESが確認できない場合に、送信を止めるか、SES管理ドメインへ切り替えて継続するかを選択する</p>
+        <table>
+          <thead><tr><th>確認項目</th><th>メッセージを拒否</th><th>デフォルトのMAIL FROMを使用</th></tr></thead>
+          <tbody>
+            <tr><td>MXレコードが正常</td><td><code>bounce.zexample.com</code>を使用して送信</td><td><code>bounce.zexample.com</code>を使用して送信</td></tr>
+            <tr><td>未検証・設定不備</td><td>SESが送信を拒否</td><td>SES管理の<code>amazonses.com</code>ドメインへ切り替えて送信</td></tr>
+            <tr><td>受信者に表示されるFrom</td><td><code>no-reply@zexample.com</code></td><td><code>no-reply@zexample.com</code>のまま</td></tr>
+            <tr><td>Return-Path</td><td>送信されない</td><td><code>amazonses.com</code>配下へ切り替わる</td></tr>
+            <tr><td>重視するもの</td><td>認証設定の一貫性</td><td>メール送信の継続性</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <ol>
         <li>Amazon SESコンソールで対象IDを開く</li>
         <li>「カスタムMAIL FROMドメイン」の「編集」を選択</li>
@@ -301,6 +316,13 @@ postqueue -p</code></pre>
 dig TXT bounce.zexample.com +short</code></pre>
       </div>
       <p>MXがリージョンの<code>feedback-smtp</code>エンドポイント、TXTが<code>v=spf1 include:amazonses.com ~all</code>を返し、SESのMAIL FROMステータスが「成功」になることを確認</p>
+
+      <h3>設定後のメールソースを確認</h3>
+      <p>受信メールのソースで、<code>Return-Path</code>が<code>bounce.zexample.com</code>配下へ変わり、SPF、DKIM、DMARCがPASSになることを確認</p>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/amazon-ses/ses-custom-mail-from-original-redacted.png" alt="カスタムMAIL FROM設定後のメールソース">
+        <figcaption>カスタムMAIL FROM設定後のメールソース。宛先メールアドレスのみマスク。</figcaption>
+      </figure>
 
       <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
