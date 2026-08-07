@@ -15,6 +15,8 @@ $groups = @(
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
+            [pscustomobject]@{ File = 'alb-tls-termination.html'; Label = 'ALBでTLS終端' }
+            [pscustomobject]@{ File = 'acm-export-ec2.html'; Label = 'ACM証明書をEC2へ配置' }
             [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'ACM / TLS証明書' }
         )
     }

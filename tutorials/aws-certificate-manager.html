@@ -32,6 +32,8 @@
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
+      <a href="alb-tls-termination.html">ALBでTLS終端</a>
+      <a href="acm-export-ec2.html">ACM証明書をEC2へ配置</a>
       <a class="active" href="aws-certificate-manager.html">ACM / TLS証明書</a>
       <p class="sidebar-group">OS／サーバー</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
@@ -110,6 +112,7 @@
         </tbody>
       </table>
       <p>EC2でTLSを直接終端する必要がなければ、ALBでTLSを終端して通常のACM証明書を関連付ける構成が最も管理項目を減らせる</p>
+      <p>ALBへの移行は<a href="alb-tls-termination.html">Application Load BalancerでTLS終端</a>、EC2への手動配置とAWS Workload Credentials Providerの実機手順は<a href="acm-export-ec2.html">ACM証明書をEC2へ自動配置</a>を参照する</p>
 
       <h2 id="managed">AWS統合サービスでの自動更新</h2>
       <p>ACM統合サービスに関連付けたAmazon発行証明書は、更新条件を満たす場合、ACMが更新し、統合サービスへ新しい証明書を配置します。DNS検証を使用する場合は、検証用CNAMEレコードを削除しない</p>
