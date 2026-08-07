@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Application Load BalancerでTLS終端 | Documentation</title>
+  <meta name="description" content="EC2上のApacheに配置した第三者証明書から、Application Load BalancerとACMでTLSを終端する構成への移行手順、DNS切替、切り戻しを整理します。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a class="active" href="alb-tls-termination.html">ALBでTLS終端</a>
+      <a href="acm-export-ec2.html">ACM証明書をEC2へ配置</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>Application Load BalancerでTLS終端</h1>
+      <p class="lead">EC2上のApacheに第三者認証局の証明書を配置してHTTPSを終端する構成から、Application Load BalancerとAWS Certificate ManagerでTLSを終端する構成へ移行します。EC2作成、移行前構成の再現、ALBの事前試験、Route 53切替、切り戻し、移行後の証明書運用までを対象とする</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ DNSレコードは最後に変更</strong>
+        <p>先にACM証明書、ターゲットグループ、ALB、Apache設定、ヘルスチェックを完成させ、ALBのDNS名を使った事前試験に成功してからRoute 53を変更します。DNSを先にALBへ向けると、未完成の経路へ利用者通信が流れる</p>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ ACMの自動更新とEC2への配置は別の処理</strong>
+        <p>DNS検証用CNAMEを残し、証明書をALBで使用している場合、ACMは証明書を自動更新してALBへ反映します。一方、エクスポートしたACM証明書や第三者証明書をEC2内へ配置した場合、ACMの更新だけではサーバー上のファイルは更新されません。サーバー内でTLSを終端する場合は、ACMEまたはAWS Workload Credentials Providerなどの再配置手段が必要</p>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 公開TLS証明書の有効期間短縮</strong>
+        <p>ACMパブリック証明書は2026年2月18日以降198日になり、ACMは期限45日前から更新します。業界要件では最大有効期間が2027年3月15日から100日、2029年3月15日から47日へ段階的に短縮されるため、第三者証明書を人手で発行・配置する運用は作業頻度と失効リスクが増える。詳しい日程は<a href="aws-certificate-manager.html#lifetime">ACM / TLS証明書 - 有効期間と今後の短縮</a>を参照する</p>
+      </div>
+
+      <h2 id="overview">0. 目的と完成構成</h2>
+      <h3>0.1 移行前と移行後</h3>
+      <table>
+        <thead><tr><th>項目</th><th>移行前</th><th>移行後</th></tr></thead>
+        <tbody>
+          <tr><td>公開URL</td><td><code>https://alb-lab.zexample.com</code></td><td><code>https://alb-lab.zexample.com</code></td></tr>
+          <tr><td>TLS終端</td><td>EC2上のApache</td><td>Application Load Balancer</td></tr>
+          <tr><td>公開証明書</td><td>サイバートラストなどの第三者証明書</td><td>ACMの非エクスポート型パブリック証明書</td></tr>
+          <tr><td>HTTPからHTTPSへの転送</td><td>Apacheの<code>mod_rewrite</code></td><td>ALBのHTTP:80リスナー</td></tr>
+          <tr><td>ALBからEC2</td><td>該当なし</td><td>HTTP:80</td></tr>
+          <tr><td>EC2の公開443</td><td>必要</td><td>移行確認後に閉鎖</td></tr>
+          <tr><td>証明書更新</td><td>再発行、配置、Apache再読み込み</td><td>ACMが更新し、ALBへ自動反映</td></tr>
+        </tbody>
+      </table>
+
+      <p>完成後の通信経路は、クライアントからALBまでがHTTPS、ALBからEC2までがHTTPです。EC2のSecurity GroupはALBのSecurity GroupからのTCP/80だけを許可し、インターネットからEC2へWeb通信を直接到達させない</p>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 0-1</strong>
+        <p>移行前の「利用者 → EC2:443 → Apache」と、移行後の「利用者 → ALB:443 → EC2:80 → Apache」を並べたAWS構成図を挿入</p>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ALBを配置してもEC2 1台の可用性は上がらない</strong>
+        <p>ALBは複数AZのサブネットへ配置しますが、ターゲットがEC2 1台だけの場合、そのEC2は単一障害点のままです。高可用性が必要な場合は、異なるAZに複数EC2を配置し、Auto Scalingまたは同等の復旧方式を追加する</p>
+      </div>
+
+      <h3>0.2 ALB終端を選ぶ理由</h3>
+      <table>
+        <thead><tr><th>観点</th><th>ALBとACM</th><th>EC2内で証明書を管理</th></tr></thead>
+        <tbody>
+          <tr><td>公開証明書料金</td><td>ACM統合サービスで使う非エクスポート型パブリック証明書は追加料金なし</td><td>第三者証明書またはエクスポート可能な証明書の料金が発生</td></tr>
+          <tr><td>更新作業</td><td>DNS検証CNAMEと利用状態を維持すればACMが自動更新</td><td>再発行、再配置、構文確認、再読み込みが必要</td></tr>
+          <tr><td>インフラ料金</td><td>ALB稼働時間、LCU、データ転送などの料金が発生</td><td>ALB料金はないが、EC2の公開IPv4や運用作業の費用を考慮</td></tr>
+          <tr><td>秘密鍵</td><td>ALB用の秘密鍵をEC2へ置かない</td><td>EC2上で秘密鍵の保護が必要</td></tr>
+          <tr><td>拡張性</td><td>複数ターゲット、パスルーティング、WAF連携へ拡張可能</td><td>サーバーごとの構成管理が必要</td></tr>
+        </tbody>
+      </table>
+      <p>ALBには固定時間料金とLCU料金が発生するため、証明書費用だけでなくALBの月額、運用工数、可用性、WAF連携の必要性を含めて比較する。料金単価はリージョンと利用量で変わるため、導入時点の<a href="https://aws.amazon.com/elasticloadbalancing/pricing/">Elastic Load Balancing料金</a>を確認する</p>
+
+      <h2 id="parameters">1. 検証パラメータ</h2>
+      <table>
+        <thead><tr><th>項目</th><th>設定値</th><th>補足</th></tr></thead>
+        <tbody>
+          <tr><td>リージョン</td><td><code>ap-northeast-1</code></td><td>ALBとACM証明書は同じリージョン</td></tr>
+          <tr><td>公開FQDN</td><td><code>alb-lab.zexample.com</code></td><td>利用者が接続する名前</td></tr>
+          <tr><td>EC2 Nameタグ</td><td><code>alb-tls-lab-web01</code></td><td>OSホスト名と区別</td></tr>
+          <tr><td>OSホスト名</td><td><code>web01.zexample.internal</code></td><td>公開FQDNをOS名として使わない</td></tr>
+          <tr><td>ALB名</td><td><code>alb-tls-lab</code></td><td>インターネット向け</td></tr>
+          <tr><td>ターゲットグループ</td><td><code>tg-alb-tls-lab-http</code></td><td>HTTP:80、ターゲットタイプはインスタンス</td></tr>
+          <tr><td>ALB Security Group</td><td><code>sg-alb-tls-lab</code></td><td>インターネットから80と443を許可</td></tr>
+          <tr><td>EC2 Security Group</td><td><code>sg-alb-tls-lab-web</code></td><td>最終的にALBから80だけを許可</td></tr>
+          <tr><td>ヘルスチェック</td><td><code>HTTP /healthz</code></td><td>成功コードは200</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ <code>zexample.com</code>を所有していることを確認</strong>
+        <p>ACMのパブリック証明書は、利用者が管理権限を持つパブリックドメインだけで発行できます。Route 53以外のDNSを利用する場合も、ACMが提示する検証用CNAMEを外部DNSへ登録する</p>
+      </div>
+
+      <h2 id="order">2. 作業順序と切替計画</h2>
+      <ol>
+        <li>既存構成、証明書、DNS、Apache設定、Security Groupのバックアップ取得</li>
+        <li>既存DNSレコードのTTL引き下げ</li>
+        <li>EC2とApacheによる移行前構成の再現</li>
+        <li>ACM証明書の発行とDNS検証</li>
+        <li>ALB用とEC2用Security Groupの準備</li>
+        <li>ApacheへのヘルスチェックとALB対応設定の追加</li>
+        <li>ターゲットグループの作成とHealthy確認</li>
+        <li>ALBとHTTP／HTTPSリスナーの作成</li>
+        <li>ALBのDNS名を使った事前疎通確認</li>
+        <li>Route 53レコードのALBエイリアスへの変更</li>
+        <li>利用者経路、証明書、ログ、アプリケーションの確認</li>
+        <li>観察期間後のEC2公開80／443閉鎖と旧証明書運用の終了</li>
+      </ol>
+
+      <p>既存レコードのTTLは作業の24時間以上前に短くします。TTLを変更しても、変更前の長いTTLでキャッシュされた応答が失効するまでは旧経路へ接続される可能性がある</p>
+
+      <h2 id="ec2">3. EC2の作成</h2>
+      <h3>3.1 インスタンス起動</h3>
+      <ol>
+        <li>EC2コンソールから「インスタンスを起動」を選択</li>
+        <li>名前へ<code>alb-tls-lab-web01</code>を入力</li>
+        <li>Amazon Linux 2023の最新AMIを選択</li>
+        <li>検証規模に合うインスタンスタイプを選択</li>
+        <li>管理方式に応じたキーペアまたはSystems Manager接続方式を選択</li>
+        <li>ALBを配置するVPCと、検証用EC2を配置するサブネットを選択</li>
+        <li>移行前の直接接続を再現する場合だけパブリックIPv4の割り当てを有効化</li>
+        <li><code>sg-alb-tls-lab-web</code>を作成し、SSHを管理元IPだけから許可</li>
+        <li>初期検証用のHTTP:80とHTTPS:443を管理元IPだけから許可</li>
+        <li>ルートボリュームの暗号化を確認してインスタンスを起動</li>
+      </ol>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 3-1</strong>
+        <p>EC2起動画面の名前、AMI、インスタンスタイプ、キーペアを挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 3-2</strong>
+        <p>VPC、サブネット、パブリックIPv4、Security Groupの設定画面を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 3-3</strong>
+        <p>インスタンス起動後のインスタンスID、プライベートIP、パブリックIP、Security Groupを挿入</p>
+      </div>
+
+      <h3>3.2 OSとApacheの初期設定</h3>
+      <p>OSホスト名を設定し、Apache、TLSモジュール、OpenSSLを導入する</p>
+      <div class="code"><div class="code-header"><span>Amazon Linux 2023</span><button class="copy" type="button">Copy</button></div><pre><code>sudo hostnamectl set-hostname web01.zexample.internal
+sudo dnf update -y
+sudo dnf install -y httpd mod_ssl openssl
+sudo systemctl enable --now httpd
+
+hostnamectl
+httpd -v
+sudo systemctl status httpd --no-pager</code></pre></div>
+
+      <p>検証用コンテンツとALBのヘルスチェック用ファイルを作成する</p>
+      <div class="code"><div class="code-header"><span>content</span><button class="copy" type="button">Copy</button></div><pre><code>echo 'ALB TLS termination lab' | sudo tee /var/www/html/index.html
+echo 'ok' | sudo tee /var/www/html/healthz
+
+curl -i http://127.0.0.1/
+curl -i http://127.0.0.1/healthz</code></pre></div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 3-4</strong>
+        <p><code>hostnamectl</code>、<code>httpd -v</code>、<code>systemctl status httpd</code>の実行結果を挿入</p>
+      </div>
+
+      <h2 id="direct-tls">4. 移行前のEC2直接TLS終端を再現</h2>
+      <h3>4.1 第三者証明書の配置</h3>
+      <p>実環境と同じ状態を再現する場合は、発行済みのサーバー証明書、秘密鍵、中間証明書チェーンを安全な経路でEC2へ配置します。検証だけの場合は自己署名証明書でもApacheの構成確認はできますが、ブラウザーでは信頼エラーになる</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 秘密鍵をGitHubや画像へ含めない</strong>
+        <p>秘密鍵の内容、証明書申請時の認証情報、実在する顧客ドメイン、固定IPはリポジトリやスクリーンショットへ含めません。秘密鍵ファイルはroot所有、権限600を基本とする</p>
+      </div>
+
+      <p>配置先ディレクトリを作成し、ファイル権限を設定する</p>
+      <div class="code"><div class="code-header"><span>certificate files</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 700 -o root -g root /etc/httpd/conf/ssl
+sudo chown root:root /etc/httpd/conf/ssl/alb-lab.zexample.com.crt
+sudo chown root:root /etc/httpd/conf/ssl/alb-lab.zexample.com.key
+sudo chown root:root /etc/httpd/conf/ssl/alb-lab.zexample.com-chain.crt
+sudo chmod 644 /etc/httpd/conf/ssl/alb-lab.zexample.com.crt
+sudo chmod 600 /etc/httpd/conf/ssl/alb-lab.zexample.com.key
+sudo chmod 644 /etc/httpd/conf/ssl/alb-lab.zexample.com-chain.crt</code></pre></div>
+
+      <p>証明書と秘密鍵の公開鍵が一致することを確認する</p>
+      <div class="code"><div class="code-header"><span>certificate verification</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 \
+  -in /etc/httpd/conf/ssl/alb-lab.zexample.com.crt \
+  -noout -subject -issuer -serial -dates -ext subjectAltName
+
+openssl x509 \
+  -in /etc/httpd/conf/ssl/alb-lab.zexample.com.crt \
+  -pubkey -noout | openssl sha256
+
+openssl pkey \
+  -in /etc/httpd/conf/ssl/alb-lab.zexample.com.key \
+  -pubout | openssl sha256</code></pre></div>
+
+      <h3>4.2 移行前VirtualHostの作成</h3>
+      <p>HTTPをHTTPSへ転送し、EC2の443で第三者証明書を使用する移行前設定を作成する</p>
+      <div class="code"><div class="code-header"><span>/etc/httpd/conf.d/alb-lab.zexample.com.conf</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;VirtualHost *:80&gt;
+    ServerName alb-lab.zexample.com
+    DocumentRoot /var/www/html
+
+    RewriteEngine On
+    RewriteRule ^ https://alb-lab.zexample.com%{REQUEST_URI} [R=301,L]
+
+    ErrorLog /var/log/httpd/alb-lab_error.log
+    CustomLog /var/log/httpd/alb-lab_access.log combined
+&lt;/VirtualHost&gt;
+
+&lt;VirtualHost *:443&gt;
+    ServerName alb-lab.zexample.com
+    DocumentRoot /var/www/html
+
+    SSLEngine on
+    SSLCertificateFile /etc/httpd/conf/ssl/alb-lab.zexample.com.crt
+    SSLCertificateKeyFile /etc/httpd/conf/ssl/alb-lab.zexample.com.key
+    SSLCertificateChainFile /etc/httpd/conf/ssl/alb-lab.zexample.com-chain.crt
+
+    ErrorLog /var/log/httpd/alb-lab_ssl_error.log
+    CustomLog /var/log/httpd/alb-lab_ssl_access.log combined
+&lt;/VirtualHost&gt;</code></pre></div>
+
+      <p>認証局からfullchain形式のファイルが提供される場合は、サーバー証明書と中間証明書を<code>SSLCertificateFile</code>で読み込み、<code>SSLCertificateChainFile</code>を省略する構成もあります。採用する形式は認証局の手順とApacheのバージョンに合わせる</p>
+
+      <p>構文確認後にApacheを再読み込みする</p>
+      <div class="code"><div class="code-header"><span>Apache validation</span><button class="copy" type="button">Copy</button></div><pre><code>sudo apachectl configtest
+sudo systemctl reload httpd
+sudo apachectl -S
+
+curl -I http://alb-lab.zexample.com/
+curl -I https://alb-lab.zexample.com/</code></pre></div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 4-1</strong>
+        <p>移行前のVirtualHost設定ファイル全体を挿入し、ドメイン名、IP、証明書固有情報はマスキング</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 4-2</strong>
+        <p>HTTPが301、HTTPSが200になる確認結果と、ブラウザーの証明書発行者を挿入</p>
+      </div>
+
+      <h2 id="acm">5. ACM証明書の発行</h2>
+      <ol>
+        <li>AWS Certificate Managerコンソールを<code>ap-northeast-1</code>で表示</li>
+        <li>「証明書をリクエスト」からパブリック証明書を選択</li>
+        <li>完全修飾ドメイン名へ<code>alb-lab.zexample.com</code>を入力</li>
+        <li>検証方法へDNS検証を選択</li>
+        <li>キーアルゴリズムを利用クライアントの互換性に合わせて選択</li>
+        <li>エクスポートを無効のまま証明書をリクエスト</li>
+        <li>Route 53を使用する場合は「Route 53でレコードを作成」を選択</li>
+        <li>外部DNSの場合は提示されたCNAME名と値を外部DNSへ登録</li>
+        <li>証明書ステータスが「発行済み」になることを確認</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ DNS検証用CNAMEを削除しない</strong>
+        <p>ACMは、証明書がAWSサービスで使用され、DNS検証用CNAMEが公開DNSで解決できる場合にマネージド更新を行います。アプリケーション本体のALBエイリアスレコードとは別のレコードであり、移行後も保持する</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 5-1</strong>
+        <p>ACMの証明書リクエスト画面でFQDN、DNS検証、エクスポート無効を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 5-2</strong>
+        <p>Route 53へ作成した検証用CNAMEと、ACMの「発行済み」ステータスを挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html">AWS公式: AWS Certificate Manager DNS validation</a></p>
+
+      <h2 id="security-groups">6. Security Groupの準備</h2>
+      <h3>6.1 ALB用Security Group</h3>
+      <table>
+        <thead><tr><th>方向</th><th>プロトコル</th><th>ポート</th><th>送信元／送信先</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>インバウンド</td><td>TCP</td><td>80</td><td><code>0.0.0.0/0</code>、必要に応じてIPv6</td><td>HTTPSへのリダイレクト</td></tr>
+          <tr><td>インバウンド</td><td>TCP</td><td>443</td><td><code>0.0.0.0/0</code>、必要に応じてIPv6</td><td>公開HTTPS</td></tr>
+          <tr><td>アウトバウンド</td><td>TCP</td><td>80</td><td><code>sg-alb-tls-lab-web</code></td><td>ターゲット通信とヘルスチェック</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6.2 EC2用Security Group</h3>
+      <p>移行作業中は既存の80／443ルールを残し、次のALB用ルールを追加します。DNS切替と観察期間が完了してから、インターネットを送信元とする80／443を削除する</p>
+      <table>
+        <thead><tr><th>方向</th><th>プロトコル</th><th>ポート</th><th>送信元</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>インバウンド</td><td>TCP</td><td>80</td><td><code>sg-alb-tls-lab</code></td><td>ALBからの転送とヘルスチェック</td></tr>
+          <tr><td>インバウンド</td><td>TCP</td><td>22</td><td>管理元IPまたは管理用Security Group</td><td>管理接続</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 6-1</strong>
+        <p>ALB用Security Groupの80／443と、EC2用Security Groupの「送信元がALB用Security Group」のルールを挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html">AWS公式: Security groups for your Application Load Balancer</a></p>
+
+      <h2 id="apache-alb">7. ApacheをALB経由に対応</h2>
+      <h3>7.1 リダイレクトループを防ぐ設定</h3>
+      <p>ALBでTLSを終端し、ターゲットグループをHTTP:80にすると、Apacheから見える接続自体はHTTPです。Apacheが接続方式だけを見てHTTPSへ転送すると、ALBとApacheの間でリダイレクトが繰り返されます。ALBが付与する<code>X-Forwarded-Proto: https</code>を確認し、HTTPSで到達した利用者を再転送しない</p>
+
+      <p>切替中もEC2への直接HTTPをHTTPSへ転送できる移行用設定へ変更する</p>
+      <div class="code"><div class="code-header"><span>/etc/httpd/conf.d/alb-lab.zexample.com.conf</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;VirtualHost *:80&gt;
+    ServerName alb-lab.zexample.com
+    DocumentRoot /var/www/html
+
+    # ALBのHTTPSリスナーから転送されたことをアプリケーションへ伝える
+    SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
+
+    RewriteEngine On
+    # ALBヘルスチェックは200を返す
+    RewriteCond %{REQUEST_URI} !^/healthz$
+    # 利用者がALBへHTTPSで接続済みの場合は再転送しない
+    RewriteCond %{HTTP:X-Forwarded-Proto} !^https$ [NC]
+    RewriteRule ^ https://alb-lab.zexample.com%{REQUEST_URI} [R=301,L]
+
+    ErrorLog /var/log/httpd/alb-lab_error.log
+    CustomLog /var/log/httpd/alb-lab_access.log combined
+&lt;/VirtualHost&gt;
+
+# 切り戻し期間中は既存の443 VirtualHostを残す
+&lt;VirtualHost *:443&gt;
+    ServerName alb-lab.zexample.com
+    DocumentRoot /var/www/html
+
+    SSLEngine on
+    SSLCertificateFile /etc/httpd/conf/ssl/alb-lab.zexample.com.crt
+    SSLCertificateKeyFile /etc/httpd/conf/ssl/alb-lab.zexample.com.key
+    SSLCertificateChainFile /etc/httpd/conf/ssl/alb-lab.zexample.com-chain.crt
+
+    ErrorLog /var/log/httpd/alb-lab_ssl_error.log
+    CustomLog /var/log/httpd/alb-lab_ssl_access.log combined
+&lt;/VirtualHost&gt;</code></pre></div>
+
+      <p>設定変更前後のファイルを保存し、構文、ローカルヘルスチェック、直接HTTPの転送を確認する</p>
+      <div class="code"><div class="code-header"><span>Apache checks</span><button class="copy" type="button">Copy</button></div><pre><code>sudo cp -a \
+  /etc/httpd/conf.d/alb-lab.zexample.com.conf \
+  /etc/httpd/conf.d/alb-lab.zexample.com.conf.$(date +%Y%m%d%H%M%S).bak
+
+sudo apachectl configtest
+sudo systemctl reload httpd
+
+curl -i http://127.0.0.1/healthz
+curl -I -H 'Host: alb-lab.zexample.com' http://127.0.0.1/
+curl -I \
+  -H 'Host: alb-lab.zexample.com' \
+  -H 'X-Forwarded-Proto: https' \
+  http://127.0.0.1/</code></pre></div>
+
+      <table>
+        <thead><tr><th>試験</th><th>期待結果</th></tr></thead>
+        <tbody>
+          <tr><td><code>/healthz</code></td><td><code>200 OK</code></td></tr>
+          <tr><td>直接HTTP、<code>X-Forwarded-Proto</code>なし</td><td><code>301</code>で公開HTTPSへ転送</td></tr>
+          <tr><td><code>X-Forwarded-Proto: https</code>あり</td><td><code>200 OK</code>、再転送なし</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 転送ヘッダーを無条件に信頼しない</strong>
+        <p><code>X-Forwarded-For</code>や<code>X-Forwarded-Proto</code>は利用者も送信できます。移行後はEC2のTCP/80をALB用Security Groupからだけ許可し、アプリケーション側でも信頼するプロキシをALB経路へ限定する</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 7-1</strong>
+        <p>変更後の80番VirtualHostと、3種類の<code>curl</code>結果を挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/x-forwarded-headers.html">AWS公式: HTTP headers and Application Load Balancers</a></p>
+
+      <h2 id="target-group">8. ターゲットグループの作成</h2>
+      <ol>
+        <li>EC2コンソールの「ターゲットグループ」から作成を選択</li>
+        <li>ターゲットタイプへ「インスタンス」を選択</li>
+        <li>名前へ<code>tg-alb-tls-lab-http</code>を入力</li>
+        <li>プロトコルへHTTP、ポートへ80を入力</li>
+        <li>EC2と同じVPCを選択</li>
+        <li>プロトコルバージョンへHTTP1を選択</li>
+        <li>ヘルスチェックプロトコルへHTTPを選択</li>
+        <li>ヘルスチェックパスへ<code>/healthz</code>を入力</li>
+        <li>成功コードへ<code>200</code>を入力</li>
+        <li><code>alb-tls-lab-web01</code>をポート80で登録</li>
+        <li>ターゲットの状態がHealthyになることを確認</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ヘルスチェックで301を成功扱いにしない</strong>
+        <p>成功コードを200から399へ広げると、リダイレクトループや誤った転送先でもHealthyになる可能性があります。<code>/healthz</code>が依存サービスを含めて正常時に200を返す構成を基本とする</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 8-1</strong>
+        <p>ターゲットグループのHTTP:80、<code>/healthz</code>、成功コード200を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 8-2</strong>
+        <p>登録済みターゲットがHealthyになった画面を挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html">AWS公式: Health checks for Application Load Balancer target groups</a></p>
+
+      <h2 id="alb">9. Application Load Balancerの作成</h2>
+      <h3>9.1 ALBとHTTPSリスナー</h3>
+      <ol>
+        <li>EC2コンソールの「ロードバランサー」からApplication Load Balancerを選択</li>
+        <li>名前へ<code>alb-tls-lab</code>を入力</li>
+        <li>スキームへ「インターネット向け」を選択</li>
+        <li>IPアドレスタイプを要件に合わせて選択</li>
+        <li>EC2と同じVPCを選択</li>
+        <li>異なるAZのパブリックサブネットを2つ以上選択</li>
+        <li><code>sg-alb-tls-lab</code>を関連付け</li>
+        <li>HTTPS:443リスナーのデフォルトアクションへ<code>tg-alb-tls-lab-http</code>を選択</li>
+        <li>ACMから<code>alb-lab.zexample.com</code>の発行済み証明書を選択</li>
+        <li>セキュリティポリシーをクライアント互換性と組織標準に合わせて選択</li>
+        <li>設定を確認してALBを作成</li>
+      </ol>
+
+      <h3>9.2 HTTPリスナーのリダイレクト</h3>
+      <ol>
+        <li>作成したALBの「リスナーとルール」を表示</li>
+        <li>HTTP:80リスナーを追加</li>
+        <li>デフォルトアクションへ「URLにリダイレクト」を選択</li>
+        <li>プロトコルへHTTPS、ポートへ443を指定</li>
+        <li>ホスト、パス、クエリを元の値のまま維持する設定を確認</li>
+        <li>ステータスコードへHTTP 301を選択して保存</li>
+      </ol>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 9-1</strong>
+        <p>ALB名、インターネット向け、VPC、2つ以上のAZとサブネットを挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 9-2</strong>
+        <p>HTTPS:443、ACM証明書、ターゲットグループの関連付けを挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 9-3</strong>
+        <p>HTTP:80からHTTPS:443への301リダイレクトアクションを挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html">AWS公式: Create an HTTPS listener for your Application Load Balancer</a></p>
+
+      <h2 id="precheck">10. DNS切替前のALB事前試験</h2>
+      <p>ALBのDNS名を確認します。公開FQDNのDNSレコードはまだEC2を向いているため、<code>curl --connect-to</code>を使って接続先だけをALBへ変更します。URL、Hostヘッダー、TLSのSNIは<code>alb-lab.zexample.com</code>のまま維持できる</p>
+
+      <div class="code"><div class="code-header"><span>pre-cutover test</span><button class="copy" type="button">Copy</button></div><pre><code>ALB_DNS_NAME='&lt;ALB_DNS_NAME&gt;'
+
+curl -I \
+  --connect-to "alb-lab.zexample.com:443:${ALB_DNS_NAME}:443" \
+  https://alb-lab.zexample.com/
+
+openssl s_client \
+  -connect "${ALB_DNS_NAME}:443" \
+  -servername alb-lab.zexample.com \
+  -showcerts &lt; /dev/null 2&gt;/dev/null |
+  openssl x509 -noout -subject -issuer -serial -dates</code></pre></div>
+
+      <p>HTTP:80のリダイレクトはALBのDNS名へHostヘッダーを付けて確認する</p>
+      <div class="code"><div class="code-header"><span>HTTP redirect test</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I \
+  -H 'Host: alb-lab.zexample.com' \
+  "http://${ALB_DNS_NAME}/test/path?source=precheck"</code></pre></div>
+
+      <table>
+        <thead><tr><th>確認対象</th><th>合格条件</th></tr></thead>
+        <tbody>
+          <tr><td>ターゲットヘルス</td><td>Healthy</td></tr>
+          <tr><td>HTTPS応答</td><td>期待する200またはアプリケーション固有の正常応答</td></tr>
+          <tr><td>公開証明書</td><td>SANに<code>alb-lab.zexample.com</code>を含み、発行者がAmazon</td></tr>
+          <tr><td>HTTPリダイレクト</td><td><code>https://alb-lab.zexample.com/test/path?source=precheck</code>へ301</td></tr>
+          <tr><td>Apache</td><td>ALB経由のHTTPS要求で再リダイレクトなし</td></tr>
+          <tr><td>アプリケーション</td><td>ログイン、Cookie、URL生成、アップロード、APIが正常</td></tr>
+          <tr><td>ログ</td><td>ALBアクセスログとApacheログへ想定どおり記録</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ALBのDNS名を公開URLとして使わない</strong>
+        <p>ACM証明書は<code>alb-lab.zexample.com</code>向けであり、ALBのAWS提供DNS名とは一致しません。利用者向けURLと事前試験のSNI／Hostヘッダーは公開FQDNを使用する</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 10-1</strong>
+        <p><code>curl --connect-to</code>の200応答、<code>openssl</code>のAmazon発行証明書、HTTPの301応答を挿入</p>
+      </div>
+
+      <h2 id="dns-cutover">11. Route 53レコードの切替</h2>
+      <h3>11.1 切替直前の最終確認</h3>
+      <ol>
+        <li>ACM証明書が「発行済み」であることの確認</li>
+        <li>HTTPS:443リスナーとACM証明書の関連付け確認</li>
+        <li>HTTP:80リスナーのHTTPSリダイレクト確認</li>
+        <li>ターゲットがHealthyであることの確認</li>
+        <li>ALB事前試験の成功確認</li>
+        <li>旧EC2の443、第三者証明書、Apache設定を切り戻し用に維持していることの確認</li>
+        <li>旧DNSレコード値と変更前画面の保存</li>
+      </ol>
+
+      <h3>11.2 エイリアスレコードへの変更</h3>
+      <ol>
+        <li>Route 53のホストゾーン<code>zexample.com</code>を表示</li>
+        <li><code>alb-lab.zexample.com</code>の既存Aレコードを編集</li>
+        <li>エイリアスを有効化</li>
+        <li>トラフィックのルーティング先へ「Application Load BalancerとClassic Load Balancer」を選択</li>
+        <li>リージョンへ<code>ap-northeast-1</code>を選択</li>
+        <li>作成済みの<code>alb-tls-lab</code>を選択</li>
+        <li>ルーティングポリシーとターゲットの正常性評価を運用設計に合わせて選択</li>
+        <li>変更前の値と差分を確認してレコードを保存</li>
+      </ol>
+
+      <p>Route 53以外のDNSでは、サブドメインのCNAMEをALBのDNS名へ向けます。ゾーン頂点では一般的なCNAMEを作成できないため、DNS事業者のALIAS／ANAME相当機能またはRoute 53のエイリアスを使用する</p>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 11-1</strong>
+        <p>変更前のAレコードとEC2のパブリックIPを挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 11-2</strong>
+        <p>変更後のAエイリアス、ALB、リージョン、正常性評価の設定を挿入</p>
+      </div>
+
+      <p><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html">AWS公式: Routing traffic to an ELB load balancer</a></p>
+
+      <h2 id="postcheck">12. 切替後の確認</h2>
+      <p>DNS、HTTP、HTTPS、証明書、ターゲット、アプリケーション、ログの順に確認する</p>
+      <div class="code"><div class="code-header"><span>post-cutover verification</span><button class="copy" type="button">Copy</button></div><pre><code>dig +short alb-lab.zexample.com
+
+curl -I http://alb-lab.zexample.com/
+curl -I https://alb-lab.zexample.com/
+
+openssl s_client \
+  -connect alb-lab.zexample.com:443 \
+  -servername alb-lab.zexample.com \
+  -showcerts &lt; /dev/null 2&gt;/dev/null |
+  openssl x509 -noout -subject -issuer -serial -dates -ext subjectAltName</code></pre></div>
+
+      <table>
+        <thead><tr><th>レイヤー</th><th>確認項目</th></tr></thead>
+        <tbody>
+          <tr><td>DNS</td><td>公開FQDNがALBのアドレスへ解決され、旧EC2の固定IPを返さない</td></tr>
+          <tr><td>HTTP</td><td>ALBがHTTPSの同一ホスト・パス・クエリへ301転送</td></tr>
+          <tr><td>HTTPS</td><td>正常応答で、リダイレクトループがない</td></tr>
+          <tr><td>証明書</td><td>Amazon発行、正しいSAN、有効期間、完全なチェーン</td></tr>
+          <tr><td>ターゲット</td><td>Healthyが継続</td></tr>
+          <tr><td>アプリケーション</td><td>ログイン、セッション、Secure Cookie、CSRF、コールバックURL、URL生成が正常</td></tr>
+          <tr><td>クライアントIP</td><td><code>X-Forwarded-For</code>を適切に処理し、ALBのIPだけを利用者IPとして記録しない</td></tr>
+          <tr><td>メトリクス</td><td><code>HTTPCode_ELB_5XX_Count</code>、<code>HTTPCode_Target_5XX_Count</code>、<code>TargetResponseTime</code>、<code>UnHealthyHostCount</code>に異常がない</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 12-1</strong>
+        <p>Route 53切替後の名前解決、HTTP 301、HTTPS 200、証明書発行者を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 12-2</strong>
+        <p>ターゲットのHealthy、ALBメトリクス、Apacheアクセスログを挿入</p>
+      </div>
+
+      <h2 id="hardening">13. 観察期間後の旧TLS設定終了</h2>
+      <p>DNSキャッシュ、長時間接続、外部監視、バッチ、固定IP参照の影響を確認するため、組織で定めた観察期間は旧EC2の443設定と証明書を切り戻し用に保持します。確認後、次の順で直接公開を終了する</p>
+      <ol>
+        <li>EC2のアクセスログに旧経路の新規通信がないことの確認</li>
+        <li>外部監視、バッチ、連携先が公開FQDNを使用していることの確認</li>
+        <li>EC2用Security Groupからインターネット送信元の80／443を削除</li>
+        <li>ALB用Security GroupからEC2の80へ到達できることの再確認</li>
+        <li>Apacheの443 VirtualHostを無効化する変更の実施</li>
+        <li><code>apachectl configtest</code>成功後のApache再読み込み</li>
+        <li>旧証明書と秘密鍵の保管または削除を組織の鍵管理規程に沿って実施</li>
+        <li>EC2のパブリックIPv4が不要な場合の削除検討</li>
+      </ol>
+
+      <p>最終的なApache設定は80番VirtualHostだけにできます。HTTPからHTTPSへのリダイレクトはALBで完結するため、EC2側のRewrite設定を削除する場合は、ALB以外の経路が存在しないことを先に確認する</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ インスタンスをプライベートサブネットへ移動する変更は別作業</strong>
+        <p>既存EC2のサブネットは後から変更できません。プライベートサブネット化する場合は、AMIまたはIaCから新しいEC2を作成し、ターゲット追加、Healthy確認、旧ターゲットのdrainingを経て入れ替える</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 13-1</strong>
+        <p>EC2用Security Groupが「ALB用Security GroupからTCP/80」と管理接続だけになった状態を挿入</p>
+      </div>
+
+      <h2 id="rollback">14. 切り戻し</h2>
+      <h3>14.1 DNS切替前</h3>
+      <p>ALB事前試験に失敗した場合はRoute 53を変更せず、既存のEC2直接TLS終端を継続します。Apache設定をバックアップから戻し、ALBとターゲットグループの原因を調査する</p>
+
+      <h3>14.2 DNS切替後</h3>
+      <ol>
+        <li>旧EC2の443 VirtualHostと第三者証明書が有効であることの確認</li>
+        <li>EC2用Security Groupの直接443許可が有効であることの確認</li>
+        <li>Route 53の<code>alb-lab.zexample.com</code>を変更前のAレコードへ復元</li>
+        <li>DNS応答が旧EC2のIPへ戻ることの確認</li>
+        <li>HTTPS応答と旧証明書の確認</li>
+        <li>ALB経路の5XX、ターゲットヘルス、Apacheログ、アプリケーションログの保全</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 切り戻し完了まで旧証明書を削除しない</strong>
+        <p>DNSキャッシュによりALB経路とEC2直接経路が一時的に混在します。両方の経路が正常である期間を確保し、切替完了を確認する前に旧証明書、443 VirtualHost、Security Groupルールを削除しない</p>
+      </div>
+
+      <h2 id="monitoring">15. 監視と運用</h2>
+      <table>
+        <thead><tr><th>対象</th><th>監視内容</th><th>異常時の確認</th></tr></thead>
+        <tbody>
+          <tr><td>ACM</td><td><code>DaysToExpiry</code>、更新ステータス、利用先、DNS検証</td><td>検証用CNAME、CAA、証明書とALBの関連付け</td></tr>
+          <tr><td>ALB</td><td>ELB 4XX／5XX、Target 4XX／5XX、接続エラー、応答時間</td><td>リスナールール、Security Group、ターゲット、アプリケーション</td></tr>
+          <tr><td>ターゲット</td><td>HealthyHostCount、UnHealthyHostCount</td><td><code>/healthz</code>、Apache、EC2リソース、Security Group</td></tr>
+          <tr><td>外部HTTPS</td><td>ステータス、証明書SAN、発行者、有効期限、チェーン</td><td>DNS、SNI、ALB証明書リスト、ACM更新状態</td></tr>
+          <tr><td>Apache</td><td>5XX、応答時間、再起動、ディスク、ログローテーション</td><td>VirtualHost、アプリケーション、<code>X-Forwarded-Proto</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>ACM上の証明書だけでなく、外部から実際に返される証明書も監視します。証明書がACMで更新済みでも、誤ったALB、別リージョン、古いDNS経路が利用されると、利用者が受け取る証明書は異なる可能性がある</p>
+
+      <h2 id="troubleshooting">16. トラブルシューティング</h2>
+      <table>
+        <thead><tr><th>事象</th><th>主な原因</th><th>確認</th></tr></thead>
+        <tbody>
+          <tr><td>ターゲットがUnhealthy</td><td><code>/healthz</code>が301／403／404、Security Group、Apache停止</td><td>EC2内の<code>curl</code>、Apacheログ、ターゲットのreason code</td></tr>
+          <tr><td>HTTPSがリダイレクトループ</td><td>Apacheが<code>X-Forwarded-Proto</code>を見ずにHTTPをHTTPSへ転送</td><td>80番VirtualHostのRewrite条件とALBリスナー</td></tr>
+          <tr><td>ALBから502</td><td>Apache未待受、接続拒否、不正な応答、タイムアウト</td><td><code>ss -lntp</code>、Apache状態、Security Group、エラーログ</td></tr>
+          <tr><td>ALBから503</td><td>Healthyなターゲットなし、ターゲット未登録</td><td>ターゲットグループの登録状態とヘルスチェック</td></tr>
+          <tr><td>証明書エラー</td><td>FQDN不一致、別証明書がデフォルト、DNSが旧経路</td><td>SNI付き<code>openssl s_client</code>、ALB証明書一覧、DNS</td></tr>
+          <tr><td>アプリケーションがHTTP URLを生成</td><td>信頼するプロキシまたは<code>X-Forwarded-Proto</code>処理不足</td><td>Apache環境変数、アプリケーションのproxy設定</td></tr>
+          <tr><td>利用者IPがすべてALBになる</td><td><code>X-Forwarded-For</code>未処理</td><td>アプリケーションと<code>mod_remoteip</code>の設定</td></tr>
+          <tr><td>ACM証明書が更新されない</td><td>検証用CNAME削除、証明書未使用、CAA制約</td><td>ACM更新ステータス、CNAME、利用先、EventBridge</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="server-certificates">17. サーバー内でTLS終端する場合</h2>
+      <p>規制、アプリケーション要件、ALBからEC2間の暗号化要件により、EC2内でTLSを終端する構成を残す場合があります。実機での手動エクスポートとAWS Workload Credentials Providerの導入は、<a href="acm-export-ec2.html">ACM証明書をEC2へ自動配置</a>を参照する。証明書方式、有効期間、料金、ACME、EventBridgeとSystems Managerによる配布方式の比較は、<a href="aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a>を参照する</p>
+
+      <div class="callout">
+        <strong>ℹ️ サーバー内の自動更新方式</strong>
+        <p>AWSは、公開証明書を利用者管理のサーバーへ自動配置する第一候補としてACMEを案内しています。ACMEを利用できない場合は、エクスポート可能なACM証明書をAWS Workload Credentials Providerが定期取得し、ファイル更新後にApacheのreloadコマンドを実行する方式を選択できる</p>
+      </div>
+
+      <h2 id="references">18. 公式ドキュメント</h2>
+      <ul>
+        <li><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-application-load-balancer.html">Create an Application Load Balancer</a></li>
+        <li><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html">Create an HTTPS listener for your Application Load Balancer</a></li>
+        <li><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html">Health checks for Application Load Balancer target groups</a></li>
+        <li><a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/x-forwarded-headers.html">HTTP headers and Application Load Balancers</a></li>
+        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html">AWS Certificate Manager DNS validation</a></li>
+        <li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-elb-load-balancer.html">Routing traffic to an ELB load balancer</a></li>
+        <li><a href="https://aws.amazon.com/certificate-manager/pricing/">AWS Certificate Manager Pricing</a></li>
+        <li><a href="https://aws.amazon.com/elasticloadbalancing/pricing/">Elastic Load Balancing Pricing</a></li>
+      </ul>
+
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#overview">0. 目的と完成構成</a>
+      <a href="#parameters">1. 検証パラメータ</a>
+      <a href="#order">2. 作業順序</a>
+      <a href="#ec2">3. EC2の作成</a>
+      <a href="#direct-tls">4. 移行前TLS終端</a>
+      <a href="#acm">5. ACM証明書</a>
+      <a href="#security-groups">6. Security Group</a>
+      <a href="#apache-alb">7. Apache設定</a>
+      <a href="#target-group">8. ターゲットグループ</a>
+      <a href="#alb">9. ALB</a>
+      <a href="#precheck">10. 事前試験</a>
+      <a href="#dns-cutover">11. Route 53切替</a>
+      <a href="#postcheck">12. 切替後確認</a>
+      <a href="#hardening">13. 旧TLS終了</a>
+      <a href="#rollback">14. 切り戻し</a>
+      <a href="#monitoring">15. 監視と運用</a>
+      <a href="#troubleshooting">16. トラブル対応</a>
+      <a href="#server-certificates">17. サーバーTLS</a>
+      <a href="#references">18. 公式資料</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

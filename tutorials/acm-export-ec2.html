@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACM証明書をEC2へ自動配置 | Documentation</title>
+  <meta name="description" content="エクスポート可能なACMパブリック証明書をEC2上のApacheへ手動配置し、AWS Workload Credentials Providerで更新と再配置を自動化する手順を整理します。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a href="alb-tls-termination.html">ALBでTLS終端</a>
+      <a class="active" href="acm-export-ec2.html">ACM証明書をEC2へ配置</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>ACM証明書をEC2へ自動配置</h1>
+      <p class="lead">エクスポート可能なAWS Certificate Managerパブリック証明書をEC2上のApacheへ配置し、AWS Workload Credentials Providerで定期取得、ファイル更新、Apache再読み込みを自動化します。手動エクスポートで証明書形式を理解した後、自動配置へ切り替える</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ALBで終端できる場合はALBと通常のACM証明書を優先</strong>
+        <p>EC2でTLSを直接終端する要件がなければ、<a href="alb-tls-termination.html">Application Load BalancerでTLS終端</a>へ移行した方が秘密鍵、配布処理、Apache再読み込みを管理せずに済みます。このページは、サーバー内でTLSを終端する明確な要件がある場合の手順</p>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ AWS Workload Credentials Providerの動作</strong>
+        <p>プロバイダーは24時間ごと、サービス起動時、システム起動時にACMから証明書をエクスポートし、ローカルファイルと比較します。内容が変わった場合だけ証明書ファイルを書き換え、設定した<code>refresh_command</code>を実行する。内容が同じ場合はApacheを再読み込みしない</p>
+      </div>
+
+      <h2 id="scope">0. 対象構成と制約</h2>
+      <table>
+        <thead><tr><th>項目</th><th>設定値</th></tr></thead>
+        <tbody>
+          <tr><td>リージョン</td><td><code>ap-northeast-1</code></td></tr>
+          <tr><td>公開FQDN</td><td><code>server-tls-lab.zexample.com</code></td></tr>
+          <tr><td>OS</td><td>Amazon Linux 2023</td></tr>
+          <tr><td>Webサーバー</td><td>Apache HTTP Server</td></tr>
+          <tr><td>証明書</td><td>エクスポートを有効にしたACMパブリック証明書</td></tr>
+          <tr><td>EC2インスタンスロール</td><td><code>EC2WcpInstanceRole</code></td></tr>
+          <tr><td>証明書エクスポートロール</td><td><code>ACMExportRole</code></td></tr>
+          <tr><td>証明書配置先</td><td><code>/etc/httpd/conf/ssl/server-tls-lab.zexample.com.crt</code></td></tr>
+          <tr><td>秘密鍵配置先</td><td><code>/etc/httpd/conf/ssl/server-tls-lab.zexample.com.key</code></td></tr>
+          <tr><td>証明書チェーン配置先</td><td><code>/etc/httpd/conf/ssl/server-tls-lab.zexample.com-chain.pem</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>エクスポート可能なパブリック証明書は有料で、発行時と更新時にドメイン単位の料金が発生します。2026年8月時点の証明書有効期間は198日で、ACMは期限45日前から更新しますが、更新後の証明書をEC2へ配置する処理は利用者側の責任</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 発行済み証明書のエクスポート設定は後から変更できない</strong>
+        <p>通常の非エクスポート型ACM証明書を発行した後で、エクスポート可能へ変更することはできません。証明書リクエスト時にエクスポートを有効化した新しい証明書が必要</p>
+      </div>
+
+      <h2 id="request">1. エクスポート可能な証明書の発行</h2>
+      <ol>
+        <li>ACMコンソールを<code>ap-northeast-1</code>で表示</li>
+        <li>パブリック証明書のリクエストを選択</li>
+        <li>ドメイン名へ<code>server-tls-lab.zexample.com</code>を入力</li>
+        <li>検証方法へDNS検証を選択</li>
+        <li>キーアルゴリズムをクライアント要件に合わせて選択</li>
+        <li>証明書のエクスポートを有効化</li>
+        <li>証明書をリクエスト</li>
+        <li>ACMが提示する検証用CNAMEを公開DNSへ登録</li>
+        <li>証明書ステータスが「発行済み」になることを確認</li>
+        <li>証明書ARNと有効期限を作業記録へ保存</li>
+      </ol>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 1-1</strong>
+        <p>証明書リクエスト画面のFQDN、DNS検証、エクスポート有効を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 1-2</strong>
+        <p>検証用CNAME、発行済みステータス、証明書ARN、エクスポート可の表示を挿入</p>
+      </div>
+
+      <p>AWS CLIでリクエストする場合は、<code>Export=ENABLED</code>を明示する</p>
+      <div class="code"><div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm request-certificate \
+  --domain-name server-tls-lab.zexample.com \
+  --validation-method DNS \
+  --key-algorithm RSA_2048 \
+  --options Export=ENABLED \
+  --region ap-northeast-1</code></pre></div>
+
+      <h2 id="manual-export">2. 手動エクスポートとApacheへの配置</h2>
+      <h3>2.1 エクスポート</h3>
+      <p>この手順は、先に「3. AWS Workload Credentials Provider用IAM」の2つのロールを作成し、EC2へ<code>EC2WcpInstanceRole</code>を関連付けてから実行します。作業用ディレクトリとパスフレーズファイルを作成し、パスフレーズファイルの末尾には改行を入れない</p>
+      <div class="code"><div class="code-header"><span>prepare</span><button class="copy" type="button">Copy</button></div><pre><code>export ACM_EXPORT_WORK="/tmp/acm-export-work-${USER}"
+umask 077
+mkdir -p "${ACM_EXPORT_WORK}"
+
+read -rsp 'Export passphrase: ' ACM_EXPORT_PASSPHRASE
+printf '\n'
+printf '%s' "${ACM_EXPORT_PASSPHRASE}" &gt; "${ACM_EXPORT_WORK}/passphrase.txt"
+unset ACM_EXPORT_PASSPHRASE</code></pre></div>
+
+      <p>EC2インスタンスロールを基点に<code>ACMExportRole</code>を引き受け、取得した一時認証情報を現在のシェルだけへ設定する</p>
+      <div class="code"><div class="code-header"><span>assume export role</span><button class="copy" type="button">Copy</button></div><pre><code>read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN &lt; &lt;(
+  aws sts assume-role \
+    --role-arn arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/ACMExportRole \
+    --role-session-name acm-manual-export \
+    --duration-seconds 900 \
+    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+    --output text
+)
+
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN</code></pre></div>
+
+      <p>対象証明書をJSON形式でエクスポートする</p>
+      <div class="code"><div class="code-header"><span>export certificate</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm export-certificate \
+  --certificate-arn &lt;CERTIFICATE_ARN&gt; \
+  --passphrase "fileb://${ACM_EXPORT_WORK}/passphrase.txt" \
+  --region ap-northeast-1 \
+  &gt; "${ACM_EXPORT_WORK}/acm-export.json"
+
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN</code></pre></div>
+
+      <p>証明書、チェーン、暗号化された秘密鍵をJSONから分離する</p>
+      <div class="code"><div class="code-header"><span>split files</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install -y jq
+
+jq -r '.Certificate' "${ACM_EXPORT_WORK}/acm-export.json" \
+  &gt; "${ACM_EXPORT_WORK}/server.crt"
+
+jq -r '.CertificateChain' "${ACM_EXPORT_WORK}/acm-export.json" \
+  &gt; "${ACM_EXPORT_WORK}/chain.pem"
+
+jq -r '.PrivateKey' "${ACM_EXPORT_WORK}/acm-export.json" \
+  &gt; "${ACM_EXPORT_WORK}/private-key-encrypted.pem"</code></pre></div>
+
+      <p>Apacheが起動時にパスフレーズ入力を要求しないよう、暗号化された秘密鍵から実行用秘密鍵を作成する</p>
+      <div class="code"><div class="code-header"><span>decrypt private key</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey \
+  -in "${ACM_EXPORT_WORK}/private-key-encrypted.pem" \
+  -passin "file:${ACM_EXPORT_WORK}/passphrase.txt" \
+  -out "${ACM_EXPORT_WORK}/server.key"</code></pre></div>
+
+      <h3>2.2 証明書と秘密鍵の検証</h3>
+      <div class="code"><div class="code-header"><span>verify</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 \
+  -in "${ACM_EXPORT_WORK}/server.crt" \
+  -noout -subject -issuer -serial -dates -ext subjectAltName
+
+openssl x509 -in "${ACM_EXPORT_WORK}/server.crt" -pubkey -noout | openssl sha256
+openssl pkey -in "${ACM_EXPORT_WORK}/server.key" -pubout | openssl sha256
+
+openssl verify \
+  -untrusted "${ACM_EXPORT_WORK}/chain.pem" \
+  "${ACM_EXPORT_WORK}/server.crt"</code></pre></div>
+
+      <p>2つのSHA-256値が一致し、証明書のSAN、有効期限、チェーン検証が正常であることを確認する</p>
+
+      <h3>2.3 Apacheへの配置</h3>
+      <div class="code"><div class="code-header"><span>install certificate files</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 700 -o root -g root /etc/httpd/conf/ssl
+
+sudo install -m 600 -o root -g root \
+  "${ACM_EXPORT_WORK}/server.crt" \
+  /etc/httpd/conf/ssl/server-tls-lab.zexample.com.crt
+
+sudo install -m 600 -o root -g root \
+  "${ACM_EXPORT_WORK}/server.key" \
+  /etc/httpd/conf/ssl/server-tls-lab.zexample.com.key
+
+sudo install -m 600 -o root -g root \
+  "${ACM_EXPORT_WORK}/chain.pem" \
+  /etc/httpd/conf/ssl/server-tls-lab.zexample.com-chain.pem</code></pre></div>
+
+      <p>Apacheの443 VirtualHostから配置したファイルを参照する</p>
+      <div class="code"><div class="code-header"><span>Apache VirtualHost</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;VirtualHost *:443&gt;
+    ServerName server-tls-lab.zexample.com
+    DocumentRoot /var/www/html
+
+    SSLEngine on
+    SSLCertificateFile /etc/httpd/conf/ssl/server-tls-lab.zexample.com.crt
+    SSLCertificateKeyFile /etc/httpd/conf/ssl/server-tls-lab.zexample.com.key
+    SSLCertificateChainFile /etc/httpd/conf/ssl/server-tls-lab.zexample.com-chain.pem
+
+    ErrorLog /var/log/httpd/server-tls-lab_error.log
+    CustomLog /var/log/httpd/server-tls-lab_access.log combined
+&lt;/VirtualHost&gt;</code></pre></div>
+
+      <div class="code"><div class="code-header"><span>Apache checks</span><button class="copy" type="button">Copy</button></div><pre><code>sudo apachectl configtest
+sudo systemctl reload httpd
+
+openssl s_client \
+  -connect server-tls-lab.zexample.com:443 \
+  -servername server-tls-lab.zexample.com \
+  -showcerts &lt; /dev/null 2&gt;/dev/null |
+  openssl x509 -noout -subject -issuer -serial -dates</code></pre></div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 手動作業用ファイルを残さない</strong>
+        <p>動作確認後は、暗号化解除済み秘密鍵、JSON、パスフレーズを含む作業ディレクトリを組織の鍵管理手順に沿って安全に削除します。削除前に、Apacheが本番配置先のファイルを参照していることを確認する</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 2-1</strong>
+        <p>証明書のsubject、issuer、serial、dates、SANと公開鍵ハッシュ一致を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 2-2</strong>
+        <p>Apacheの構文成功、HTTPS応答、外部から返る証明書を挿入</p>
+      </div>
+
+      <h2 id="iam">3. AWS Workload Credentials Provider用IAM</h2>
+      <h3>3.1 EC2インスタンスロール</h3>
+      <p><code>EC2WcpInstanceRole</code>へ、証明書エクスポートロールだけを引き受ける権限を追加する</p>
+      <div class="code"><div class="code-header"><span>EC2 role policy</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AssumeAcmExportRole",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/ACMExportRole"
+    }
+  ]
+}</code></pre></div>
+
+      <h3>3.2 証明書エクスポートロール</h3>
+      <p><code>ACMExportRole</code>の信頼ポリシーで、EC2インスタンスロールだけを許可する</p>
+      <div class="code"><div class="code-header"><span>ACMExportRole trust policy</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TrustEc2WcpInstanceRole",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/EC2WcpInstanceRole"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}</code></pre></div>
+
+      <p><code>ACMExportRole</code>へ、対象証明書1つだけをエクスポートする権限を追加する</p>
+      <div class="code"><div class="code-header"><span>ACMExportRole permissions policy</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ExportSingleCertificate",
+      "Effect": "Allow",
+      "Action": "acm:ExportCertificate",
+      "Resource": "&lt;CERTIFICATE_ARN&gt;"
+    }
+  ]
+}</code></pre></div>
+
+      <p>EC2へ<code>EC2WcpInstanceRole</code>のインスタンスプロファイルを関連付け、認証情報を確認する</p>
+      <div class="code"><div class="code-header"><span>identity check</span><button class="copy" type="button">Copy</button></div><pre><code>aws sts get-caller-identity
+
+aws sts assume-role \
+  --role-arn arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/ACMExportRole \
+  --role-session-name wcp-permission-test \
+  --duration-seconds 900 \
+  --query 'AssumedRoleUser.Arn' \
+  --output text</code></pre></div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ EC2ロールへ<code>acm:ExportCertificate</code>を直接付与しない</strong>
+        <p>AWSの構成例と同様に、基点となるEC2ロールと証明書ごとのエクスポートロールを分離します。証明書ARNを限定し、同一アカウント内のすべての証明書をエクスポートできる権限を避ける</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 3-1</strong>
+        <p>EC2ロール、証明書エクスポートロール、信頼ポリシー、対象証明書ARN限定の権限を挿入</p>
+      </div>
+
+      <h2 id="install">4. AWS Workload Credentials Providerの導入</h2>
+      <h3>4.1 ソースとバージョンの固定</h3>
+      <p>AWS Workload Credentials Providerはオープンソースです。検証したGitタグを指定して取得し、<code>main</code>ブランチを無条件に本番ビルドへ使用しない</p>
+      <div class="code"><div class="code-header"><span>download source</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf groupinstall -y "Development Tools"
+sudo dnf install -y git openssl-devel pkgconfig
+
+git clone \
+  --branch &lt;WCP_RELEASE_TAG&gt; \
+  --depth 1 \
+  https://github.com/aws/aws-workload-credentials-provider.git
+
+cd aws-workload-credentials-provider
+git describe --tags --always</code></pre></div>
+
+      <p>AWS公式リポジトリのREADMEとリリースタグを確認し、Rustツールチェーンを導入してバイナリをビルドする</p>
+      <div class="code"><div class="code-header"><span>build</span><button class="copy" type="button">Copy</button></div><pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+. "$HOME/.cargo/env"
+
+cargo build --release
+file target/release/aws-workload-credentials-provider</code></pre></div>
+
+      <h3>4.2 設定ファイルの作成</h3>
+      <p>証明書ARN、引き受けるロール、配置先、Apache再読み込みコマンドをTOMLへ記載する</p>
+      <div class="code"><div class="code-header"><span>/tmp/wcp-acm-config.toml</span><button class="copy" type="button">Copy</button></div><pre><code>[logging]
+log_level = "info"
+log_to_file = true
+
+[capabilities.acm]
+enabled = true
+
+[[capabilities.acm.certificates]]
+certificate_arn = "&lt;CERTIFICATE_ARN&gt;"
+role_arn = "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/ACMExportRole"
+certificate_path = "/etc/httpd/conf/ssl/server-tls-lab.zexample.com.crt"
+private_key_path = "/etc/httpd/conf/ssl/server-tls-lab.zexample.com.key"
+chain_path = "/etc/httpd/conf/ssl/server-tls-lab.zexample.com-chain.pem"
+refresh_command = "/bin/systemctl reload httpd"
+</code></pre></div>
+
+      <p><code>chain_path</code>を省略すると、プロバイダーは証明書とチェーンを<code>certificate_path</code>へ連結してfullchain形式で保存します。Apache設定とファイル形式を一致させる</p>
+
+      <h3>4.3 インストール</h3>
+      <p>AWS公式リポジトリに含まれるインストーラーをrootで実行する</p>
+      <div class="code"><div class="code-header"><span>install</span><button class="copy" type="button">Copy</button></div><pre><code>cd aws_workload_credentials_provider_common/configuration
+sudo ./install --config /tmp/wcp-acm-config.toml</code></pre></div>
+
+      <p>インストーラーは専用の低権限ユーザー、systemdサービス、証明書配置先の権限、設定済みの<code>refresh_command</code>だけを実行できるsudoersエントリを作成します。<code>/etc/sudoers</code>が<code>/etc/sudoers.d</code>を読み込むことを確認する</p>
+
+      <div class="code"><div class="code-header"><span>sudoers check</span><button class="copy" type="button">Copy</button></div><pre><code>sudo visudo -c
+sudo grep -R "systemctl reload httpd" \
+  /etc/sudoers /etc/sudoers.d 2&gt;/dev/null</code></pre></div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 長期アクセスキーをEC2へ置かない</strong>
+        <p>EC2ではインスタンスプロファイルから一時認証情報を取得します。アクセスキーをsystemd環境変数、設定ファイル、シェル履歴へ保存しない</p>
+      </div>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 4-1</strong>
+        <p>固定したGitタグ、ビルド成功、インストーラー成功、作成されたsystemdサービスを挿入</p>
+      </div>
+
+      <h2 id="verify">5. 初回取得と動作確認</h2>
+      <p>サービス、ログ、証明書ファイル、権限を確認する</p>
+      <div class="code"><div class="code-header"><span>provider verification</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl status aws-workload-credentials-provider-acm --no-pager
+
+sudo tail -100 \
+  /opt/aws/workload-credentials-provider/logs/acm_provider.log
+
+sudo ls -l /etc/httpd/conf/ssl/server-tls-lab.zexample.com*
+
+sudo openssl x509 \
+  -in /etc/httpd/conf/ssl/server-tls-lab.zexample.com.crt \
+  -noout -subject -issuer -serial -dates -ext subjectAltName
+
+sudo apachectl configtest
+sudo systemctl status httpd --no-pager</code></pre></div>
+
+      <p>外部エンドポイントが新しい証明書を返すことを確認する</p>
+      <div class="code"><div class="code-header"><span>endpoint verification</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client \
+  -connect server-tls-lab.zexample.com:443 \
+  -servername server-tls-lab.zexample.com \
+  -showcerts &lt; /dev/null 2&gt;/dev/null |
+  openssl x509 -noout -subject -issuer -serial -dates</code></pre></div>
+
+      <table>
+        <thead><tr><th>確認</th><th>合格条件</th></tr></thead>
+        <tbody>
+          <tr><td>プロバイダーサービス</td><td>active (running)</td></tr>
+          <tr><td>ローカルログ</td><td>対象証明書の初回エクスポート成功</td></tr>
+          <tr><td>証明書ファイル</td><td>専用ユーザーとrootだけに限定された権限</td></tr>
+          <tr><td>Apache</td><td>構文成功、再読み込み成功、HTTPS応答</td></tr>
+          <tr><td>証明書</td><td>ACMと外部エンドポイントのserial、有効期限、SANが一致</td></tr>
+          <tr><td>CloudTrail</td><td><code>ExportCertificate</code>とWCPのUser-Agentを確認</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>📷 画像挿入位置 5-1</strong>
+        <p>プロバイダーのactive状態、初回エクスポート成功ログ、証明書ファイル権限を挿入</p>
+      </div>
+      <div class="callout">
+        <strong>📷 画像挿入位置 5-2</strong>
+        <p>Apache構文成功、外部HTTPS応答、証明書serialと有効期限を挿入</p>
+      </div>
+
+      <h2 id="reload">6. 設定変更と更新試験</h2>
+      <h3>6.1 動的設定再読み込み</h3>
+      <p>証明書、配置先、ロールを変更する場合は、新しいTOMLを指定して動的再読み込みを実行する。設定検証、権限更新、サービス再起動が行われる</p>
+      <div class="code"><div class="code-header"><span>configuration reload</span><button class="copy" type="button">Copy</button></div><pre><code>sudo aws-workload-credentials-provider \
+  acm reload \
+  --config /tmp/wcp-acm-config.toml
+
+sudo systemctl status aws-workload-credentials-provider-acm --no-pager
+sudo tail -100 /opt/aws/workload-credentials-provider/logs/acm_provider.log</code></pre></div>
+
+      <h3>6.2 自動更新経路の検証</h3>
+      <p>ACMの実更新を任意の時刻に強制できないため、初回インストール時の取得、ファイル書き込み、Apache再読み込みを証拠として保存します。さらに隔離した検証環境では、同じFQDNの新しいエクスポート可能証明書を発行し、設定の証明書ARNを変更して動的再読み込みを行うことで、証明書差し替え経路を確認できる</p>
+
+      <ol>
+        <li>変更前の証明書serialと有効期限の記録</li>
+        <li>同じFQDNを持つ検証用証明書の新規発行</li>
+        <li>検証用証明書を対象にしたIAM Resourceの変更</li>
+        <li>TOML内の<code>certificate_arn</code>変更</li>
+        <li><code>acm reload</code>の実行</li>
+        <li>プロバイダーログの更新検知とApache reload成功の確認</li>
+        <li>ローカルファイルと外部エンドポイントのserial変更確認</li>
+        <li>本来の証明書ARNとIAM Resourceへの復元</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 新しい証明書の発行と更新には料金が発生</strong>
+        <p>エクスポート可能なパブリック証明書は、発行時と更新時に料金が発生します。差し替え試験用の追加発行も課金対象になるため、事前に料金と不要証明書の後片付けを確認する</p>
+      </div>
+
+      <h2 id="monitoring">7. 監視</h2>
+      <table>
+        <thead><tr><th>対象</th><th>監視内容</th></tr></thead>
+        <tbody>
+          <tr><td>ACM</td><td><code>DaysToExpiry</code>、更新ステータス、DNS検証CNAME、証明書ARN</td></tr>
+          <tr><td>WCPサービス</td><td>systemdのactive状態、再起動回数、起動失敗</td></tr>
+          <tr><td>WCPログ</td><td>24時間周期の取得、比較、書き込み、refresh commandの結果</td></tr>
+          <tr><td>CloudTrail</td><td><code>AssumeRole</code>、<code>ExportCertificate</code>、想定したロールとUser-Agent</td></tr>
+          <tr><td>ローカルファイル</td><td>serial、有効期限、所有者、権限、証明書と秘密鍵の一致</td></tr>
+          <tr><td>Apache</td><td>構文、reload失敗、エラーログ、HTTPS応答</td></tr>
+          <tr><td>外部エンドポイント</td><td>利用者が実際に受け取る証明書のserial、有効期限、チェーン</td></tr>
+        </tbody>
+      </table>
+
+      <p>ACMの更新成功だけでは、EC2への配置成功を意味しません。ACM、WCP、ローカルファイル、Apache、外部エンドポイントを別々の監視対象として扱う</p>
+
+      <h2 id="troubleshooting">8. トラブルシューティング</h2>
+      <table>
+        <thead><tr><th>事象</th><th>確認</th></tr></thead>
+        <tbody>
+          <tr><td>エクスポートできない</td><td>証明書がエクスポート有効で発行されたか、リージョン、ARN、IAM Resourceを確認する</td></tr>
+          <tr><td><code>AssumeRole</code>が拒否される</td><td>EC2ロールの権限と<code>ACMExportRole</code>の信頼ポリシーを両方確認する</td></tr>
+          <tr><td>証明書ファイルが作成されない</td><td>配置先の絶対パス、親ディレクトリ、WCPログ、SELinux、ファイル権限を確認する</td></tr>
+          <tr><td>Apache reloadが失敗する</td><td><code>refresh_command</code>の絶対パス、sudoers、<code>visudo -c</code>、Apache構文を確認する</td></tr>
+          <tr><td>ACMは新しいがEC2は古い</td><td>24時間周期、WCPサービス、対象ARN、比較ログ、書き込み失敗を確認する</td></tr>
+          <tr><td>EC2は新しいが外部は古い</td><td>Apacheの参照パス、reload結果、DNS、複数EC2への配布漏れを確認する</td></tr>
+          <tr><td>秘密鍵をApacheが読めない</td><td>所有者、権限、SELinuxコンテキスト、暗号化状態、秘密鍵形式を確認する</td></tr>
+          <tr><td>証明書と秘密鍵が不一致</td><td>両方の公開鍵ハッシュを比較し、同じ更新単位のファイルへ戻す</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="acme">9. ACMEとの使い分け</h2>
+      <p>AWSは、公開証明書を利用者管理サーバーへ自動発行・更新する方式としてACMEを第一候補に案内し、ACMEを利用できない場合の代替としてエクスポート可能なACM証明書とAWS Workload Credentials Providerを案内しています。ACMEでは秘密鍵をクライアント側で生成し、ACMから秘密鍵をエクスポートしない</p>
+
+      <table>
+        <thead><tr><th>観点</th><th>ACM ACME</th><th>エクスポート証明書とWCP</th></tr></thead>
+        <tbody>
+          <tr><td>秘密鍵</td><td>ACMEクライアントで生成</td><td>ACMが保持し、WCPがエクスポート</td></tr>
+          <tr><td>有効期間</td><td>45日</td><td>198日</td></tr>
+          <tr><td>更新主体</td><td>CertbotなどのACMEクライアント</td><td>ACMが更新し、WCPが24時間ごとに再配置</td></tr>
+          <tr><td>主な利点</td><td>標準プロトコル、サーバー側で発行と配置を完結</td><td>ACM上で証明書を集中管理</td></tr>
+          <tr><td>主な注意</td><td>ACMEエンドポイント、EAB、クライアント運用が必要</td><td>発行・更新料金、IAM、秘密鍵エクスポートが必要</td></tr>
+        </tbody>
+      </table>
+
+      <p>ACME、料金、有効期間、EventBridgeとSystems Managerを含む方式比較は、<a href="aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a>を参照する</p>
+
+      <h2 id="references">10. 公式ドキュメント</h2>
+      <ul>
+        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate-automation.html">AWS Workload Credentials Provider</a></li>
+        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-exportable-certificates.html">AWS Certificate Manager exportable public certificates</a></li>
+        <li><a href="https://github.com/aws/aws-workload-credentials-provider">AWS Workload Credentials Provider GitHub repository</a></li>
+        <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html">AWS Certificate Manager DNS validation</a></li>
+        <li><a href="https://aws.amazon.com/certificate-manager/pricing/">AWS Certificate Manager Pricing</a></li>
+      </ul>
+
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#scope">0. 対象構成</a>
+      <a href="#request">1. 証明書発行</a>
+      <a href="#manual-export">2. 手動配置</a>
+      <a href="#iam">3. IAM</a>
+      <a href="#install">4. WCP導入</a>
+      <a href="#verify">5. 動作確認</a>
+      <a href="#reload">6. 更新試験</a>
+      <a href="#monitoring">7. 監視</a>
+      <a href="#troubleshooting">8. トラブル対応</a>
+      <a href="#acme">9. ACME比較</a>
+      <a href="#references">10. 公式資料</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
