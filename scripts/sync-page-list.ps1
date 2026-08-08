@@ -15,6 +15,7 @@ $groups = @(
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
+            [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
             [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'ACM / TLS証明書' }
         )
     }

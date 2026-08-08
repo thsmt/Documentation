@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon RDS Blue/Green Deployments | Documentation</title>
+  <meta name="description" content="Amazon RDS Blue/Green Deploymentsの仕組み、インプレース更新との差分、制約、切替、監視、切り戻し計画、実践手順を整理する">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a class="active" href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>Amazon RDS Blue/Green Deployments</h1>
+      <p class="lead">Amazon RDSの本番更新を、同期したステージング環境で検証してから短時間で切り替えるための運用パターン。インプレース更新との判断、制約、接続影響、監視、復旧計画、実践手順を整理する</p>
+
+      <div class="callout">
+        <strong>ℹ️ このページの対象</strong>
+        <p>対象はAmazon RDS for MySQL、MariaDB、PostgreSQLのBlue/Green Deployments。Amazon AuroraのBlue/Green Deploymentsは別機能のため、Aurora固有の対応可否はAuroraの公式ドキュメントで確認</p>
+        <p>記載内容は2026年8月時点のAWS公式ドキュメントに基づく。対応エンジン・バージョン・リージョンは更新されるため、実施直前に<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RDS_Fea_Regions_DB-eng.Feature.BlueGreenDeployments.html">Supported Regions and DB engines</a>を再確認</p>
+      </div>
+
+      <h2 id="summary">結論と使いどころ</h2>
+      <p>Blue/Green Deploymentsは、本番のBlue環境を複製したGreen環境へ変更を先行適用し、レプリケーション追随と検証を完了してから切り替える方式。メジャーバージョン更新、パラメータ変更、インスタンスクラス変更、ストレージ構成変更などで、作業時間を本番停止時間から切り離せる</p>
+      <p>切替時はRDSが書き込み停止、接続切断、Greenへの追随待ち、DB識別子とエンドポイント名の付け替えを実行する。アプリケーションの接続先名は原則として維持されるが、既存コネクションは切断されるため、接続再試行とコネクションプールの振る舞いが成功条件になる</p>
+
+      <table>
+        <thead><tr><th>適する変更</th><th>Blue/Greenを優先する理由</th><th>事前に確認すること</th></tr></thead>
+        <tbody>
+          <tr><td>メジャー/マイナーのエンジン更新</td><td>Greenでアプリ互換性とクエリ性能を確認してから切替可能</td><td>対象バージョン、拡張機能、ドライバー、論理レプリケーション時の制約</td></tr>
+          <tr><td>DBパラメータ変更</td><td>本番への即時反映を避け、再起動を伴う設定もGreenで評価可能</td><td>パラメータグループ、再起動要否、接続数、メモリ使用量</td></tr>
+          <tr><td>インスタンス/ストレージ構成変更</td><td>新構成で負荷試験と性能比較を実施してから本番化可能</td><td>Green側コスト、ストレージ初期化、性能試験シナリオ</td></tr>
+          <tr><td>互換性のあるスキーマ変更</td><td>展開作業と切替を分離し、リスクの高い時間帯を短縮可能</td><td>レプリケーション互換性、DDL/DCL、アプリの新旧両対応期間</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="in-place">インプレース更新との違い</h2>
+      <table class="table-scroll-wide">
+        <thead><tr><th>観点</th><th>インプレース更新</th><th>Blue/Green Deployments</th></tr></thead>
+        <tbody>
+          <tr><td>変更対象</td><td>本番DBインスタンス自体を変更</td><td>本番を複製したGreen環境を変更</td></tr>
+          <tr><td>検証環境</td><td>別途用意しなければ本番と同一トポロジーでの検証は困難</td><td>読み取りレプリカ、Multi-AZ、バックアップ、Performance Insights、Enhanced Monitoringを含むトポロジーを複製</td></tr>
+          <tr><td>停止の主な時間</td><td>変更適用、再起動、互換性確認が本番作業に含まれる</td><td>切替時の書き込み停止、接続再確立、Green追随待ちに集約</td></tr>
+          <tr><td>接続先</td><td>既存DBが継続するため通常は変更なし</td><td>Greenのエンドポイント名をBlueと同じ名前へ変更。IPアドレス直指定は不可</td></tr>
+          <tr><td>切り戻し</td><td>変更内容に応じて復元、再変更、PITRを設計</td><td>切替後に自動のロールバック/スイッチバックはない。旧Blueを残しても新本番の書き込みは反映されない</td></tr>
+          <tr><td>費用</td><td>通常は既存環境の費用のみ</td><td>BlueとGreenが並行稼働する期間はDB、ストレージ、I/O、追加機能の費用が概ね二重</td></tr>
+          <tr><td>運用の複雑さ</td><td>小規模な変更では低い</td><td>事前検証、同期監視、依存サービスの確認、旧Blue削除判断が必要</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 「ほぼ無停止」は「無影響」ではない</strong>
+        <p>切替中にRDSは両環境の新規書き込みを停止し、接続を切断する。AWSは単一リージョン構成で直接エンドポイント接続時のライター停止を通常5秒以下と案内しているが、実際の影響は長時間トランザクション、レプリケーション遅延、DNSキャッシュ、クライアント実装、接続プールに左右される</p>
+        <p>停止時間の目標は、実機に近いワークロードで接続再試行を含めて測定し、業務要件と照合</p>
+      </div>
+
+      <h2 id="architecture">仕組みと切替の内部フロー</h2>
+      <h3>BlueとGreenの関係</h3>
+      <p>Blueは現在の本番環境、Greenは同期するステージング環境。作成時にRDSはBlueのプライマリ、読み取りレプリカ、Multi-AZ構成、ストレージ、スナップショット、監視機能などのトポロジーをGreenへ複製し、BlueのプライマリからGreenのプライマリへレプリケーションを設定する</p>
+      <p>Greenは既定で読み取り専用。Greenへの書き込みを有効にすると、レプリケーション競合や切替後の意図しないデータ混入につながるため、原則として読み取り検証に限定</p>
+
+      <h3>切替でRDSが実行すること</h3>
+      <ol>
+        <li>スイッチオーバーガードレールによるヘルス、レプリケーション、長時間トランザクションの確認</li>
+        <li>BlueとGreenのプライマリに対する新規書き込みの停止</li>
+        <li>両環境のDB接続の切断と新規接続の一時停止</li>
+        <li>GreenがBlueへ追随している状態までの待機</li>
+        <li>GreenのDB識別子とエンドポイント名をBlueの名称へ変更</li>
+        <li>接続再開と新本番Greenに対する書き込み再開</li>
+      </ol>
+      <p>切替を、Greenインスタンスに対する手動の「昇格」と混同しないこと。Greenを手動で昇格するとレプリケーションが切れ、Blue/Green Deploymentは無効構成になる</p>
+
+      <h3>PostgreSQLのレプリケーション方式</h3>
+      <p>RDS for PostgreSQLは通常は物理レプリケーションを使用する。一部のソースバージョンからメジャーバージョン更新を指定した場合は論理レプリケーションを使用し、前提と制約が増える</p>
+      <table>
+        <thead><tr><th>方式</th><th>主な条件</th><th>設計上の注意</th></tr></thead>
+        <tbody>
+          <tr><td>物理レプリケーション</td><td>同一メジャーバージョン内の更新またはエンジン更新なし</td><td>Greenは厳格な読み取り専用。Greenでのスキーマ変更は不可</td></tr>
+          <tr><td>論理レプリケーション</td><td>対象のPostgreSQLバージョンからメジャー更新を指定</td><td>DDL/DCL、ラージオブジェクト、主キーのない表、シーケンス、マテリアライズドビュー、WAL容量を個別に評価</td></tr>
+        </tbody>
+      </table>
+      <p>論理レプリケーションでは、Blueで実行したDDLはGreenへ複製されない。BlueにDDL変更を検出すると<code>Replication degraded</code>となり、Greenを含むDeploymentの作り直しが必要になる。主キーのない表は<code>UPDATE</code>/<code>DELETE</code>を扱えないため、主キー追加または性能影響を評価したうえで<code>REPLICA IDENTITY FULL</code>を検討</p>
+
+      <h2 id="prerequisites">対応条件・制約・依存関係</h2>
+      <table class="table-scroll-wide">
+        <thead><tr><th>分類</th><th>確認事項</th><th>対応方針</th></tr></thead>
+        <tbody>
+          <tr><td>対象エンジン</td><td>RDS for MySQL 5.7以降、MariaDB 10.2以降、PostgreSQL 11.1以降が対象。Db2、SQL Server、Oracleは対象外</td><td>正確な対応マイナーバージョンとメジャー更新可否を公式一覧で確認</td></tr>
+          <tr><td>バックアップ</td><td>自動バックアップが必要</td><td>保持期間、PITR、手動スナップショット、復旧担当を作業計画へ記載</td></tr>
+          <tr><td>トポロジー</td><td>Multi-AZ DBインスタンスは対象。Multi-AZ DBクラスター、カスケード読み取りレプリカ、クロスリージョン読み取りレプリカは対象外</td><td>対象外の構成は別移行方式または構成変更を検討</td></tr>
+          <tr><td>暗号化</td><td>暗号化あり/なしを切替途中で変更不可</td><td>暗号化方式の変更はスナップショット復元など別計画</td></tr>
+          <tr><td>Secrets Manager</td><td>マスターユーザーパスワードのSecrets Manager管理は非対応</td><td>事前に認証情報管理方式を確認し、必要な再設定を手順化</td></tr>
+          <tr><td>IaC</td><td>CloudFormationによるBlue/Green Deployment管理は非対応</td><td>作業手順、CLI実行記録、タグ、構成差分を別途管理</td></tr>
+          <tr><td>同一アカウント</td><td>BlueとGreenは同一AWSアカウント内</td><td>アカウント間移行やリージョン移行にはDMSなど別方式を選定</td></tr>
+          <tr><td>外部連携</td><td>ゼロETL Redshift統合は切替前に削除し、切替後に再作成。DMSタスクは切替後に再作成が必要</td><td>データ連携の停止、再開、整合性確認を作業計画へ含める</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ リソースIDベースの依存先</strong>
+        <p>切替後、DBインスタンス識別子とエンドポイント名はGreenへ引き継がれる一方、Green固有の<code>DbiResourceId</code>はBlueとは異なる。AWS Backup、IAM DB認証ポリシー、リソースIDを参照する監視、タグ連携、運用自動化は切替後に再確認</p>
+        <p>タグは作成時にBlueからGreenへコピーされるが、作成後のタグ変更は同期されない。切替ではBlue側のタグがGreen側を上書きするため、作業中のタグ変更を避けるか、切替後の再適用を手順化</p>
+      </div>
+
+      <h2 id="procedure">実践手順</h2>
+      <p>以下はRDS for PostgreSQLまたはRDS for MySQL/MariaDBを対象に、Blue/Green Deploymentを本番へ適用するための標準手順。実行前に変更管理の承認、復旧判断者、業務停止連絡、削除猶予期間を確定</p>
+
+      <h3>1. 作業前の棚卸しとベースライン取得</h3>
+      <p>対象DB、エンジンとバージョン、トポロジー、保留中の変更、バックアップ、監視、外部連携、接続方式を記録。AWS CLIは意図したアカウントとリージョンを明示し、出力は変更記録に保管</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws sts get-caller-identity
+
+aws rds describe-db-instances `
+  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
+  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Engine:Engine,EngineVersion:EngineVersion,Class:DBInstanceClass,MultiAZ:MultiAZ,Endpoint:Endpoint.Address,BackupRetention:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}" `
+  --output json
+
+aws rds describe-db-instances `
+  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
+  --query "DBInstances[0].ReadReplicaDBInstanceIdentifiers" `
+  --output json</code></pre>
+      </div>
+
+      <h3>2. 変更内容と復旧条件を固定</h3>
+      <p>目標エンジンバージョン、パラメータグループ、DBインスタンスクラス、ストレージ構成、変更対象の読み取りレプリカを一覧化。切替前の中止条件、切替後の受入基準、旧Blueを削除する条件も事前に合意</p>
+      <table>
+        <thead><tr><th>項目</th><th>記録例</th></tr></thead>
+        <tbody>
+          <tr><td>作業目的</td><td>PostgreSQLのメジャーバージョン更新とパラメータ見直し</td></tr>
+          <tr><td>中止条件</td><td>Greenのレプリケーション遅延、性能劣化、互換性エラー、外部連携の未解決</td></tr>
+          <tr><td>切替実施条件</td><td>受入試験完了、監視正常、レプリケーション追随、長時間トランザクションなし</td></tr>
+          <tr><td>旧Blue保持</td><td>切替後の業務・性能・バックアップ確認を終えるまで読み取り専用で保持</td></tr>
+          <tr><td>削除判断</td><td>保留期間終了、PITR確認、バックアップ確認、監視/連携更新、費用承認</td></tr>
+        </tbody>
+      </table>
+
+      <h3>3. エンジン固有の前提を確認</h3>
+      <p>MySQL/MariaDBでは自動バックアップを有効化。PostgreSQLでメジャーバージョン更新を行う場合は、適用されるレプリケーション方式を確認し、論理レプリケーションの前提パラメータ、主キー、WAL保持容量を確認</p>
+      <div class="code">
+        <div class="code-header"><span>PostgreSQL</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>-- 主キーのない通常テーブルを確認
+SELECT n.nspname AS schema_name,
+       c.relname AS table_name
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+LEFT JOIN pg_index i ON i.indrelid = c.oid AND i.indisprimary
+WHERE c.relkind = 'r'
+  AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+  AND i.indexrelid IS NULL
+ORDER BY 1, 2;</code></pre>
+      </div>
+      <div class="callout">
+        <strong>ℹ️ PostgreSQLのWAL容量</strong>
+        <p>論理レプリケーションでは、Greenが適用するまでBlue側にWALが保持される。ピーク時間帯の<code>TransactionLogsGeneration</code>、<code>TransactionLogsDiskUsage</code>、<code>OldestReplicationSlotLag</code>、<code>FreeStorageSpace</code>を確認し、レプリケーション遅延に耐える空き容量を確保</p>
+      </div>
+
+      <h3>4. Blue/Green Deploymentを作成</h3>
+      <p>RDSコンソールの「Databases」でBlueのプライマリを選択し、Actionsから「Create blue/green deployment」を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds create-blue-green-deployment `
+  --blue-green-deployment-name &lt;BLUE_GREEN_DEPLOYMENT_NAME&gt; `
+  --source arn:aws:rds:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:db:&lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
+  --target-engine-version &lt;TARGET_ENGINE_VERSION&gt; `
+  --target-db-parameter-group-name &lt;TARGET_DB_PARAMETER_GROUP&gt;</code></pre>
+      </div>
+      <p>上記は最小例。インスタンスクラス、ストレージ、IOPS、スループット、Optimized Writesなどの変更を同時に行う場合は、実機の選択値と<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/create-blue-green-deployment.html">create-blue-green-deployment</a>の引数を対応付けて実行</p>
+
+      <h3>5. Greenの作成完了と同期状態を確認</h3>
+      <p>作成直後は、スナップショットから復元したGreenのストレージで遅延ロードが進む。十分なI/O性能が必要な試験では、ストレージ初期化の進捗も確認してから測定を開始</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-blue-green-deployments `
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
+  --query "BlueGreenDeployments[0].{Status:Status,Replication:StatusDetails,Source:Source,Target:Target,Tasks:Tasks}" `
+  --output json
+
+aws rds describe-db-instances `
+  --db-instance-identifier &lt;GREEN_DB_INSTANCE_IDENTIFIER&gt; `
+  --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" `
+  --output json</code></pre>
+      </div>
+
+      <h3>6. Greenで受入試験を実施</h3>
+      <p>Green固有のエンドポイントを用い、アプリケーションの起動、読み取り画面、バッチのドライラン、主要SQL、実行計画、接続数、CPU、メモリ、待機イベント、エラー率を確認。データ変更を伴う試験はレプリケーション競合を起こすため、実施範囲と後始末をDBAと合意してから実施</p>
+      <table>
+        <thead><tr><th>確認領域</th><th>受入基準の例</th></tr></thead>
+        <tbody>
+          <tr><td>アプリ接続</td><td>TLS、認証、接続プール、ドライバー、IAM DB認証の接続成功</td></tr>
+          <tr><td>機能</td><td>主要画面、検索、帳票、バッチ、拡張機能、ストアドプロシージャの期待結果</td></tr>
+          <tr><td>性能</td><td>主要クエリの応答時間、DBLoad、CPU、メモリ、ロック、I/Oが許容範囲</td></tr>
+          <tr><td>運用</td><td>バックアップ、監視、ログ、アラーム、タグ、EventBridge、外部連携の確認</td></tr>
+        </tbody>
+      </table>
+
+      <h3>7. 切替直前の監視と中止判断</h3>
+      <p>切替直前に、書き込み負荷と長時間トランザクションを低くし、レプリケーション遅延をほぼゼロに近づける。MySQL/MariaDBはGreenの<code>ReplicaLag</code>、PostgreSQLの論理レプリケーションはBlueの<code>OldestReplicationSlotLag</code>を確認。<code>DatabaseConnections</code>とPerformance Insightsの<code>DBLoad</code>も確認</p>
+      <div class="code">
+        <div class="code-header"><span>PostgreSQL logical replication</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>SELECT slot_name,
+       confirmed_flush_lsn AS flushed,
+       pg_current_wal_lsn(),
+       pg_current_wal_lsn() - confirmed_flush_lsn AS lsn_distance
+FROM pg_catalog.pg_replication_slots
+WHERE slot_type = 'logical';</code></pre>
+      </div>
+      <p><code>lsn_distance</code>が<code>0</code>なら論理レプリカは追随済み。長時間トランザクション、Greenのヘルス異常、互換性未解決、連携先未更新のいずれかがあれば切替を中止し、Greenを修正またはDeploymentを作り直す</p>
+
+      <h3>8. スイッチオーバーを実行</h3>
+      <p>RDSコンソールでBlue/Green Deploymentを選択し、Actionsから「Switch over」を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds switchover-blue-green-deployment `
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
+  --switchover-timeout 600</code></pre>
+      </div>
+
+      <h3>9. 切替後の受入確認と旧Blueの保護</h3>
+      <p>新本番のDB識別子とエンドポイントが従来どおりであること、アプリが再接続して書き込みを再開したこと、エラー率と遅延が許容範囲であることを確認。旧Blueは<code>-old&lt;n&gt;</code>が付いた読み取り専用のリソースとして残るため、削除判断が完了するまで書き込みを有効化しない</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-blue-green-deployments `
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
+  --query "BlueGreenDeployments[0].{Status:Status,Source:Source,Target:Target}" `
+  --output json
+
+aws rds describe-db-instances `
+  --db-instance-identifier &lt;PRODUCTION_DB_INSTANCE_IDENTIFIER&gt; `
+  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Endpoint:Endpoint.Address,EngineVersion:EngineVersion,Status:DBInstanceStatus}" `
+  --output json</code></pre>
+      </div>
+
+      <h2 id="connection">DNS・接続・停止影響の設計</h2>
+      <p>スイッチオーバーではGreenのDB識別子とエンドポイント名をBlueの名称へ変更するため、アプリケーションの接続文字列は通常変更不要。ただし切替処理で既存接続は落ち、名前解決先は新本番へ変わる</p>
+      <table>
+        <thead><tr><th>項目</th><th>推奨</th><th>避けること</th></tr></thead>
+        <tbody>
+          <tr><td>接続先</td><td>RDSエンドポイント名、または対応するAmazon RDS Proxyを利用</td><td>RDSのIPアドレスを固定値で保持</td></tr>
+          <tr><td>アプリ再試行</td><td>一時的な接続エラーを判定し、指数バックオフと上限付き再試行を実装</td><td>接続エラーを即時に恒久障害として扱う実装</td></tr>
+          <tr><td>トランザクション</td><td>再実行可能性、冪等性、二重実行防止、クライアント側タイムアウトを事前検証</td><td>切替時に長時間更新や一括ジョブを走らせる運用</td></tr>
+          <tr><td>RDS Proxy</td><td>利用する場合はBlueをProxyへ登録してからDeploymentを作成。単一リージョン構成での接続断短縮を実機検証</td><td>作成後のBlue/Green DeploymentへProxyを後から登録する操作</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>ℹ️ ダウンタイムの期待値</strong>
+        <p>AWSは2026年1月から、単一リージョン構成の直接エンドポイント接続でライター停止を通常5秒以下、AWS Advanced JDBC Driver利用時は通常2秒以下と案内している。これはアプリケーション全体のSLOや完了時間を保証する値ではないため、接続プールと再試行を含むE2E試験で採用可否を判断</p>
+      </div>
+
+      <h2 id="monitoring">監視・イベント・運用記録</h2>
+      <p>作成から切替、切替後までの状態遷移を、RDSコンソール、CloudWatch、Performance Insights、RDSイベント、EventBridgeで追跡。アプリケーション側ではHTTP/APIエラー率、DB接続失敗、レイテンシ、キュー滞留、ジョブ失敗を同じ時間軸で確認</p>
+      <table>
+        <thead><tr><th>タイミング</th><th>DB側の主な確認項目</th><th>アプリ/運用側の主な確認項目</th></tr></thead>
+        <tbody>
+          <tr><td>Green作成中</td><td>Deployment status、Status details、ストレージ初期化、レプリケーション状態、空き容量</td><td>費用アラート、作業ログ、承認状況</td></tr>
+          <tr><td>試験中</td><td>DBLoad、CPU、接続数、待機イベント、レプリケーション遅延、クエリ性能</td><td>機能試験、接続プール、バッチ、外部連携</td></tr>
+          <tr><td>切替直前</td><td>接続数、長時間トランザクション、ReplicaLagまたはOldestReplicationSlotLag、空き容量</td><td>メンテナンス告知、書き込み抑制、監視担当の待機</td></tr>
+          <tr><td>切替後</td><td>新本番のDB識別子、DbiResourceId、エラー、負荷、バックアップ、旧Blueの状態</td><td>再接続成功率、業務処理、通知、連携先、監視/タグ/IAM/AWS Backup更新</td></tr>
+        </tbody>
+      </table>
+      <p>RDSイベントをEventBridgeで受信する場合は、切替開始、成功、失敗、レプリケーション異常のイベントを作業用チャネルへ通知し、時刻、実行者、Deployment ID、判断結果を変更記録へ残す</p>
+
+      <h2 id="rollback">ロールバックではなく復旧計画として設計</h2>
+      <div class="callout callout-warning">
+        <strong>⚠️ 切替後の安全なスイッチバックはない</strong>
+        <p>Blue/Green Deploymentsには、切替後に旧Blueへ戻す自動ロールバック機能がない。切替が完了するとBlueとGreenのレプリケーションは停止し、新本番で発生した書き込みは旧Blueに存在しない</p>
+      </div>
+      <table>
+        <thead><tr><th>状況</th><th>取るべき行動</th><th>避けること</th></tr></thead>
+        <tbody>
+          <tr><td>切替前に試験失敗</td><td>切替を行わず、Greenの修正またはDeployment削除と再作成</td><td>未解決のまま時間制約だけで切替</td></tr>
+          <tr><td>切替がガードレールで失敗</td><td>長時間トランザクション、同期遅延、ヘルス、PostgreSQL論理レプリケーション制約を調査</td><td>Greenの手動昇格</td></tr>
+          <tr><td>切替直後に障害</td><td>アプリ書き込みを止め、事実関係、データ差分、旧Blue、スナップショット、PITRを評価して復旧手段を決定</td><td>旧Blueを書き込み可能にして接続先だけ戻す操作</td></tr>
+          <tr><td>受入完了後</td><td>旧Blueの保持期限を終えた後、削除保護、スナップショット、バックアップを確認して削除</td><td>旧Blueを無期限に残して費用と運用対象を増やすこと</td></tr>
+        </tbody>
+      </table>
+      <p>復旧の実現性は、業務停止後に新本番で書き込まれたデータ量、RPO/RTO、データ補正手段で変わる。実施前に「どの時点へ戻すか」「新規データをどう回収するか」「誰が復旧判断するか」を具体化</p>
+
+      <h2 id="cost">料金と削除計画</h2>
+      <p>Green環境にはBlueと同様にDBインスタンス、ストレージ、読み書きI/O、バックアップ、Performance Insightsなどの通常料金が発生する。BlueとGreenを並行稼働する期間は、構成が同程度であれば概ね2倍のランニングコストとなる</p>
+      <p>切替後も旧Blueは自動削除されず、標準料金が継続する。検証期間の延長は安全性と費用のトレードオフであるため、保持終了日時、削除承認者、削除前チェックを変更計画に含める</p>
+      <p>費用の見積りには、Greenのインスタンス数、Multi-AZ、ストレージ種別・容量、IOPS/スループット、バックアップ、Performance Insights、RDS Proxyを含める。割引適用の有無は使用するリージョン・インスタンスクラス・購入形態に依存するため、AWS Pricing CalculatorまたはCost Explorerで実値を確認</p>
+
+      <h2 id="checklist">本番切替チェックリスト</h2>
+      <table>
+        <thead><tr><th>区分</th><th>確認</th></tr></thead>
+        <tbody>
+          <tr><td>対象確認</td><td>エンジン、バージョン、リージョン、トポロジー、暗号化、バックアップ、対象外機能の確認</td></tr>
+          <tr><td>依存確認</td><td>アプリ接続、DNS、RDS Proxy、IAM DB認証、AWS Backup、タグ、監視、DMS、Redshift、外部レプリカの確認</td></tr>
+          <tr><td>Green検証</td><td>機能、性能、接続再試行、拡張機能、バッチ、監視、バックアップ、レプリケーションの確認</td></tr>
+          <tr><td>切替準備</td><td>書き込み抑制、長時間トランザクション停止、レプリケーション遅延、DBLoad、接続数、通知体制の確認</td></tr>
+          <tr><td>切替後</td><td>アプリ書き込み、エラー率、レイテンシ、新DbiResourceId、監視、連携、タグ、旧Blue読み取り専用の確認</td></tr>
+          <tr><td>完了</td><td>保留期間、削除条件、スナップショット、PITR、旧Blue削除、費用確認の記録</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="references">公式情報</h2>
+      <ul>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-overview.html">Overview of Amazon RDS Blue/Green Deployments</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-creating.html">Creating a blue/green deployment in Amazon RDS</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-switching.html">Switching a blue/green deployment in Amazon RDS</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html">Limitations and considerations for Amazon RDS blue/green deployments</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-best-practices.html">Best practices for Amazon RDS blue/green deployments</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-replication-type.html">PostgreSQL replication methods for blue/green deployments</a></li>
+        <li><a href="https://aws.amazon.com/rds/faqs/">Amazon RDS FAQs: Blue/Green Deployments pricing</a></li>
+        <li><a href="https://aws.amazon.com/about-aws/whats-new/2026/01/amazon-rds-blue-green-deployments-reduces-downtime/">Amazon RDS Blue/Green Deployments reduces downtime to under five seconds</a></li>
+        <li><a href="https://aws.amazon.com/about-aws/whats-new/2026/04/rds-proxy-blue-green/">Amazon RDS Blue/Green Deployments now supports Amazon RDS Proxy</a></li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#summary">結論と使いどころ</a>
+      <a href="#in-place">インプレース更新との違い</a>
+      <a href="#architecture">仕組みと切替フロー</a>
+      <a href="#prerequisites">対応条件・制約</a>
+      <a href="#procedure">実践手順</a>
+      <a href="#connection">DNS・接続・停止影響</a>
+      <a href="#monitoring">監視・イベント</a>
+      <a href="#rollback">復旧計画</a>
+      <a href="#cost">料金と削除計画</a>
+      <a href="#checklist">チェックリスト</a>
+      <a href="#references">公式情報</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>
