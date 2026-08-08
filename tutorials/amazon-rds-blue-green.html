@@ -162,14 +162,18 @@
       <p>対象DB、エンジンとバージョン、トポロジー、保留中の変更、バックアップ、監視、外部連携、接続方式を記録。AWS CLIは意図したアカウントとリージョンを明示し、出力は変更記録に保管</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sts get-caller-identity
-
-aws rds describe-db-instances `
+        <pre><code>aws sts get-caller-identity</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances `
   --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
   --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Engine:Engine,EngineVersion:EngineVersion,Class:DBInstanceClass,MultiAZ:MultiAZ,Endpoint:Endpoint.Address,BackupRetention:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}" `
-  --output json
-
-aws rds describe-db-instances `
+  --output json</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances `
   --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
   --query "DBInstances[0].ReadReplicaDBInstanceIdentifiers" `
   --output json</code></pre>
@@ -227,9 +231,11 @@ ORDER BY 1, 2;</code></pre>
         <pre><code>aws rds describe-blue-green-deployments `
   --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
   --query "BlueGreenDeployments[0].{Status:Status,Replication:StatusDetails,Source:Source,Target:Target,Tasks:Tasks}" `
-  --output json
-
-aws rds describe-db-instances `
+  --output json</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances `
   --db-instance-identifier &lt;GREEN_DB_INSTANCE_IDENTIFIER&gt; `
   --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" `
   --output json</code></pre>
@@ -276,9 +282,11 @@ WHERE slot_type = 'logical';</code></pre>
         <pre><code>aws rds describe-blue-green-deployments `
   --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
   --query "BlueGreenDeployments[0].{Status:Status,Source:Source,Target:Target}" `
-  --output json
-
-aws rds describe-db-instances `
+  --output json</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances `
   --db-instance-identifier &lt;PRODUCTION_DB_INSTANCE_IDENTIFIER&gt; `
   --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Endpoint:Endpoint.Address,EngineVersion:EngineVersion,Status:DBInstanceStatus}" `
   --output json</code></pre>
@@ -316,7 +324,7 @@ aws rds describe-db-instances `
       <h2 id="rollback">ロールバックではなく復旧計画として設計</h2>
       <div class="callout callout-warning">
         <strong>⚠️ 切替後の安全なスイッチバックはない</strong>
-        <p>Blue/Green Deploymentsには、切替後に旧Blueへ戻す自動ロールバック機能がない。切替が完了するとBlueとGreenのレプリケーションは停止し、新本番で発生した書き込みは旧Blueに存在しない</p>
+        <p>Blue/Green Deploymentsには、切替後に旧Blueへ戻す自動ロールバック機能がないため、切替が完了するとBlueとGreenのレプリケーションは停止し、新本番で発生した書き込みは旧Blueに存在しない仕様となる</p>
       </div>
       <table>
         <thead><tr><th>状況</th><th>取るべき行動</th><th>避けること</th></tr></thead>
@@ -334,31 +342,6 @@ aws rds describe-db-instances `
       <p>切替後も旧Blueは自動削除されず、標準料金が継続する。検証期間の延長は安全性と費用のトレードオフであるため、保持終了日時、削除承認者、削除前チェックを変更計画に含める</p>
       <p>費用の見積りには、Greenのインスタンス数、Multi-AZ、ストレージ種別・容量、IOPS/スループット、バックアップ、Performance Insights、RDS Proxyを含める。割引適用の有無は使用するリージョン・インスタンスクラス・購入形態に依存するため、AWS Pricing CalculatorまたはCost Explorerで実値を確認</p>
 
-      <h2 id="checklist">本番切替チェックリスト</h2>
-      <table>
-        <thead><tr><th>区分</th><th>確認</th></tr></thead>
-        <tbody>
-          <tr><td>対象確認</td><td>エンジン、バージョン、リージョン、トポロジー、暗号化、バックアップ、対象外機能の確認</td></tr>
-          <tr><td>依存確認</td><td>アプリ接続、DNS、RDS Proxy、IAM DB認証、AWS Backup、タグ、監視、DMS、Redshift、外部レプリカの確認</td></tr>
-          <tr><td>Green検証</td><td>機能、性能、接続再試行、拡張機能、バッチ、監視、バックアップ、レプリケーションの確認</td></tr>
-          <tr><td>切替準備</td><td>書き込み抑制、長時間トランザクション停止、レプリケーション遅延、DBLoad、接続数、通知体制の確認</td></tr>
-          <tr><td>切替後</td><td>アプリ書き込み、エラー率、レイテンシ、新DbiResourceId、監視、連携、タグ、旧Blue読み取り専用の確認</td></tr>
-          <tr><td>完了</td><td>保留期間、削除条件、スナップショット、PITR、旧Blue削除、費用確認の記録</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="references">公式情報</h2>
-      <ul>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-overview.html">Overview of Amazon RDS Blue/Green Deployments</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-creating.html">Creating a blue/green deployment in Amazon RDS</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-switching.html">Switching a blue/green deployment in Amazon RDS</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html">Limitations and considerations for Amazon RDS blue/green deployments</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-best-practices.html">Best practices for Amazon RDS blue/green deployments</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-replication-type.html">PostgreSQL replication methods for blue/green deployments</a></li>
-        <li><a href="https://aws.amazon.com/rds/faqs/">Amazon RDS FAQs: Blue/Green Deployments pricing</a></li>
-        <li><a href="https://aws.amazon.com/about-aws/whats-new/2026/01/amazon-rds-blue-green-deployments-reduces-downtime/">Amazon RDS Blue/Green Deployments reduces downtime to under five seconds</a></li>
-        <li><a href="https://aws.amazon.com/about-aws/whats-new/2026/04/rds-proxy-blue-green/">Amazon RDS Blue/Green Deployments now supports Amazon RDS Proxy</a></li>
-      </ul>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
@@ -372,8 +355,6 @@ aws rds describe-db-instances `
       <a href="#monitoring">監視・イベント</a>
       <a href="#rollback">復旧計画</a>
       <a href="#cost">料金と削除計画</a>
-      <a href="#checklist">チェックリスト</a>
-      <a href="#references">公式情報</a>
     </aside>
   </div>
 
