@@ -42,6 +42,31 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
+const ensureWindowsUpgradePageLink = () => {
+  const sidebar = document.querySelector("#site-sidebar");
+  if (!sidebar) return;
+
+  const targetFile = "windows-server-2016-2025-inplace-upgrade.html";
+  const currentPath = window.location.pathname;
+  const existingLink = sidebar.querySelector(`a[href$="${targetFile}"]`);
+
+  if (existingLink) {
+    existingLink.classList.toggle("active", currentPath.endsWith(`/${targetFile}`));
+    return;
+  }
+
+  const windows2025Link = sidebar.querySelector('a[href$="windows-server-2025.html"]');
+  if (!windows2025Link) return;
+
+  const link = document.createElement("a");
+  link.href = windows2025Link.getAttribute("href").replace("windows-server-2025.html", targetFile);
+  link.textContent = "[移行] Windows Server 2016 → 2025";
+  link.classList.toggle("active", currentPath.endsWith(`/${targetFile}`));
+  windows2025Link.insertAdjacentElement("afterend", link);
+};
+
+ensureWindowsUpgradePageLink();
+
 document.querySelectorAll(".copy").forEach((button) => {
   button.addEventListener("click", async () => {
     const code = button.closest(".code").querySelector("code").innerText;
