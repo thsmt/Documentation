@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventBridge Scheduler 自動停止・起動 | Documentation</title>
+  <meta name="description" content="EventBridge SchedulerのUniversal targetで、EC2、RDS、WorkSpacesなどをスケジュールで停止・起動する設計と手順。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a class="active" href="eventbridge-scheduler-start-stop.html">EventBridge Scheduler 自動停止・起動</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content eventbridge-scheduler-guide">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+      <h1>EventBridge Scheduler 自動停止・起動</h1>
+      <p class="lead">Amazon EventBridge SchedulerのUniversal targetを使用し、EC2、RDS、Amazon WorkSpacesなどのAWS APIを指定時刻に実行する設計と手順を整理する</p>
+
+      <h2 id="summary">結論と使いどころ</h2>
+      <p>開発・検証環境の営業時間外停止、始業前起動、定期ジョブ開始には、EventBridge Schedulerをスケジューラーとして使用する。Universal targetを使うと、Schedulerが実行ロールを引き受け、指定したAWSサービスAPIを直接呼び出す</p>
+      <div class="callout">
+        <strong>ℹ️ Universal targetの範囲</strong>
+        <p>Universal targetは270超のAWSサービスと6,000超のAPI操作を対象にできる。一方、すべてのAPIを実行できるわけではなく、読み取り系の<code>Get</code>、<code>Describe</code>、<code>List</code>などは対象外</p>
+      </div>
+      <table>
+        <thead><tr><th>用途</th><th>採用判断</th></tr></thead>
+        <tbody>
+          <tr><td>単一サービスの停止・起動</td><td>対象APIと入力JSONを直接指定でき、Lambdaを不要にできる</td></tr>
+          <tr><td>複数サービスの始業前起動</td><td>サービスごとに開始時刻をずらせる。起動完了待機や分岐が必要ならStep Functionsを使用</td></tr>
+          <tr><td>定期的な書き込みAPI実行</td><td>cron、rate、単発スケジュールとタイムゾーンを設定できる</td></tr>
+          <tr><td>イベント発生を契機とする処理</td><td>EventBridgeルール、Step Functions、Lambdaなどを検討</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="architecture">仕組みと設計原則</h2>
+      <p>1つのScheduleには1つのTargetを設定する。Targetには実行ロール、Universal target ARN、APIリクエストに対応するJSON入力を指定する。複数サービスを順序付きで操作する場合は、SchedulerからStep FunctionsまたはLambdaを起動し、待機、分岐、通知をワークフロー側で実装する</p>
+      <table>
+        <thead><tr><th>設定項目</th><th>役割</th><th>注意点</th></tr></thead>
+        <tbody>
+          <tr><td>Schedule expression</td><td>cron、rate、単発の実行時刻</td><td>業務時刻を基準にし、<code>Asia/Tokyo</code>などのタイムゾーンを明示</td></tr>
+          <tr><td>Flexible time window</td><td>指定時刻からの実行分散</td><td>始業前起動など時刻厳守の処理は<code>OFF</code>を指定</td></tr>
+          <tr><td>Execution role</td><td>Schedulerが引き受けるIAMロール</td><td>対象APIと対象リソースだけを許可し、管理者権限を付与しない</td></tr>
+          <tr><td>Universal target ARN</td><td>呼び出すサービスとAPI操作</td><td><code>arn:aws:scheduler:::aws-sdk:&lt;service&gt;:&lt;apiAction&gt;</code>形式を使用</td></tr>
+          <tr><td>Input</td><td>APIに渡すリクエストJSON</td><td>対象サービスのAPIリファレンスにあるリクエスト形式と一致させる</td></tr>
+          <tr><td>Retry/DLQ</td><td>失敗時の再試行と記録</td><td>少なくとも1回配信を前提に、起動・停止以外の更新APIは冪等性を設計</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning"><strong>⚠️ 停止と起動は別Schedule</strong><p>停止用と起動用は別々のScheduleとして作成する。停止時刻より前に終了が必要なバッチ、起動後に利用可能になるまで時間がかかるデータベース、接続中ユーザーを同じ時刻に扱わない</p></div>
+
+      <h2 id="services">自動停止・起動を適用できる主なサービス</h2>
+      <p>対象可否は「サービス名」ではなく「そのAPI操作がUniversal targetで利用可能か」「リソースが状態遷移をサポートするか」「実行ロールに権限があるか」で判断する</p>
+      <table>
+        <thead><tr><th>サービス</th><th>代表API</th><th>用途と主な制約</th></tr></thead>
+        <tbody>
+          <tr><td>Amazon EC2</td><td><code>stopInstances</code> / <code>startInstances</code></td><td>EBSルートボリュームのインスタンスに適用。停止中はパブリックIPv4アドレスが変わる場合がある</td></tr>
+          <tr><td>Amazon RDS DB instance</td><td><code>stopDBInstance</code> / <code>startDBInstance</code></td><td>開発・検証DB向け。停止状態は最大7日で、その後は自動起動。読み取りレプリカや構成によって停止不可の場合がある</td></tr>
+          <tr><td>Amazon Aurora / RDS Multi-AZ DB cluster</td><td><code>stopDBCluster</code> / <code>startDBCluster</code></td><td>DBインスタンスではなくクラスター操作を使用。対応エンジン・構成を事前確認</td></tr>
+          <tr><td>Amazon WorkSpaces Personal</td><td><code>stopWorkspaces</code> / <code>startWorkspaces</code></td><td>AutoStopまたはManualの停止済みWorkSpaceを開始可能。1リクエストで最大25台を指定</td></tr>
+          <tr><td>Amazon WorkSpaces Pools</td><td><code>stopWorkspacesPool</code> / <code>startWorkspacesPool</code></td><td>Personalとは別APIを使用。プールのセッションと利用時間を考慮して停止時刻を設計</td></tr>
+          <tr><td>Amazon Redshift provisioned</td><td><code>pauseCluster</code> / <code>resumeCluster</code></td><td>停止ではなく一時停止・再開。再開まで数分以上かかる場合があり、停止不可なクラスター条件がある</td></tr>
+          <tr><td>Amazon WorkSpaces Applications</td><td><code>stopFleet</code> / <code>startFleet</code></td><td>Always-OnまたはOn-Demandフリートで使用。利用者セッション、Auto Scaling、フリート種別を確認</td></tr>
+          <tr><td>Amazon ECS / Auto Scaling</td><td><code>updateService</code> / <code>updateAutoScalingGroup</code></td><td>desired countや最小・最大容量を変更する方式。復帰値を入力へ固定するため、状態を保持するワークフローを推奨</td></tr>
+          <tr><td>Lambda / Step Functions / Glue</td><td><code>invoke</code> / <code>startExecution</code> / <code>startJobRun</code></td><td>常駐リソースの停止ではなく、定期処理の開始に使用</td></tr>
+        </tbody>
+      </table>
+      <p>DocumentDB、Neptune、AppStream 2.0などにも状態変更APIがある。採用前に対象リージョン、リソース状態、API入力、料金、サービス固有の制約を公式ドキュメントで確認する</p>
+
+      <h2 id="prerequisites">作業前の確認</h2>
+      <p>対象リソース、依存サービス、停止可能時間、復帰に必要な時間、停止中も発生する料金、実行失敗時の連絡先を記録する。停止対象はタグで管理し、リソースIDをSchedule入力へ直接書く範囲を最小化する</p>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sts get-caller-identity</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws ec2 describe-instances `
+  --instance-ids &lt;EC2_INSTANCE_ID&gt; `
+  --query "Reservations[0].Instances[0].{InstanceId:InstanceId,State:State.Name,RootDeviceType:RootDeviceType,DisableApiStop:DisableApiStop,Tags:Tags}" `
+  --output json</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws rds describe-db-instances `
+  --db-instance-identifier &lt;RDS_DB_INSTANCE_IDENTIFIER&gt; `
+  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,Status:DBInstanceStatus,Engine:Engine,MultiAZ:MultiAZ,ReadReplicas:ReadReplicaDBInstanceIdentifiers,ReadReplicaSource:ReadReplicaSourceDBInstanceIdentifier}" `
+  --output json</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws workspaces describe-workspaces `
+  --workspace-ids &lt;WORKSPACE_ID&gt; `
+  --query "Workspaces[0].{WorkspaceId:WorkspaceId,State:State,RunningMode:WorkspaceProperties.RunningMode,DirectoryId:DirectoryId,UserName:UserName}" `
+  --output json</code></pre></div>
+
+      <h2 id="iam">実行ロールの作成</h2>
+      <p>Scheduler用の実行ロールは、信頼ポリシーで<code>scheduler.amazonaws.com</code>だけが引き受けられるようにする。次の例はEC2の開始・停止だけを特定インスタンスに許可する最小構成であり、RDSやWorkSpacesを追加する場合は別Statementで対象アクションとリソースを限定する</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "scheduler.amazonaws.com" },
+    "Action": "sts:AssumeRole"
+  }]
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws iam create-role `
+  --role-name &lt;SCHEDULER_ROLE_NAME&gt; `
+  --assume-role-policy-document file://scheduler-trust-policy.json</code></pre></div>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+    "Resource": "arn:aws:ec2:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:instance/&lt;EC2_INSTANCE_ID&gt;"
+  }]
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws iam put-role-policy `
+  --role-name &lt;SCHEDULER_ROLE_NAME&gt; `
+  --policy-name AllowScheduledEc2StartStop `
+  --policy-document file://scheduler-ec2-policy.json</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ サービスごとの最小権限</strong><p>RDSには<code>rds:StartDBInstance</code>と<code>rds:StopDBInstance</code>、WorkSpacesには<code>workspaces:StartWorkspaces</code>と<code>workspaces:StopWorkspaces</code>を追加する。IAMのサービス認可リファレンスで、各アクションが指定できるリソースARNと依存アクションを確認してから付与する</p></div>
+
+      <h2 id="procedure">Schedule作成手順</h2>
+      <h3 id="ec2-stop">EC2停止Schedule</h3>
+      <p>Universal targetの<code>Input</code>には、対象APIのリクエストJSONを文字列として指定する。以下では平日20:00 JSTにEC2を停止するTarget定義とScheduleを作成する</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:ec2:stopInstances",
+  "Input": "{\"InstanceIds\":[\"&lt;EC2_INSTANCE_ID&gt;\"]}",
+  "RetryPolicy": {"MaximumEventAgeInSeconds": 3600, "MaximumRetryAttempts": 3}
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule `
+  --name &lt;EC2_STOP_SCHEDULE_NAME&gt; `
+  --schedule-expression "cron(0 20 ? * MON-FRI *)" `
+  --schedule-expression-timezone "Asia/Tokyo" `
+  --flexible-time-window '{"Mode":"OFF"}' `
+  --target file://target-ec2-stop.json `
+  --state ENABLED</code></pre></div>
+      <h3 id="ec2-start">EC2起動Schedule</h3>
+      <p>起動用は停止用と別のTarget定義を使用し、業務開始より前の時刻へ設定する。起動後のアプリケーション初期化時間、EBSボリュームチェック、監視エージェントの起動時間を含めて時刻を決める</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:ec2:startInstances",
+  "Input": "{\"InstanceIds\":[\"&lt;EC2_INSTANCE_ID&gt;\"]}",
+  "RetryPolicy": {"MaximumEventAgeInSeconds": 3600, "MaximumRetryAttempts": 3}
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule `
+  --name &lt;EC2_START_SCHEDULE_NAME&gt; `
+  --schedule-expression "cron(0 8 ? * MON-FRI *)" `
+  --schedule-expression-timezone "Asia/Tokyo" `
+  --flexible-time-window '{"Mode":"OFF"}' `
+  --target file://target-ec2-start.json `
+  --state ENABLED</code></pre></div>
+      <h3 id="rds">RDS DB instance停止・起動</h3>
+      <p>RDSでは<code>DBInstanceIdentifier</code>を入力に指定する。停止できない構成ではAPIが失敗するため、事前確認の結果とDLQを必ず確認する。停止状態を7日より長く維持する設計には向かない</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:rds:stopDBInstance",
+  "Input": "{\"DBInstanceIdentifier\":\"&lt;RDS_DB_INSTANCE_IDENTIFIER&gt;\"}"
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:rds:startDBInstance",
+  "Input": "{\"DBInstanceIdentifier\":\"&lt;RDS_DB_INSTANCE_IDENTIFIER&gt;\"}"
+}</code></pre></div>
+      <h3 id="workspaces">Amazon WorkSpaces Personal停止・起動</h3>
+      <p>WorkSpaces Personalは、単一または最大25台のWorkSpace IDをAPI入力に指定する。利用者が接続中の時間帯に停止すると業務影響があるため、通知、猶予時間、例外対象を運用設計に含める</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:workspaces:stopWorkspaces",
+  "Input": "{\"StopWorkspaceRequests\":[{\"WorkspaceId\":\"&lt;WORKSPACE_ID&gt;\"}]}"
+}</code></pre></div>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;SCHEDULER_ROLE_NAME&gt;",
+  "Arn": "arn:aws:scheduler:::aws-sdk:workspaces:startWorkspaces",
+  "Input": "{\"StartWorkspaceRequests\":[{\"WorkspaceId\":\"&lt;WORKSPACE_ID&gt;\"}]}"
+}</code></pre></div>
+
+      <h2 id="operations">確認・監視・変更管理</h2>
+      <p>Schedule作成後は、設定値、次回実行時刻、実行ロール、Target ARN、入力JSONを確認する。最初の実行は検証リソースで実施し、対象サービスの状態遷移、CloudTrailイベント、CloudWatch LogsまたはDLQ通知を確認してから本番相当の対象へ広げる</p>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule `
+  --name &lt;SCHEDULE_NAME&gt; `
+  --group-name default `
+  --output json</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler list-schedules `
+  --group-name default `
+  --output table</code></pre></div>
+      <table>
+        <thead><tr><th>確認タイミング</th><th>確認内容</th></tr></thead>
+        <tbody>
+          <tr><td>作成直後</td><td>時刻、タイムゾーン、Target ARN、Input、実行ロール、Schedule状態</td></tr>
+          <tr><td>停止前</td><td>利用者接続、実行中バッチ、バックアップ、メンテナンス、依存先の稼働状況</td></tr>
+          <tr><td>停止後</td><td>対象リソースの状態、失敗応答、DLQ、監視アラーム抑止の要否、費用影響</td></tr>
+          <tr><td>起動後</td><td>リソース稼働、ヘルスチェック、アプリ接続、ジョブ、監視復帰、利用者通知</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning"><strong>⚠️ 例外日と重複実行</strong><p>祝日、棚卸し、月次処理などの例外は、Scheduleの無効化または一時的な時刻変更で管理する。Schedulerは少なくとも1回の配信を前提とするため、起動・停止以外の更新APIでは重複実行時の安全性を検証する</p></div>
+
+      <h2 id="troubleshooting">失敗時の切り分け</h2>
+      <table>
+        <thead><tr><th>症状</th><th>確認項目</th><th>対応</th></tr></thead>
+        <tbody>
+          <tr><td>Scheduleが実行されない</td><td>Schedule状態、cron式、タイムゾーン、開始・終了日時</td><td><code>get-schedule</code>で設定を確認し、検証用の単発Scheduleで実行時刻を確認</td></tr>
+          <tr><td>AccessDenied</td><td>信頼ポリシー、実行ロール、対象リソースARN、SCP、権限境界</td><td>Schedulerの実行ロールに、対象APIと対象リソースだけを許可</td></tr>
+          <tr><td>Invalid state</td><td>すでに停止中または起動中、メンテナンス、レプリカ、接続中ユーザー</td><td>対象サービスの状態条件を確認し、必要に応じてStep Functionsで待機と分岐を実装</td></tr>
+          <tr><td>起動後も利用できない</td><td>起動完了までの時間、ヘルスチェック、DNS、アプリ依存先、監視</td><td>始業時刻より前に起動し、サービスごとの復帰確認を自動化</td></tr>
+          <tr><td>失敗が追跡できない</td><td>Retry policy、DLQ、CloudTrail、CloudWatchアラーム、通知先</td><td>DLQと通知を追加し、失敗イベントの所有者と初動手順を定義</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="references">公式情報</h2>
+      <ul>
+        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html">What is Amazon EventBridge Scheduler?</a></li>
+        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-targets-universal.html">Using universal targets in EventBridge Scheduler</a></li>
+        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">Schedule types in EventBridge Scheduler</a></li>
+        <li><a href="https://docs.aws.amazon.com/cli/latest/reference/scheduler/create-schedule.html">AWS CLI create-schedule</a></li>
+        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html">Stop and start Amazon EC2 instances</a></li>
+        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html">Stopping an Amazon RDS DB instance temporarily</a></li>
+        <li><a href="https://docs.aws.amazon.com/workspaces/latest/api/API_StartWorkspaces.html">Amazon WorkSpaces StartWorkspaces API</a></li>
+        <li><a href="https://docs.aws.amazon.com/redshift/latest/mgmt/rs-mgmt-pause-resume-cluster.html">Pausing and resuming an Amazon Redshift cluster</a></li>
+      </ul>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#summary">結論と使いどころ</a>
+      <a href="#architecture">仕組みと設計原則</a>
+      <a href="#services">適用できるサービス</a>
+      <a href="#prerequisites">作業前の確認</a>
+      <a href="#iam">実行ロール</a>
+      <a href="#procedure">Schedule作成</a>
+      <a href="#operations">確認・監視</a>
+      <a href="#troubleshooting">失敗時の切り分け</a>
+      <a href="#references">公式情報</a>
+    </aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

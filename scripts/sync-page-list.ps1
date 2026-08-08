@@ -13,6 +13,7 @@ $groups = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
+            [pscustomobject]@{ File = 'eventbridge-scheduler-start-stop.html'; Label = 'EventBridge Scheduler 自動停止・起動' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
@@ -27,7 +28,7 @@ $groups = @(
             [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = '[構築] Amazon Linux 2023' }
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = '[構築] Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = '[構築] Windows Server 2025' }
-            [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = '[更新] Windows Server 2016 → 2025' }
+ [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server' }
             [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0' }
