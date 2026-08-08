@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[更新] Windows Server 2016 → 2025 インプレースアップグレード | Documentation</title>
+  <meta name="description" content="Amazon EC2上のWindows Server 2016をWindows Server 2025へインプレースアップグレードする手順とEC2固有の注意点。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS／クラウド</p>
+      <a href="cloudformation.html">CloudFormation</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
+      <p class="sidebar-group">OS／サーバー</p>
+      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
+      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a class="active" href="windows-server-2016-upgrade.html">[更新] Windows Server 2016 → 2025</a>
+      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <p class="sidebar-group">自動化／基盤</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform ※移行中</a>
+      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
+      <a href="container.html">コンテナ ※移行中</a>
+      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>[更新] Windows Server 2016 → 2025 インプレースアップグレード</h1>
+      <p class="lead">Amazon EC2上のWindows Server 2016を、AWS提供のインストールメディアを使用してWindows Server 2025へインプレースアップグレードする手順を整理する。サポート期限、アップグレードパス、EC2固有の注意点、事後確認までを扱う</p>
+
+      <h2 id="overview">1. インプレースアップグレードの概要</h2>
+      <p>インプレースアップグレードは、設定、サーバーの役割、データを保持したまま、既存サーバーのOSを新しいバージョンのWindows Serverへ移行する方式。再構築や移行と比べて作業工数を抑えられる一方、失敗時の切り戻しが難しいため、事前バックアップと事後確認を含めた計画が前提になる</p>
+
+      <table>
+        <thead>
+          <tr><th>方式</th><th>内容</th><th>特徴</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>インプレースアップグレード</td>
+            <td>既存OS上で新バージョンをインストールし、設定・役割・データを引き継ぐ</td>
+            <td>工数が小さい。IPアドレスやインスタンスIDが変わらない。失敗時の切り戻しは事前バックアップ頼み</td>
+          </tr>
+          <tr>
+            <td>クリーンインストール + 移行</td>
+            <td>新規サーバーを構築し、役割・機能・データを移し替える</td>
+            <td>環境を刷新できる。作業量とダウンタイムが大きい。接続先変更の調整が必要</td>
+          </tr>
+          <tr>
+            <td>Automationランブック</td>
+            <td>AWS Systems Managerがインスタンスを複製し、複製側を自動でアップグレードする</td>
+            <td>元インスタンスを変更せず検証できる。成果物は別インスタンス(別ID・別IP)になる</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ Automationランブックとの使い分け</strong>
+        <code>AWSEC2-CloneInstanceAndUpgradeWindows</code>は、元インスタンスを複製した側でアップグレードし、検証用の新しいAMIを作成する方式。実行前にランブックの<code>TargetWindowsVersion</code>で対象バージョンを確認し、対象外の場合や既存インスタンスを更新する場合は本ページのインストールメディア方式を使用する
+      </div>
+
+      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverアップグレードを計画する</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/automated-upgrades.html">AWS公式: Automationランブックによるアップグレード</a></p>
+
+      <h2 id="support">2. サポート期限とアップグレードパス</h2>
+
+      <h3 id="support-lifecycle">2.1 Windows Server 2016のサポート期限</h3>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>期限</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>メインストリームサポート終了</td><td>2022/01/11(終了済み)</td></tr>
+          <tr><td>延長サポート終了</td><td>2027/01/12</td></tr>
+        </tbody>
+      </table>
+      <p>延長サポート終了後はセキュリティ更新プログラムが提供されないため、それまでに後継バージョンへの移行を完了させる。他バージョンの期限は<a href="eol.html">EOL / ライフサイクル一覧表</a>を参照</p>
+
+      <h3 id="support-paths">2.2 Windows Server 2016からのアップグレードパス</h3>
+      <p>インストールメディアを使用する場合、Windows Server 2016から次のバージョンへ直接アップグレードできる</p>
+      <table>
+        <thead>
+          <tr><th>アップグレード先</th><th>可否</th><th>備考</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Windows Server 2019</td><td>可</td><td>延長サポート終了が2029/01/09と近く、移行先としての価値は低い</td></tr>
+          <tr><td>Windows Server 2022</td><td>可</td><td>従来の「2世代まで」の範囲内。実績記事が多い</td></tr>
+          <tr><td>Windows Server 2025</td><td>可</td><td>Windows Server 2025で非クラスター環境の最大4世代アップグレードがサポートされ、直接移行が可能になった</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ 最大4世代アップグレード</strong>
+        Windows Server 2025以降では、非クラスター環境について一度に最大4世代のインプレースアップグレードがサポートされ、Windows Server 2012 R2以降から2025へ直接移行できる。Windows Server 2022以前をアップグレード先とする場合は従来どおり最大2世代まで
+      </div>
+
+      <h3 id="support-target">2.3 2022と2025のどちらへ上げるか</h3>
+      <table>
+        <thead>
+          <tr><th>観点</th><th>Windows Server 2022</th><th>Windows Server 2025</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>延長サポート終了</td><td>2031/10/14</td><td>2034/11/14</td></tr>
+          <tr><td>次回アップグレードまでの猶予</td><td>短い</td><td>長い</td></tr>
+          <tr><td>アプリ・ミドルウェアの対応実績</td><td>豊富</td><td>ベンダーの2025対応状況の確認が必要</td></tr>
+          <tr><td>既定セキュリティ設定の変化</td><td>小さい</td><td>SMB署名の既定必須化など影響が大きい。<a href="windows-server-2025.html">[構築] Windows Server 2025</a>の既定値差分を参照</td></tr>
+        </tbody>
+      </table>
+      <p>稼働アプリケーションがWindows Server 2025に対応しているなら、サポート期間の長い2025を選ぶことで次回のアップグレードを1世代分先送りできる。本ページでは2016 → 2025を実施する</p>
+
+      <h2 id="constraints">3. アップグレードできない・非推奨の構成</h2>
+      <p>ライセンス版(評価版ではない)のインプレースアップグレードには次の制限がある。該当する場合は方式の再検討が必要</p>
+      <table>
+        <thead>
+          <tr><th>構成</th><th>扱い</th><th>対応</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Active Directory Domain Services(ドメインコントローラー)</td><td>非推奨</td><td>技術的には可能だが、Microsoftはクリーンインストールした新規DCの昇格と旧DCの降格を推奨</td></tr>
+          <tr><td>フェールオーバークラスター</td><td>不可(方式が異なる)</td><td>クラスターOSローリングアップグレードを使用。一度に進められるのは1世代のみ</td></tr>
+          <tr><td>Server Core ⇔ デスクトップエクスペリエンスの切り替え</td><td>不可</td><td>同じインストールオプション間でのみアップグレード可能</td></tr>
+          <tr><td>言語の変更</td><td>不可</td><td>OSと同じ言語のインストールメディアを使用する</td></tr>
+          <tr><td>エディションのダウングレード</td><td>不可</td><td>Datacenter → Standardは不可。Standard → Datacenterへの変更は可能</td></tr>
+          <tr><td>32ビット → 64ビット</td><td>不可</td><td>同一アーキテクチャのみ。Windows Server 2008 R2以降は64ビットのみ</td></tr>
+          <tr><td>VHDブート構成</td><td>不可</td><td>クリーンインストールを検討</td></tr>
+          <tr><td>NICチーミング</td><td>事前作業が必要</td><td>アップグレード前に無効化し、完了後に再有効化</td></tr>
+        </tbody>
+      </table>
+      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/identity/ad-ds/deploy/upgrade-domain-controllers">Microsoft公式: ドメインコントローラーのアップグレード</a> / <a href="https://learn.microsoft.com/ja-jp/windows-server/failover-clustering/cluster-operating-system-rolling-upgrade">Microsoft公式: クラスターOSのローリングアップグレード</a></p>
+
+      <h2 id="aws-notes">4. Amazon EC2固有の注意点</h2>
+      <p>オンプレミスの手順に加えて、EC2では次の点を考慮する</p>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>バックアップ</td><td>作業前にAMIを作成する。インプレースアップグレードの確実な切り戻し手段はこのAMIのみ</td></tr>
+          <tr><td>インストールメディア</td><td>ISOをダウンロードせず、AWSが提供するパブリックスナップショットからEBSボリュームを作成してアタッチする。BYOLの場合は自前のメディアが必要</td></tr>
+          <tr><td>ネットワークドライバー</td><td>事前にAWS PVドライバーとENAドライバーを最新化する。ドライバーが古いとアップグレード後にRDP接続できなくなるおそれがある</td></tr>
+          <tr><td>インスタンスサイズ</td><td>2 vCPU・4 GiB RAM以上での実施をAWSが推奨。小さいインスタンスは一時的にサイズ変更して実施できる</td></tr>
+          <tr><td>ルートボリューム空き容量</td><td>Windowsセットアップは容量不足を警告しない場合がある。旧OSが<code>Windows.old</code>として保持される分の空きを確保する</td></tr>
+          <tr><td>RDP切断</td><td>セットアップ開始から数分でRDPセッションが切断される。進行状況は「インスタンスのスクリーンショットを取得」で確認する</td></tr>
+          <tr><td>ステータスチェック</td><td>アップグレード中は一時的に失敗ステータスになる。監視・自動復旧(オートリカバリ等)を設定している場合は事前に抑止する</td></tr>
+          <tr><td>所要時間</td><td>役割とアプリケーションの数に依存し、AWSは40分から数時間かかる場合があると案内</td></tr>
+          <tr><td>起動エージェント</td><td>Windows Server 2016 AMIにはEC2Launch v1またはv2が含まれる。アップグレード前後に実際のエージェントと設定を確認し、v1を使用している場合はv2への移行を別作業として計画</td></tr>
+        </tbody>
+      </table>
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
+
+      <h2 id="lab-setup">5. 事前検証環境の構築例</h2>
+
+      <h3 id="lab-values">5.1 構築例の値</h3>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>値</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>リージョン</td><td>ap-northeast-1(東京)</td></tr>
+          <tr><td>AMI</td><td><code>Windows_Server-2016-Japanese-Full-Base</code>(最新版)</td></tr>
+          <tr><td>AMI ID(検証時点)</td><td><code>&lt;AMI_ID&gt;</code></td></tr>
+          <tr><td>エディション</td><td>Windows Server 2016 Datacenter(デスクトップエクスペリエンス)</td></tr>
+          <tr><td>インスタンスタイプ</td><td>t3.medium(2 vCPU / 4 GiB)</td></tr>
+          <tr><td>ルートボリューム</td><td>gp3 50 GiB</td></tr>
+          <tr><td>キーペア</td><td><code>&lt;KEY_PAIR_NAME&gt;</code>(RSA)</td></tr>
+          <tr><td>バックアップAMI ID</td><td><code>&lt;BACKUP_AMI_ID&gt;</code></td></tr>
+          <tr><td>メディアスナップショットID</td><td><code>&lt;MEDIA_SNAPSHOT_ID&gt;</code></td></tr>
+          <tr><td>実施日 / 所要時間</td><td><code>&lt;UPGRADE_DATE&gt;</code> / <code>&lt;UPGRADE_DURATION&gt;</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ルートボリューム容量</strong>
+        選択したWindows Server AMIの既定ルートボリューム容量を確認する。アップグレードでは旧OSが<code>Windows.old</code>として保持されるため空きを大きく消費する。容量はワークロードに応じて見積もり、本ページの例では起動時に50 GiBへ変更する
+      </div>
+
+      <h3 id="lab-ami">5.2 最新AMI IDの取得</h3>
+      <p>AMI IDはリージョンごとに異なり、AWS Windows AMIは月次で更新される。固定値ではなく、SSMパブリックパラメータから実行時点の最新AMI IDを取得し、5.1の表へ記録する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ssm get-parameter `
+  --name "/aws/service/ami-windows-latest/Windows_Server-2016-Japanese-Full-Base" `
+  --region ap-northeast-1 `
+  --query "Parameter.Value" `
+  --output text</code></pre>
+      </div>
+      <p><a href="https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/parameter-store-public-parameters-ami.html">AWS公式: AMIパブリックパラメータの呼び出し</a></p>
+
+      <h3 id="lab-launch">5.3 Windows Server 2016インスタンスの起動</h3>
+      <ol>
+        <li>Amazon EC2コンソールで「インスタンスを起動」を選択</li>
+        <li>「その他のAMIを閲覧する」から、5.2で取得したAMI IDを検索して選択</li>
+        <li>インスタンスタイプに<code>t3.medium</code>を選択</li>
+        <li>RSAキーペア<code>&lt;KEY_PAIR_NAME&gt;</code>を指定</li>
+        <li>検証用VPC・サブネットと、RDP(TCP/3389)を接続元限定で許可するSecurity Groupを設定</li>
+        <li>ルートボリュームを<code>gp3</code> 50 GiBへ変更してインスタンスを起動</li>
+      </ol>
+
+      <h3 id="lab-connect">5.4 RDP接続とアップグレード前の記録</h3>
+      <p>Administratorパスワードの取得とRDP接続の手順は<a href="windows-server-2025.html">[構築] Windows Server 2025</a>の「1. Windowsインスタンス接続」と同じ。接続後、アップグレード前の状態を記録し、サーバー外(手元の端末など)へ退避する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-ComputerInfo -Property WindowsProductName,WindowsBuildLabEx,WindowsEditionID | Out-File -FilePath .\computerinfo.txt
+        </code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systeminfo.exe | Out-File -FilePath .\systeminfo.txt</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>ipconfig /all | Out-File -FilePath .\ipconfig.txt</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Service | Where-Object { $_.StartType -eq "Automatic" } | Out-File -FilePath .\services.txt</code></pre>
+      </div>
+      <p>アップグレード後の比較用として、稼働サービス、ネットワーク設定、OSビルドを控える。<code>winver</code>で現在のバージョン表示も取得する</p>
+
+      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/upgrade-in-place">Microsoft公式: Windows Serverのインプレースアップグレードを実行する</a></p>
+
+      <h2 id="pre-tasks">6. アップグレード前の準備</h2>
+
+      <h3 id="pre-backup">6.1 バックアップAMIの取得</h3>
+      <ol>
+        <li>Amazon EC2コンソールで対象インスタンスを選択</li>
+        <li>「アクション」から「イメージとテンプレート」、「イメージを作成」を選択</li>
+        <li>イメージ名に用途と日付がわかる名前を入力。例: <code>ws2016-before-upgrade-&lt;UPGRADE_DATE&gt;</code></li>
+        <li>イメージを作成し、AMI IDを5.1の表の<code>&lt;BACKUP_AMI_ID&gt;</code>へ記録</li>
+        <li>AMIのステータスが「利用可能」になることを確認</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 再起動の有無</strong>
+        既定ではイメージ作成時にインスタンスが再起動される。「再起動しない」を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する
+      </div>
+
+      <h3 id="pre-drivers">6.2 ネットワークドライバーの確認と更新</h3>
+      <p>現在のENAドライバーとAWS PVドライバーのバージョンを確認</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-CimInstance Win32_PnPSignedDriver |
+  Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" -or $_.DeviceName -like "*AWS PV*" } |
+  Select-Object DeviceName, DriverVersion</code></pre>
+      </div>
+      <p>最新版でない場合は、AWS公式手順に従いAWS PVドライバーとENAドライバーを更新する。サーバー上のPowerShellから直接ドライバーをダウンロードする場合は、先にTLS 1.2を有効化する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12</code></pre>
+      </div>
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">AWS公式: PVドライバーのアップグレード</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">AWS公式: ENAドライバーのインストール</a></p>
+
+      <h3 id="pre-agent">6.3 SSM Agentと起動エージェントの確認</h3>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Service AmazonSSMAgent
+        </code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Service | Where-Object { $_.Name -like "*EC2Launch*" -or $_.Name -like "*Ec2Config*" }</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ EC2Configの置き換えは2016では不要</strong>
+        AWS公式手順にあるEC2Configのアンインストールは、アップグレード元がWindows Server 2012 / 2012 R2の場合の作業。Windows Server 2016 AMIはEC2Launch v1またはv2を使用するため、実際の起動エージェントを確認し、EC2Configを使用していない場合はこの置き換え作業は不要
+      </div>
+
+      <h3 id="pre-av">6.4 ウイルス対策とファイアウォールの一時無効化</h3>
+      <p>ウイルス対策・スパイウェア対策ソフトとファイアウォールはアップグレードプロセスと競合するおそれがあるため、一時的に無効化する。無効化した項目は9章の事後作業で必ず再有効化するため、変更内容を記録しておく</p>
+
+      <h3 id="pre-disk">6.5 空き容量の確認</h3>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Volume -DriveLetter C | Select-Object DriveLetter, SizeRemaining, Size</code></pre>
+      </div>
+      <p>空き容量が不足する場合は、EBSボリュームの拡張とOS側のパーティション拡張を先に実施する</p>
+
+      <h2 id="media">7. インストールメディアの準備</h2>
+
+      <h3 id="media-search">7.1 パブリックスナップショットの検索</h3>
+      <p>AWSはWindows Serverインストールメディアを言語別のパブリックスナップショットとして提供している。ISOのダウンロードとアップロードは不要</p>
+      <ol>
+        <li>Amazon EC2コンソールで「Elastic Block Store」の「スナップショット」を選択</li>
+        <li>フィルターを「パブリックスナップショット」へ変更</li>
+        <li>検索バーで「所有者のエイリアス」、「=」、「amazon」を指定</li>
+        <li>続けて「説明」に<code>Windows 2025 Japanese Installation Media</code>を入力して検索</li>
+        <li>該当スナップショットのIDを5.1の表の<code>&lt;MEDIA_SNAPSHOT_ID&gt;</code>へ記録</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ メディアの言語一致</strong>
+        インストールメディアはOSの言語設定と一致させる。日本語AMIから構築したインスタンスにはJapanese、英語版にはEnglishのメディアを選択する。言語の異なるメディアではアップグレードできない
+      </div>
+
+      <h3 id="media-volume">7.2 ボリュームの作成</h3>
+      <ol>
+        <li>該当スナップショットを選択し、「アクション」から「スナップショットからボリュームを作成」を選択</li>
+        <li>アベイラビリティーゾーンを対象インスタンスと同じAZへ変更</li>
+        <li>他の設定は既定のままボリュームを作成</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ アベイラビリティーゾーンの一致</strong>
+        EBSボリュームは同じAZのインスタンスにしかアタッチできない。既定値のまま作成するとAZ不一致でアタッチに失敗しやすいため、作成時に必ず対象インスタンスのAZへ合わせる
+      </div>
+
+      <h3 id="media-attach">7.3 アタッチとオンライン化</h3>
+      <ol>
+        <li>作成したボリュームを選択し、「アクション」から「ボリュームのアタッチ」を選択</li>
+        <li>対象インスタンスとデバイス名(例: <code>xvdf</code>)を指定してアタッチ</li>
+        <li>RDP接続に戻り、「ディスクの管理」で該当ディスクを右クリックして「オンライン」を選択</li>
+        <li>エクスプローラーでドライブ(例: <code>D:</code>)としてメディアの内容が見えることを確認</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ディスクの初期化はしない</strong>
+        「ディスクの管理」で初期化(フォーマット)を実行するとメディアの内容が消える。操作は「オンライン」への切り替えのみ
+      </div>
+
+      <h2 id="upgrade">8. インプレースアップグレードの実行</h2>
+
+      <h3 id="upgrade-run">8.1 セットアップの起動</h3>
+      <p>管理者としてPowerShellを開き、メディアのドライブへ移動してセットアップを実行。ドライブ文字は7.3で認識された値へ読み替える</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>D:</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>.\setup.exe /auto upgrade /dynamicupdate disable</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ /dynamicupdate disable の理由</strong>
+        アップグレード中の更新プログラム適用は失敗の要因になるため、AWS公式手順ではDynamic Updateを無効化して実行する。無効化した分の更新はアップグレード完了後にWindows Updateで適用する
+      </div>
+
+      <h3 id="upgrade-edition">8.2 エディションの選択</h3>
+      <ol>
+        <li>セットアップ画面で、現在のエディションとインストールオプションに対応するWindows Server 2025を選択</li>
+        <li>ライセンス条項を確認して同意</li>
+        <li>「ファイル、設定、アプリを保持する」が選択されていることを確認してインストールを開始</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ エディションとインストールオプション</strong>
+        既存OSと同じエディション(本ページの例ではDatacenter)、同じインストールオプション(デスクトップエクスペリエンス)を選択する。Server Core版や下位エディションを選ぶとアップグレードを継続できない
+      </div>
+
+      <h3 id="upgrade-monitor">8.3 進行状況の確認</h3>
+      <p>セットアップ開始から数分でRDPセッションが切断され、以降はOSへ接続できない。進行状況はコンソール画面のキャプチャで確認する</p>
+      <ol>
+        <li>Amazon EC2コンソールで対象インスタンスを選択</li>
+        <li>「アクション」から「モニタリングとトラブルシューティング」、「インスタンスのスクリーンショットを取得」を選択</li>
+        <li>「更新プログラムを構成しています」などの表示と進捗率を確認</li>
+        <li>スクリーンショットを更新しながら完了まで待機。CPUとディスクのCloudWatchメトリクスでも進行を確認</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ステータスチェックの一時失敗</strong>
+        アップグレード中はインスタンスステータスチェックが一時的に失敗状態になり、完了すると回復する。ステータスチェック連動のアラームや自動復旧を設定している場合は、誤検知による再起動を防ぐため事前に無効化する
+      </div>
+
+      <h3 id="upgrade-done">8.4 完了の確認</h3>
+      <ol>
+        <li>スクリーンショットにロック画面が表示されたらアップグレード完了と判断</li>
+        <li>ステータスチェックが2/2で成功していることを確認</li>
+        <li>RDPで再接続し、サインインできることを確認</li>
+        <li>開始から完了までの時間を5.1の表の<code>&lt;UPGRADE_DURATION&gt;</code>へ記録</li>
+      </ol>
+
+      <h2 id="post-check">9. アップグレード後の確認</h2>
+      <p>アップグレード成功はバージョン表示の確認では終わらない。サービス、ネットワーク、AWS管理機能、ライセンスまで確認して作業完了とする</p>
+
+      <h3 id="post-version">9.1 OSバージョンの確認</h3>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-ComputerInfo -Property WindowsProductName,WindowsBuildLabEx,WindowsEditionID</code></pre>
+      </div>
+      <p><code>winver</code>でもWindows Server 2025の表示を確認し、5.4で取得した値と比較する</p>
+
+      <h3 id="post-os">9.2 OS状態の確認</h3>
+      <p>自動起動サービスの停止有無、イベントログのエラー、ネットワーク設定を事前記録と比較</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Service | Where-Object { $_.StartType -eq "Automatic" -and $_.Status -ne "Running" }</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-WinEvent -FilterHashtable @{ LogName = "System"; Level = 1,2 ; StartTime = (Get-Date).AddHours(-6) } | Select-Object TimeCreated, Id, ProviderName, Message</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>ipconfig /all</code></pre>
+      </div>
+      <ol>
+        <li>停止している自動起動サービスの有無と理由を確認</li>
+        <li>Systemログの重大・エラーイベントを確認</li>
+        <li>IPアドレス、DNS、デフォルトゲートウェイを6章以前の記録と比較して確認</li>
+        <li>デバイスマネージャーで警告表示のデバイスがないことを確認</li>
+        <li>稼働アプリケーションとタスクスケジューラの動作を確認</li>
+      </ol>
+
+      <h3 id="post-aws">9.3 AWS管理機能の確認</h3>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Service AmazonSSMAgent</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-CimInstance Win32_PnPSignedDriver |
+  Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" -or $_.DeviceName -like "*NVMe*" } |
+  Select-Object DeviceName, DriverVersion</code></pre>
+      </div>
+      <ol>
+        <li>SSM Agentの稼働と、Systems Manager Fleet Managerでマネージドノードとして表示されることを確認</li>
+        <li>Nitro世代のインスタンスではENAドライバーとNVMeドライバーの状態を確認</li>
+        <li>.NET Frameworkの更新を求められた場合は適用して再起動を実行</li>
+      </ol>
+
+      <div class="callout">
+        <strong>ℹ️ EC2Launch v2への移行</strong>
+        インプレースアップグレード後も、アップグレード前の起動エージェントと設定を引き継ぐ可能性がある。EC2Launch v1またはv2のいずれを使用しているかを確認し、v1を使用している場合は運用標準と互換性を確認したうえでv2への移行を別作業として計画する
+      </div>
+      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2.html">AWS公式: EC2Launch v2エージェント</a></p>
+
+      <h3 id="post-license">9.4 ライセンス認証の確認</h3>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cscript //nologo $env:windir\System32\slmgr.vbs /dlv</code></pre>
+      </div>
+      <p>ライセンス込み(License Included)のAWS提供AMIではWindowsのライセンス認証はAWS側の仕組みで行われる。ライセンスの状態が「ライセンスされています」であることを確認</p>
+
+      <h3 id="post-update">9.5 Windows Updateの適用</h3>
+      <p>Dynamic Updateを無効化してアップグレードしたため、完了後にWindows Updateで最新の更新プログラムを適用し、再起動まで実施する</p>
+
+      <h3 id="post-cleanup">9.6 事後作業</h3>
+      <ol>
+        <li>6.4で無効化したウイルス対策ソフトとファイアウォールを再有効化</li>
+        <li>8.3で無効化した監視・アラーム・自動復旧を再有効化</li>
+        <li>インストールメディアのEBSボリュームをデタッチして削除</li>
+        <li>動作確認の完了後、不要になった検証用リソース(インスタンス、バックアップAMIと関連スナップショット)を削除してコストを抑止</li>
+      </ol>
+
+      <h2 id="troubleshooting">10. トラブルシューティングとロールバック</h2>
+
+      <h3 id="trbl-logs">10.1 セットアップログの確認</h3>
+      <p>アップグレード後の動作が想定と異なる場合、またはアップグレード自体が失敗した場合は、セットアップログを確認する</p>
+      <table>
+        <thead>
+          <tr><th>確認先</th><th>内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>C:\Windows\Panther</code></td><td>Windowsセットアップのログファイル一式</td></tr>
+          <tr><td>SetupDiag</td><td>Microsoft提供のログ解析ツール。失敗原因の特定に使用</td></tr>
+          <tr><td>インスタンスのスクリーンショット / システムログ</td><td>OSへ接続できない場合のコンソール状態の確認</td></tr>
+        </tbody>
+      </table>
+      <p>数時間経過してもステータスチェックが回復しない場合は、AWSのトラブルシューティング手順に従う</p>
+      <p><a href="https://learn.microsoft.com/ja-jp/windows/deployment/upgrade/setupdiag">Microsoft公式: SetupDiag</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-upgrade-trbl.html">AWS公式: OSアップグレードのトラブルシューティング</a></p>
+
+      <h3 id="trbl-rollback">10.2 ロールバック</h3>
+      <p>インプレースアップグレードの確実な切り戻し手段は、6.1で取得したバックアップAMIからの復旧のみ。復旧手順を事前に決めてから作業に着手する</p>
+      <ol>
+        <li>失敗したインスタンスを停止</li>
+        <li><code>&lt;BACKUP_AMI_ID&gt;</code>から同じサブネット・Security Groupで新しいインスタンスを起動</li>
+        <li>固定IPが必要な場合はElastic IPまたはENIの付け替えを実施</li>
+        <li>アプリケーションの動作と接続性を確認</li>
+        <li>失敗した側のインスタンスは原因調査後に削除</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 本番適用の判断</strong>
+        復旧後のインスタンスはIDが変わり、EIP・ENI・監視・バックアップ設定の付け替えが必要になる。本番環境では、この切り戻し影響まで含めて検証環境で一度リハーサルしてから適用を判断する
+      </div>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#overview">1. 概要</a>
+      <a href="#support">2. サポート期限</a>
+      <a href="#constraints">3. 非対応構成</a>
+      <a href="#aws-notes">4. EC2固有</a>
+      <a href="#lab-setup">5. 事前検証</a>
+      <a href="#pre-tasks">6. 事前準備</a>
+      <a href="#media">7. メディア準備</a>
+      <a href="#upgrade">8. 実行</a>
+      <a href="#post-check">9. 事後確認</a>
+      <a href="#troubleshooting">10. 障害対応</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

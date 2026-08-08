@@ -16,6 +16,7 @@ https://thsmt.github.io/Documentation/
 - [構築] Red Hat Enterprise Linux 9の整理
 - [構築] Amazon Linux 2023の整理
 - [構築] Windows Server 2022の整理
+- [更新] Windows Server 2016 → 2025 インプレースアップグレードの整理
 - Zabbix 6.0 運用手順の整理
 - AWX / Ansible 手順の整理
 - EOL / ライフサイクル一覧表の整理

@@ -27,6 +27,7 @@ $groups = @(
             [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = '[構築] Amazon Linux 2023' }
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = '[構築] Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = '[構築] Windows Server 2025' }
+            [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = '[更新] Windows Server 2016 → 2025' }
             [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server' }
             [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0' }
