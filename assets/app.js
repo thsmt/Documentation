@@ -42,6 +42,45 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
+const userValueSplitPattern = /(<[A-Z][A-Z0-9_:-]*>)/;
+const userValueTest = /<[A-Z][A-Z0-9_:-]*>/;
+
+const highlightUserValues = () => {
+  document.querySelectorAll(".code pre code").forEach((code) => {
+    const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let textNode;
+
+    while ((textNode = walker.nextNode())) {
+      if (!textNode.parentElement?.closest(".user-value") && userValueTest.test(textNode.nodeValue)) {
+        textNodes.push(textNode);
+      }
+    }
+
+    textNodes.forEach((node) => {
+      const fragment = document.createDocumentFragment();
+      const parts = node.nodeValue.split(userValueSplitPattern);
+
+      parts.forEach((part) => {
+        if (!part) return;
+
+        if (userValueTest.test(part)) {
+          const value = document.createElement("span");
+          value.className = "user-value";
+          value.textContent = part;
+          fragment.append(value);
+        } else {
+          fragment.append(document.createTextNode(part));
+        }
+      });
+
+      node.replaceWith(fragment);
+    });
+  });
+};
+
+highlightUserValues();
+
 document.querySelectorAll(".copy").forEach((button) => {
   button.addEventListener("click", async () => {
     const code = button.closest(".code").querySelector("code").innerText;
