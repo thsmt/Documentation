@@ -64,7 +64,7 @@
       </nav>
       <h1>EventBridge Scheduler 自動停止・起動</h1>
 
-      
+
 
       <h2 id="services">自動停止・起動を適用できる主なサービス</h2>
       <p>対象可否は「サービス名」ではなく「そのAPI操作がUniversal targetで利用可能か」「リソースが状態遷移をサポートするか」「実行ロールに権限があるか」で判断する</p>
@@ -202,7 +202,7 @@
         </tbody>
       </table>
       <div class="callout callout-warning"><strong>⚠️ 例外日と重複実行</strong><p>祝日、棚卸し、月次処理などの例外は、Scheduleの無効化または一時的な時刻変更で管理する。Schedulerは少なくとも1回の配信を前提とするため、起動・停止以外の更新APIでは重複実行時の安全性を検証する</p></div>
-      
+
     </main>
 
     <aside class="toc" aria-label="Table of contents">
