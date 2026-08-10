@@ -63,38 +63,8 @@
         <span>トピック</span>
       </nav>
       <h1>EventBridge Scheduler 自動停止・起動</h1>
-      <p class="lead">Amazon EventBridge SchedulerのUniversal targetを使用し、EC2、RDS、Amazon WorkSpacesなどのAWS APIを指定時刻に実行する設計と手順を整理する</p>
 
-      <h2 id="summary">結論と使いどころ</h2>
-      <p>開発・検証環境の営業時間外停止、始業前起動、定期ジョブ開始には、EventBridge Schedulerをスケジューラーとして使用する。Universal targetを使うと、Schedulerが実行ロールを引き受け、指定したAWSサービスAPIを直接呼び出す</p>
-      <div class="callout">
-        <strong>ℹ️ Universal targetの範囲</strong>
-        <p>Universal targetは270超のAWSサービスと6,000超のAPI操作を対象にできる。一方、すべてのAPIを実行できるわけではなく、読み取り系の<code>Get</code>、<code>Describe</code>、<code>List</code>などは対象外</p>
-      </div>
-      <table>
-        <thead><tr><th>用途</th><th>採用判断</th></tr></thead>
-        <tbody>
-          <tr><td>単一サービスの停止・起動</td><td>対象APIと入力JSONを直接指定でき、Lambdaを不要にできる</td></tr>
-          <tr><td>複数サービスの始業前起動</td><td>サービスごとに開始時刻をずらせる。起動完了待機や分岐が必要ならStep Functionsを使用</td></tr>
-          <tr><td>定期的な書き込みAPI実行</td><td>cron、rate、単発スケジュールとタイムゾーンを設定できる</td></tr>
-          <tr><td>イベント発生を契機とする処理</td><td>EventBridgeルール、Step Functions、Lambdaなどを検討</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="architecture">仕組みと設計原則</h2>
-      <p>1つのScheduleには1つのTargetを設定する。Targetには実行ロール、Universal target ARN、APIリクエストに対応するJSON入力を指定する。複数サービスを順序付きで操作する場合は、SchedulerからStep FunctionsまたはLambdaを起動し、待機、分岐、通知をワークフロー側で実装する</p>
-      <table>
-        <thead><tr><th>設定項目</th><th>役割</th><th>注意点</th></tr></thead>
-        <tbody>
-          <tr><td>Schedule expression</td><td>cron、rate、単発の実行時刻</td><td>業務時刻を基準にし、<code>Asia/Tokyo</code>などのタイムゾーンを明示</td></tr>
-          <tr><td>Flexible time window</td><td>指定時刻からの実行分散</td><td>始業前起動など時刻厳守の処理は<code>OFF</code>を指定</td></tr>
-          <tr><td>Execution role</td><td>Schedulerが引き受けるIAMロール</td><td>対象APIと対象リソースだけを許可し、管理者権限を付与しない</td></tr>
-          <tr><td>Universal target ARN</td><td>呼び出すサービスとAPI操作</td><td><code>arn:aws:scheduler:::aws-sdk:&lt;service&gt;:&lt;apiAction&gt;</code>形式を使用</td></tr>
-          <tr><td>Input</td><td>APIに渡すリクエストJSON</td><td>対象サービスのAPIリファレンスにあるリクエスト形式と一致させる</td></tr>
-          <tr><td>Retry/DLQ</td><td>失敗時の再試行と記録</td><td>少なくとも1回配信を前提に、起動・停止以外の更新APIは冪等性を設計</td></tr>
-        </tbody>
-      </table>
-      <div class="callout callout-warning"><strong>⚠️ 停止と起動は別Schedule</strong><p>停止用と起動用は別々のScheduleとして作成する。停止時刻より前に終了が必要なバッチ、起動後に利用可能になるまで時間がかかるデータベース、接続中ユーザーを同じ時刻に扱わない</p></div>
+      
 
       <h2 id="services">自動停止・起動を適用できる主なサービス</h2>
       <p>対象可否は「サービス名」ではなく「そのAPI操作がUniversal targetで利用可能か」「リソースが状態遷移をサポートするか」「実行ロールに権限があるか」で判断する</p>
@@ -232,43 +202,16 @@
         </tbody>
       </table>
       <div class="callout callout-warning"><strong>⚠️ 例外日と重複実行</strong><p>祝日、棚卸し、月次処理などの例外は、Scheduleの無効化または一時的な時刻変更で管理する。Schedulerは少なくとも1回の配信を前提とするため、起動・停止以外の更新APIでは重複実行時の安全性を検証する</p></div>
-
-      <h2 id="troubleshooting">失敗時の切り分け</h2>
-      <table>
-        <thead><tr><th>症状</th><th>確認項目</th><th>対応</th></tr></thead>
-        <tbody>
-          <tr><td>Scheduleが実行されない</td><td>Schedule状態、cron式、タイムゾーン、開始・終了日時</td><td><code>get-schedule</code>で設定を確認し、検証用の単発Scheduleで実行時刻を確認</td></tr>
-          <tr><td>AccessDenied</td><td>信頼ポリシー、実行ロール、対象リソースARN、SCP、権限境界</td><td>Schedulerの実行ロールに、対象APIと対象リソースだけを許可</td></tr>
-          <tr><td>Invalid state</td><td>すでに停止中または起動中、メンテナンス、レプリカ、接続中ユーザー</td><td>対象サービスの状態条件を確認し、必要に応じてStep Functionsで待機と分岐を実装</td></tr>
-          <tr><td>起動後も利用できない</td><td>起動完了までの時間、ヘルスチェック、DNS、アプリ依存先、監視</td><td>始業時刻より前に起動し、サービスごとの復帰確認を自動化</td></tr>
-          <tr><td>失敗が追跡できない</td><td>Retry policy、DLQ、CloudTrail、CloudWatchアラーム、通知先</td><td>DLQと通知を追加し、失敗イベントの所有者と初動手順を定義</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="references">公式情報</h2>
-      <ul>
-        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html">What is Amazon EventBridge Scheduler?</a></li>
-        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-targets-universal.html">Using universal targets in EventBridge Scheduler</a></li>
-        <li><a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html">Schedule types in EventBridge Scheduler</a></li>
-        <li><a href="https://docs.aws.amazon.com/cli/latest/reference/scheduler/create-schedule.html">AWS CLI create-schedule</a></li>
-        <li><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html">Stop and start Amazon EC2 instances</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html">Stopping an Amazon RDS DB instance temporarily</a></li>
-        <li><a href="https://docs.aws.amazon.com/workspaces/latest/api/API_StartWorkspaces.html">Amazon WorkSpaces StartWorkspaces API</a></li>
-        <li><a href="https://docs.aws.amazon.com/redshift/latest/mgmt/rs-mgmt-pause-resume-cluster.html">Pausing and resuming an Amazon Redshift cluster</a></li>
-      </ul>
+      
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#summary">結論と使いどころ</a>
-      <a href="#architecture">仕組みと設計原則</a>
       <a href="#services">適用できるサービス</a>
       <a href="#prerequisites">作業前の確認</a>
       <a href="#iam">実行ロール</a>
       <a href="#procedure">Schedule作成</a>
       <a href="#operations">確認・監視</a>
-      <a href="#troubleshooting">失敗時の切り分け</a>
-      <a href="#references">公式情報</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
