@@ -223,8 +223,16 @@ body.sidebar-collapsed .sidebar a {
 .sidebar-group {
   margin: 18px 0 5px;
   color: var(--text);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-group::before {
+  content: "▶";
+  margin-right: 6px;
+  color: var(--accent-strong);
+  font-size: 10px;
 }
 
 .sidebar-heading + .sidebar-group {
@@ -349,7 +357,7 @@ li {
   border-bottom: 1px solid var(--line);
 }
 
-.code .user-value {
+.user-value {
   color: #ff9900;
   font-weight: 700;
 }

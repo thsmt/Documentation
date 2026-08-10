@@ -42,10 +42,19 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
+const pageUserValues = (document.body.dataset.userValues || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .sort((left, right) => right.length - left.length);
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const userValuePatterns = [
   { pattern: /<[A-Z][A-Z0-9_:-]*>/g, group: 0 },
   { pattern: /\{[A-Z][A-Z0-9_:-]*\}/g, group: 0 },
   { pattern: /[:/]role\/([A-Za-z0-9+=,.@_-]+)/g, group: 1 },
+  ...pageUserValues.map((value) => ({ pattern: new RegExp(escapeRegExp(value), "g"), group: 0 })),
 ];
 
 const collectUserValueRanges = (text) => {
@@ -70,13 +79,13 @@ const collectUserValueRanges = (text) => {
 };
 
 const highlightUserValues = () => {
-  document.querySelectorAll(".code pre code").forEach((code) => {
-    const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+  document.querySelectorAll("main").forEach((root) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const textNodes = [];
     let textNode;
 
     while ((textNode = walker.nextNode())) {
-      if (!textNode.parentElement?.closest(".user-value") && collectUserValueRanges(textNode.nodeValue).length > 0) {
+      if (!textNode.parentElement?.closest("script, style, .user-value") && collectUserValueRanges(textNode.nodeValue).length > 0) {
         textNodes.push(textNode);
       }
     }
