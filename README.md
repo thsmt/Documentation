@@ -12,6 +12,8 @@ https://thsmt.github.io/Documentation/
 - AWS CLI 特殊対応の整理
 - AWS CLI コマンドリファレンスの整理
 - EventBridge SchedulerによるAWSサービスの自動停止・起動
+- Amazon SES SMTPリレーの構築
+- Amazon SESの配信監視と通知
 - 障害切り分けチェックリストの整理
 - Terraform の整理
 - Red Hat Enterprise Linux 9の整理

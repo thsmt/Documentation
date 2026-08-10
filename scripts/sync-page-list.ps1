@@ -15,7 +15,8 @@ $groups = @(
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'eventbridge-scheduler.html'; Label = 'EventBridge Scheduler' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
-            [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
+            [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES SMTPリレー' }
+            [pscustomobject]@{ File = 'amazon-ses-monitoring.html'; Label = 'Amazon SES 配信監視' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
             [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'AWS Certificate Manager (ACM)' }
         )

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon SES 配信監視 | Documentation</title>
+  <meta name="description" content="Amazon SESのConfiguration Set、SNS、EventBridge、CloudWatch、サプレッションリスト、VDMを使用した配信監視手順。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-user-values="ses-postfix-monitoring,ses-events-notification,ses-event-bridge,ses-cloudwatch-events,SES-Reputation-BounceRate,SES-Reputation-ComplaintRate,zexample.com,no-reply@zexample.com">
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a class="active" href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <p class="sidebar-group">OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="apache.html">Apache</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
+      <p class="sidebar-group">開発／自動化</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="container.html">コンテナ</a>
+      <a href="github-actions.html">GitHub Actions</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>Amazon SES 配信監視</h1>
+      <p class="lead">Amazon SESから送信したメールの配信、バウンス、苦情、遅延を収集し、異常を通知する運用手順を整理する。Configuration Setを起点にSNS、EventBridge、CloudWatchを設定し、サプレッションリスト、VDM、送信クォータまで確認する</p>
+
+      <h2 id="overview">配信監視の全体像</h2>
+      <p>SMTPサーバーで<code>status=sent</code>になっても、SESが受信者のメールサーバーへ配信したことまでは保証しない。PostfixからSESへの引き渡し、SESの配信イベント、受信者側の結果を分けて確認する</p>
+      <table>
+        <thead><tr><th>確認レイヤー</th><th>確認内容</th><th>主な確認先</th></tr></thead>
+        <tbody>
+          <tr><td>Postfix</td><td>SES SMTPエンドポイントへ引き渡せたか</td><td><code>journalctl</code>、メールキュー</td></tr>
+          <tr><td>Amazon SES</td><td>Send、Delivery、Bounce、Complaint、DeliveryDelay</td><td>Configuration Setのイベント送信先</td></tr>
+          <tr><td>通知</td><td>即時通知、イベント振り分け、メトリクスアラーム</td><td>SNS、EventBridge、CloudWatch</td></tr>
+          <tr><td>レピュテーション</td><td>バウンス率、苦情率、アカウント状態</td><td>SESレピュテーションメトリクス</td></tr>
+          <tr><td>到達性</td><td>ISP、送信ID、Configuration Set別の配信傾向</td><td>Virtual Deliverability Manager</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>📌 このページの検証構成</strong>
+        <p>東京リージョン、Configuration Set名<code>ses-postfix-monitoring</code>、SNSトピック名<code>ses-events-notification</code>を例にする。名前、ARN、送信ID、メールアドレスは環境に合わせて変更する</p>
+      </div>
+
+      <h2 id="configuration-set">Configuration Setの作成</h2>
+      <p>Configuration Setは、イベント送信先、レピュテーションメトリクス、VDM設定などを送信メールへまとめて適用する単位。同じ送信IDでも、トランザクションメールとマーケティングメールを分けると、監視と変更管理を独立させやすい。設定項目はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/creating-configuration-sets.html">Configuration Set作成手順</a>を参照する</p>
+      <ol>
+        <li>Amazon SESコンソールを東京リージョンで開き、「設定」「設定セット」を選択</li>
+        <li>「セットの作成」を選択</li>
+        <li>設定セット名へ<code>ses-postfix-monitoring</code>を入力</li>
+        <li>送信オプションが有効であることを確認</li>
+        <li>レピュテーションメトリクスを有効化</li>
+        <li>サプレッションリストとVDMはアカウント設定を継承し、必要な場合だけConfiguration Set単位で上書き</li>
+        <li>タグを設定し、「セットの作成」を選択</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set `
+  --configuration-set-name ses-postfix-monitoring `
+  --region ap-northeast-1</code></pre></div>
+      <div class="callout">
+        <strong>🧪 実機検証で記録する内容</strong>
+        <p>設定セットの概要、送信オプション、レピュテーションメトリクス、サプレッションリスト、VDMの各設定を画像で記録する</p>
+      </div>
+
+      <h2 id="destinations">イベント送信先の作成</h2>
+      <p>Configuration Setの「イベント送信先」で、収集するイベントと出力先を設定する。1つのConfiguration Setには複数のイベント送信先を作成できるため、通知用SNS、振り分け用EventBridge、集計用CloudWatchを分けて設定する。選択できるイベントと送信先はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/event-destinations-manage.html">イベント送信先の作成</a>を参照する</p>
+      <table>
+        <thead><tr><th>送信先</th><th>向いている用途</th><th>保持・確認方法</th></tr></thead>
+        <tbody>
+          <tr><td>Amazon SNS</td><td>バウンスや苦情をメール、SMS、Lambdaなどへ即時通知</td><td>購読先へJSONイベントを配信</td></tr>
+          <tr><td>Amazon EventBridge</td><td>イベント種別で振り分け、SNS、SQS、Lambda、Step Functionsへ連携</td><td>ルールのメトリクス、Target、DLQで確認</td></tr>
+          <tr><td>Amazon CloudWatch</td><td>イベント件数をメトリクス化し、ダッシュボードとアラームで監視</td><td><code>AWS/SES</code>メトリクスで確認</td></tr>
+        </tbody>
+      </table>
+      <p>最初の検証では<code>Send</code>、<code>Delivery</code>、<code>Bounce</code>、<code>Complaint</code>、<code>DeliveryDelay</code>、<code>Reject</code>を対象とする。<code>Open</code>と<code>Click</code>はエンゲージメント追跡を利用する場合だけ追加する</p>
+
+      <h3 id="destination-sns">Amazon SNS</h3>
+      <ol>
+        <li>Amazon SNSコンソールで「トピック」「トピックの作成」を選択</li>
+        <li>タイプは「スタンダード」、名前は<code>ses-events-notification</code>として作成</li>
+        <li>「サブスクリプションの作成」で通知先メールアドレスを登録</li>
+        <li>届いた確認メールから購読を確定し、ステータスが「確認済み」になることを確認</li>
+        <li>SESのConfiguration Setを開き、「イベント送信先」「送信先を追加」を選択</li>
+        <li>対象イベントを選択し、送信先タイプにAmazon SNS、作成したトピックを指定</li>
+        <li>イベント発行を有効にして保存</li>
+      </ol>
+      <p>SNSトピックのアクセスポリシーには、対象Configuration Setからの<code>sns:Publish</code>だけを許可する</p>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "AllowSESPublish",
+    "Effect": "Allow",
+    "Principal": { "Service": "ses.amazonaws.com" },
+    "Action": "sns:Publish",
+    "Resource": "arn:aws:sns:ap-northeast-1:&lt;ACCOUNT_ID&gt;:ses-events-notification",
+    "Condition": {
+      "StringEquals": {
+        "AWS:SourceAccount": "&lt;ACCOUNT_ID&gt;",
+        "AWS:SourceArn": "arn:aws:ses:ap-northeast-1:&lt;ACCOUNT_ID&gt;:configuration-set/ses-postfix-monitoring"
+      }
+    }
+  }]
+}</code></pre></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>SNSトピック、確認済みサブスクリプション、SESイベント送信先、選択したイベント種別を画像で記録する</p></div>
+
+      <h3 id="destination-eventbridge">Amazon EventBridge</h3>
+      <ol>
+        <li>Configuration Setの「イベント送信先」「送信先を追加」を選択</li>
+        <li>対象イベントを選択し、送信先タイプにAmazon EventBridgeを指定</li>
+        <li>名前を<code>ses-event-bridge</code>としてイベント発行を有効化</li>
+        <li>Amazon EventBridgeコンソールでデフォルトイベントバスを開く</li>
+        <li>「ルールを作成」でイベントパターンを使用するルールを作成</li>
+        <li>イベントソースを<code>aws.ses</code>、通知対象の詳細タイプを指定</li>
+        <li>TargetへSNSトピック<code>ses-events-notification</code>を指定</li>
+        <li>必要に応じて再試行とSQS DLQを設定し、ルールを有効化</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+  "source": ["aws.ses"],
+  "detail-type": [
+    "Email Bounced",
+    "Email Complaint Received",
+    "Email Delivery Delayed",
+    "Email Rejected"
+  ]
+}</code></pre></div>
+      <div class="callout callout-info"><strong>ℹ️ SNSとの使い分け</strong><p>SNSイベント送信先は選択したSESイベントを直接通知する。EventBridgeは詳細タイプやイベント内容でルールを分け、複数サービスへ連携する場合に使用する。EventBridgeへのSESサービスイベント配信はベストエフォートのため、重要な失敗記録はSNS、SQS、ログ保存も組み合わせる</p></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>SESのEventBridge送信先、ルールのイベントパターン、Target、再試行、DLQ、ルールメトリクスを画像で記録する</p></div>
+
+      <h3 id="destination-cloudwatch">Amazon CloudWatch</h3>
+      <ol>
+        <li>Configuration Setの「イベント送信先」「送信先を追加」を選択</li>
+        <li>対象イベントを選択し、送信先タイプにAmazon CloudWatchを指定</li>
+        <li>名前を<code>ses-cloudwatch-events</code>としてイベント発行を有効化</li>
+        <li>値のソースは「メッセージタグ」を選択</li>
+        <li>ディメンション名へ<code>ses:configuration-set</code>を指定</li>
+        <li>デフォルト値へ<code>ses-postfix-monitoring</code>を指定して保存</li>
+        <li>テスト送信後、CloudWatchの「すべてのメトリクス」「SES」でイベント件数を確認</li>
+      </ol>
+      <div class="callout callout-warning"><strong>⚠️ CloudWatchメトリクスの料金</strong><p>イベントタイプ、ディメンション名、ディメンション値の組み合わせごとにメトリクスが作成される。受信者、Message IDなど値の種類が増え続ける項目をディメンションに使用せず、Configuration Setや用途など有限の値へ限定する</p></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>CloudWatchイベント送信先のディメンション設定と、テスト送信後に表示されたSESメトリクスを画像で記録する</p></div>
+
+      <h2 id="identity-default">送信IDへのConfiguration Set設定</h2>
+      <p>イベント送信先を作成しただけでは、送信メールへConfiguration Setは適用されない。Postfixから常に同じ設定を使用する場合は送信IDのデフォルトConfiguration Setを設定する</p>
+      <ol>
+        <li>Amazon SESコンソールで「設定」「ID」を開く</li>
+        <li>送信に使用するドメイン<code>zexample.com</code>を選択</li>
+        <li>「設定セット」タブの「編集」を選択</li>
+        <li>デフォルト設定セットへ<code>ses-postfix-monitoring</code>を指定</li>
+        <li>保存後、IDの設定画面へ設定セット名が表示されることを確認</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity `
+  --email-identity zexample.com `
+  --region ap-northeast-1 `
+  --query "{IdentityType:IdentityType,VerifiedForSendingStatus:VerifiedForSendingStatus,ConfigurationSetName:ConfigurationSetName}"</code></pre></div>
+      <p>メール単位でデフォルト設定を上書きする場合は、SMTP送信するMIMEヘッダーへ次の値を追加する</p>
+      <div class="code"><div class="code-header"><span>text</span><button class="copy-button" type="button">Copy</button></div><pre><code>X-SES-CONFIGURATION-SET: ses-postfix-monitoring</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ デフォルト設定セットの削除</strong><p>送信IDへ割り当てたデフォルトConfiguration Setを先に削除すると、そのIDを使用した送信が失敗する。削除前に送信IDとの関連付けを解除する</p></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>送信IDの設定セットタブと、デフォルトConfiguration Setが表示された状態を画像で記録する</p></div>
+
+      <h2 id="simulator">メールボックスシミュレーター</h2>
+      <p>メールボックスシミュレーターは、実在しない受信者を作成せずに配信、バウンス、苦情、自動応答、サプレッションを再現する。サンドボックスでも利用でき、日次送信クォータ、バウンス率、苦情率、VDMメトリクスには影響しないが、送信料金と最大送信レートは通常どおり適用される。動作条件はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/send-an-email-from-console.html">メールボックスシミュレーター</a>を参照する</p>
+      <table>
+        <thead><tr><th>シナリオ</th><th>宛先</th><th>期待する結果</th></tr></thead>
+        <tbody>
+          <tr><td>正常配信</td><td><code>success@simulator.amazonses.com</code></td><td>Send、Delivery</td></tr>
+          <tr><td>ハードバウンス</td><td><code>bounce@simulator.amazonses.com</code></td><td>Send、Bounce。シミュレーター自体はサプレッションリストへ追加されない</td></tr>
+          <tr><td>苦情</td><td><code>complaint@simulator.amazonses.com</code></td><td>Send、Delivery、Complaint</td></tr>
+          <tr><td>自動応答</td><td><code>ooto@simulator.amazonses.com</code></td><td>Delivery後、Return-PathまたはMAIL FROMへ自動応答</td></tr>
+          <tr><td>サプレッション</td><td><code>suppressionlist@simulator.amazonses.com</code></td><td>グローバルサプレッションリストに存在する場合と同様のBounce</td></tr>
+        </tbody>
+      </table>
+
+      <h3>正常配信</h3>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES delivery monitoring test" | mailx -v -r no-reply@zexample.com -s "SES success test" success@simulator.amazonses.com</code></pre></div>
+      <h3>バウンス</h3>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES bounce monitoring test" | mailx -v -r no-reply@zexample.com -s "SES bounce test" bounce@simulator.amazonses.com</code></pre></div>
+      <h3>苦情</h3>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES complaint monitoring test" | mailx -v -r no-reply@zexample.com -s "SES complaint test" complaint@simulator.amazonses.com</code></pre></div>
+      <h3>自動応答</h3>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES out-of-office monitoring test" | mailx -v -r no-reply@zexample.com -s "SES OOTO test" ooto@simulator.amazonses.com</code></pre></div>
+      <h3>サプレッション</h3>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES suppression monitoring test" | mailx -v -r no-reply@zexample.com -s "SES suppression test" suppressionlist@simulator.amazonses.com</code></pre></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>各コマンドのPostfixログ、SNS通知、EventBridgeイベント、CloudWatchメトリクスを同じ送信時刻とSES Message IDで対応付ける</p></div>
+
+      <h2 id="event-check">SNS／EventBridgeイベントの確認</h2>
+      <h3>SNS通知</h3>
+      <ol>
+        <li>メール購読先へ届いたSNS通知を開く</li>
+        <li><code>eventType</code>が送信したシナリオと一致することを確認</li>
+        <li><code>mail.messageId</code>、<code>mail.source</code>、<code>mail.destination</code>を確認</li>
+        <li>Bounceでは<code>bounce.bounceType</code>、<code>bounce.bounceSubType</code>、<code>bouncedRecipients</code>を確認</li>
+        <li>Complaintでは<code>complaint.complaintFeedbackType</code>と対象受信者を確認</li>
+        <li>Deliveryでは<code>delivery.smtpResponse</code>、<code>processingTimeMillis</code>、<code>remoteMtaIp</code>を確認</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+  "eventType": "Bounce",
+  "mail": {
+    "messageId": "&lt;SES_MESSAGE_ID&gt;",
+    "source": "no-reply@zexample.com",
+    "destination": ["bounce@simulator.amazonses.com"]
+  },
+  "bounce": {
+    "bounceType": "Permanent",
+    "bounceSubType": "General"
+  }
+}</code></pre></div>
+
+      <h3>EventBridge</h3>
+      <ol>
+        <li>EventBridgeルールの「モニタリング」で<code>MatchedEvents</code>と<code>Invocations</code>の増加を確認</li>
+        <li>TargetのSNS通知またはCloudWatch Logsでイベント本文を確認</li>
+        <li><code>source</code>が<code>aws.ses</code>であることを確認</li>
+        <li><code>detail-type</code>が<code>Email Bounced</code>などルールの条件と一致することを確認</li>
+        <li><code>detail.mail.messageId</code>をPostfixログやSNS通知と照合</li>
+      </ol>
+      <div class="callout callout-info"><strong>ℹ️ 個人情報の取り扱い</strong><p>SNSとEventBridgeのイベントには送信元、受信者、件名、Message IDなどが含まれる場合がある。通知メール、CloudWatch Logs、S3、DLQへ保存する範囲、暗号化、保持期間、閲覧権限を事前に定義する</p></div>
+
+      <h2 id="reputation">レピュテーションメトリクス</h2>
+      <ol>
+        <li>Amazon SESコンソールの「レピュテーションメトリクス」を開く</li>
+        <li>アカウントステータスが「正常」であることを確認</li>
+        <li>バウンス率と苦情率の現在値、期間、傾向を確認</li>
+        <li>その他の通知にスパムトラップ、認証、送信パターンなどの警告がないことを確認</li>
+        <li>Configuration Set単位のレピュテーションメトリクスも確認</li>
+      </ol>
+      <table>
+        <thead><tr><th>状態</th><th>意味</th><th>初動</th></tr></thead>
+        <tbody>
+          <tr><td>Healthy</td><td>送信機能へ影響する問題が検出されていない</td><td>通常監視を継続</td></tr>
+          <tr><td>Under review</td><td>レピュテーション上の問題をAWSが確認中</td><td>送信を抑制し、バウンス、苦情、送信リストを調査</td></tr>
+          <tr><td>Paused</td><td>アカウントのメール送信が停止</td><td>原因を是正し、AWSからの通知に従って再審査を依頼</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="alarms">CloudWatchアラームと通知</h2>
+      <p>SESはアカウントレベルの<code>Reputation.BounceRate</code>と<code>Reputation.ComplaintRate</code>をCloudWatchへ発行する。しきい値到達前にSNSへ通知し、送信停止やリスト修正を開始できる状態にする。推奨しきい値と設定手順はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/reputationdashboard-cloudwatch-alarm.html">レピュテーション監視アラーム</a>を参照する</p>
+      <ol>
+        <li>SESの「レピュテーションメトリクス」でバウンス率の「CloudWatchで表示」を選択</li>
+        <li><code>Reputation.BounceRate</code>のアラームアイコンを選択</li>
+        <li>しきい値タイプを「静的」、条件を「以上」、値を<code>0.05</code>に設定</li>
+        <li>欠落データの処理は「無視してアラーム状態を維持」を選択</li>
+        <li>アラーム状態の通知先へSNSトピック<code>ses-events-notification</code>を指定</li>
+        <li>アラーム名を<code>SES-Reputation-BounceRate</code>として作成</li>
+        <li><code>Reputation.ComplaintRate</code>は値を<code>0.001</code>として同じ流れで作成</li>
+      </ol>
+      <table>
+        <thead><tr><th>メトリクス</th><th>通知しきい値</th><th>SESの推奨と注意点</th></tr></thead>
+        <tbody>
+          <tr><td><code>Reputation.BounceRate</code></td><td><code>&gt;= 0.05</code>（5%）</td><td>5%未満を維持。10%を超えると送信停止の可能性</td></tr>
+          <tr><td><code>Reputation.ComplaintRate</code></td><td><code>&gt;= 0.001</code>（0.1%）</td><td>0.1%未満を維持。0.5%を超えると送信停止の可能性</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>SESレピュテーション画面、CloudWatchアラーム条件、SNS通知先、作成後のアラーム状態を画像で記録する</p></div>
+
+      <h2 id="suppression">サプレッションリスト</h2>
+      <p>アカウントレベルのサプレッションリストは、ハードバウンスまたは苦情が発生した宛先への再送を抑止する。AWSアカウントとリージョン単位で管理され、Configuration Setから抑止理由を上書きできる。動作と制約はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list.html">アカウントレベルのサプレッションリスト</a>を参照する</p>
+      <ol>
+        <li>Amazon SESコンソールの「設定」「サプレッションリスト」を開く</li>
+        <li>「アカウントレベルの設定」でサプレッションリストが有効であることを確認</li>
+        <li>抑止理由としてBounceとComplaintのどちらを使用するか確認</li>
+        <li>一覧でメールアドレス、理由、登録日時を確認</li>
+        <li>対象を選択して「レポートを表示」を開き、原因となったイベントを確認</li>
+        <li>誤登録と判断できる場合だけ、宛先の有効性と再送許可を確認して削除</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations `
+  --region ap-northeast-1 `
+  --output table</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination `
+  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; `
+  --region ap-northeast-1</code></pre></div>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination `
+  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; `
+  --region ap-northeast-1</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ 安易に削除しない</strong><p>ハードバウンスした無効な宛先を削除して再送すると、バウンス率が悪化する。アドレスの誤入力修正、受信者からの再登録、管理者による有効性確認など、再送できる根拠を記録してから削除する</p></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>アカウントレベル設定、一覧、理由、登録日時、レポート詳細を画像で記録する。メールアドレスとMessage IDは公開前にマスクする</p></div>
+
+      <h2 id="vdm">Virtual Deliverability Manager</h2>
+      <p>Virtual Deliverability Manager（VDM）は、SESの配信結果をアカウント、ISP、送信ID、Configuration Set、Message ID単位で分析し、到達性に影響する設定をAdvisorで確認する有料機能。機能はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/vdm.html">Virtual Deliverability Manager</a>、利用前の料金は<a href="https://aws.amazon.com/ses/pricing/">Amazon SES料金</a>を確認する</p>
+      <ol>
+        <li>Amazon SESコンソールの「Virtual Deliverability Manager」「概要」を開く</li>
+        <li>使用開始を選択し、料金と対象リージョンを確認</li>
+        <li>エンゲージメント追跡のONまたはOFFを選択</li>
+        <li>最適化された共有配信のONまたはOFFを選択</li>
+        <li>設定内容を確認してVDMを有効化</li>
+        <li>Configuration SetのVDM設定でアカウント設定を継承するか上書きするか確認</li>
+        <li>管理可能な実在宛先へテストメールを送信</li>
+        <li>Dashboardで配信率、バウンス、苦情、開封、クリックを確認</li>
+        <li>ISP、送信ID、Configuration Set、Messagesで対象を絞り込み</li>
+        <li>Advisorで未解決の推奨事項と修正方法を確認</li>
+      </ol>
+      <div class="callout callout-warning"><strong>⚠️ エンゲージメント追跡</strong><p>有効にすると、開封確認用の要素が追加され、リンクURLがSESの追跡用URLへ書き換えられる。プライバシーポリシー、セキュリティ製品によるURL検査、トランザクションメールの要件を確認してから有効化する</p></div>
+      <div class="callout callout-warning"><strong>⚠️ 最適化された共有配信</strong><p>送信レピュテーションを保護するため、メール送信が事前に遅延する可能性がある。即時性が必要な通知ではアカウント全体へ一律適用せず、Configuration Set単位で無効化を検討する</p></div>
+      <div class="callout callout-info"><strong>ℹ️ シミュレーターはVDMへ反映されない</strong><p>メールボックスシミュレーターへの送信はVDMメトリクスへ影響しない。Dashboardの検証には、自分で管理できる実在のテスト受信先を使用する</p></div>
+      <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>VDMの設定、Dashboard全体、ISP、送信ID、Configuration Set、Messages、Advisorを画像で記録する。受信者、件名、Message ID、アカウント情報は公開前にマスクする</p></div>
+
+      <h2 id="quota">送信クォータとサンドボックス</h2>
+      <p>送信クォータとサンドボックス状態はAWSアカウントとリージョンごとに独立する。上限値と調整可否はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/quotas.html">Amazon SES Service Quotas</a>を参照する</p>
+      <ol>
+        <li>Amazon SESコンソールの「アカウントダッシュボード」を開く</li>
+        <li>本番アクセスが有効か、サンドボックスかを確認</li>
+        <li>24時間あたりの送信クォータ、過去24時間の送信数、残数を確認</li>
+        <li>1秒あたりの最大送信レートを確認</li>
+        <li>送信量が上限へ近づく前に、用途と送信パターンを整理して引き上げを申請</li>
+      </ol>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-account `
+  --region ap-northeast-1 `
+  --query "{ProductionAccessEnabled:ProductionAccessEnabled,EnforcementStatus:EnforcementStatus,SendQuota:SendQuota,SendingEnabled:SendingEnabled}"</code></pre></div>
+      <table>
+        <thead><tr><th>項目</th><th>サンドボックス</th><th>本番アクセス</th></tr></thead>
+        <tbody>
+          <tr><td>通常宛先</td><td>検証済み受信者だけ</td><td>通常の受信者へ送信可能</td></tr>
+          <tr><td>24時間の送信数</td><td>最大200受信者</td><td>アカウントとリージョンごとの割当</td></tr>
+          <tr><td>最大送信レート</td><td>1受信者／秒</td><td>アカウントとリージョンごとの割当</td></tr>
+          <tr><td>シミュレーター</td><td>利用可能</td><td>利用可能</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info"><strong>ℹ️ クォータは受信者数で計算</strong><p>To、CC、BCCを含む受信者数がクォータへ加算される。1通を10人へ送信すると10として扱われ、クォータとサンドボックス状態はリージョンごとに異なる</p></div>
+
+      <h2 id="troubleshooting">障害時の切り分け</h2>
+      <table>
+        <thead><tr><th>症状</th><th>主な確認項目</th><th>対応</th></tr></thead>
+        <tbody>
+          <tr><td>Postfixは<code>status=sent</code>だがイベントがない</td><td>送信IDのデフォルトConfiguration Set、<code>X-SES-CONFIGURATION-SET</code>、リージョン</td><td>実際に使用した送信IDへConfiguration Setを割り当て、再送</td></tr>
+          <tr><td>SNS通知が届かない</td><td>購読状態、イベント種別、送信先の有効状態、トピックポリシー</td><td>購読を確認済みにし、SESの<code>sns:Publish</code>を許可</td></tr>
+          <tr><td>EventBridgeルールに一致しない</td><td><code>source</code>、<code>detail-type</code>、リージョン、デフォルトイベントバス</td><td>Sandboxのサンプルイベントでパターンを検証し、ルールメトリクスを確認</td></tr>
+          <tr><td>CloudWatchメトリクスがない</td><td>イベント送信先、ディメンション名と値、送信実績、リージョン</td><td>有限のデフォルト値を設定し、同じリージョンでテスト送信</td></tr>
+          <tr><td>バウンスまたは苦情が増加</td><td>SNSイベント、サプレッションリスト、送信元リスト、取得経路</td><td>対象リストへの送信を停止し、無効宛先と同意状況を是正</td></tr>
+          <tr><td>アラームが<code>INSUFFICIENT_DATA</code></td><td>SES送信実績、メトリクスのリージョン、欠落データ設定</td><td>テスト送信後にデータを確認し、欠落データを「無視」に設定</td></tr>
+          <tr><td>VDMにシミュレーターの結果がない</td><td>送信先が<code>simulator.amazonses.com</code>か</td><td>管理可能な実在受信先で検証</td></tr>
+          <tr><td>VDMの開封・クリックがない</td><td>エンゲージメント追跡、画像読み込み、リンク、Configuration Set上書き</td><td>追跡設定と受信クライアントのプライバシー機能を確認</td></tr>
+          <tr><td>サプレッションされた宛先へ再送したい</td><td>登録理由、アドレスの有効性、受信者の再同意</td><td>再送根拠を確認した場合だけリストから削除</td></tr>
+          <tr><td>送信がスロットリングされる</td><td>最大送信レート、過去24時間の送信数、Postfixキュー</td><td>送信速度を制御し、必要に応じてクォータ引き上げを申請</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning"><strong>⚠️ 公開前のマスク</strong><p>コンソール画像とイベントJSONにはAWSアカウントID、メールアドレス、ドメイン、Message ID、件名、送信元IP、IAM情報が含まれる。画像追加時は必要な状態と設定値を残し、個人情報とアカウント固有情報をマスクする</p></div>
+
+      <p>関連する構築手順は<a href="amazon-ses.html">Amazon SES SMTPリレー</a>を参照する</p>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#overview">配信監視の全体像</a>
+      <a href="#configuration-set">Configuration Set</a>
+      <a href="#destinations">イベント送信先</a>
+      <a href="#identity-default">送信IDへの設定</a>
+      <a href="#simulator">シミュレーター</a>
+      <a href="#event-check">イベント確認</a>
+      <a href="#reputation">レピュテーション</a>
+      <a href="#alarms">CloudWatchアラーム</a>
+      <a href="#suppression">サプレッション</a>
+      <a href="#vdm">VDM</a>
+      <a href="#quota">クォータ</a>
+      <a href="#troubleshooting">障害切り分け</a>
+    </aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

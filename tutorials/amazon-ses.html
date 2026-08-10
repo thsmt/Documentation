@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amazon SES | Documentation</title>
-  <meta name="description" content="Amazon SESのID作成、Postfix SMTPリレー、カスタムMAIL FROM、VDMを整理した構築手順。">
+  <title>Amazon SES SMTPリレー | Documentation</title>
+  <meta name="description" content="Amazon SESのID作成、Postfix SMTPリレー、カスタムMAIL FROMを整理した構築手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body data-user-values="ses-smtp-user,bounce.zexample.com,no-reply@zexample.com,ses-relay.zexample.com,recipient@example.net">
@@ -35,7 +35,8 @@
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
-      <a class="active" href="amazon-ses.html">Amazon SES</a>
+      <a class="active" href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
@@ -66,8 +67,8 @@
         <span>トピック</span>
       </nav>
 
-      <h1>Amazon SES</h1>
-      <p class="lead">Amazon SESの送信ドメインを作成し、Amazon Linux上のPostfixからSES SMTPへメールをリレーする手順を整理する。カスタムMAIL FROMとVirtual Deliverability Manager（VDM）の設定も扱う</p>
+      <h1>Amazon SES SMTPリレー</h1>
+      <p class="lead">Amazon SESの送信ドメインを作成し、Amazon Linux上のPostfixからSES SMTPへメールをリレーする手順を整理する。カスタムMAIL FROMを設定し、SPF、DKIM、DMARC、Return-Pathまで確認する</p>
 
       <h2 id="ses-identity">Amazon SES作成</h2>
       <ol>
@@ -329,19 +330,10 @@ dig TXT bounce.zexample.com +short</code></pre>
 
       <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
-      <h2 id="vdm">Virtual Deliverability Manager（VDM）</h2>
-      <p>VDMは、送信レピュテーションや配信結果を可視化し、配信性能を分析する機能。利用前に追加料金、対象リージョン、収集するメトリクスを確認する</p>
-
-      <ol>
-        <li>Amazon SESコンソールの「Virtual Deliverability Manager」から概要を開く</li>
-        <li>VDMの使用を開始</li>
-        <li>エンゲージメント追跡の有効化を選択</li>
-        <li>最適化された共有配信の有効化を選択</li>
-        <li>設定を確認して有効化</li>
-        <li>ダッシュボードで配信、バウンス、苦情、エンゲージメントを確認</li>
-      </ol>
-
-      <p>公式情報: <a href="https://docs.aws.amazon.com/ses/latest/dg/vdm.html">Virtual Deliverability Manager</a></p>
+      <div class="callout">
+        <strong>📨 送信後の配信監視</strong>
+        <p>SMTPリレーの構築後は、Configuration Setを使用して配信、バウンス、苦情などのイベントを収集する。SNS、EventBridge、CloudWatch、サプレッションリスト、VDMの設定は<a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>で扱う</p>
+      </div>
 
     </main>
 
@@ -355,7 +347,6 @@ dig TXT bounce.zexample.com +short</code></pre>
       <a href="#mail-from">カスタムMAIL FROM</a>
       <a href="#dns">DNSレコード登録</a>
       <a href="#dns-check">DNS反映確認</a>
-      <a href="#vdm">VDM</a>
     </aside>
   </div>
 
