@@ -37,7 +37,7 @@
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a class="active" href="amazon-ses.html">Amazon SES</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a>
+      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
@@ -179,9 +179,9 @@ smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt</code></pre>
       </div>
       <div class="code">
         <div class="code-header"><span>/etc/postfix/sasl_passwd</span><button class="copy-button" type="button">Copy</button></div>
-        <pre><code>[email-smtp.ap-northeast-1.amazonaws.com]:587 AKIAxxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+        <pre><code>[email-smtp.ap-northeast-1.amazonaws.com]:587 &lt;SES_SMTP_USER_NAME&gt;:&lt;SES_SMTP_PASSWORD&gt;</code></pre>
       </div>
-      <p><code>AKIA...</code>の部分にSMTPユーザー名、コロンの右側にSESが生成したSMTPパスワードを記載。山括弧は記載しない</p>
+      <p><code>&lt;SES_SMTP_USER_NAME&gt;</code>をSES SMTPユーザー名、<code>&lt;SES_SMTP_PASSWORD&gt;</code>をSES SMTPパスワードへ置き換える。山括弧は記載しない。SMTPパスワードはAWSのシークレットアクセスキーとは異なる</p>
 
       <h3>7. 認証情報DBと権限を設定</h3>
       <p><code>postmap</code>でPostfixが参照するハッシュDBを生成し、平文ファイルとDBをrootだけが読み書きできる状態へ変更</p>
