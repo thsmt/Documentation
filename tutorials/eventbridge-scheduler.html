@@ -334,8 +334,8 @@
   "Input": "{\"StartWorkspaceRequests\":[{\"WorkspaceId\":\"&lt;WORKSPACE_ID&gt;\"}]}"
 }</code></pre></div>
 
-      <h2 id="operations">確認・監視・変更管理</h2>
-      <p>Schedule作成後の運用は、設定が正しいか、予定時刻に呼び出しを試行したか、Target APIが成功したか、誰が設定を変更したかを分けて確認する。設定内容はSchedulerコンソール、実行状況はCloudWatchメトリクス、失敗理由はSQS DLQ、設定変更履歴はCloudTrailからGUIで確認できる</p>
+      <h2 id="operations">モニタリング・通知・変更管理</h2>
+      <p>Schedule作成後は、設定、呼び出し試行、Target APIの失敗、Targetリソースの状態、設定変更履歴を分けて確認する。設定内容はSchedulerコンソール、実行メトリクスと通知はCloudWatch、失敗理由はSQS DLQ、変更履歴はCloudTrail、実際の停止・起動結果はTargetサービスで確認する</p>
 
       <h3 id="operations-console">Schedulerコンソールで設定を確認</h3>
       <ol>
@@ -346,8 +346,13 @@
       </ol>
       <div class="callout callout-info"><strong>ℹ️ Schedulerコンソールだけでは完結しない</strong><p>Schedulerコンソールは設定内容の確認に使用する。個々の呼び出しが成功したかを判断する完全な実行履歴画面ではないため、CloudWatchメトリクスとTargetサービスの状態を合わせて確認する</p></div>
 
-      <h3 id="operations-metrics">CloudWatchで実行と失敗を監視</h3>
-      <p>CloudWatchコンソールで「メトリクス」「すべてのメトリクス」「Scheduler」を開き、Schedule Group MetricsまたはAccount Metricsを選択する。リージョンをScheduleと合わせ、統計をSum、期間を実行間隔に合わせて確認する</p>
+      <h3 id="operations-metrics">CloudWatchで実行状況をモニタリング</h3>
+      <ol>
+        <li>CloudWatchコンソールで「メトリクス」「すべてのメトリクス」「Scheduler」を開く</li>
+        <li>Scheduleごとの運用では「Schedule Group Metrics」、リージョン全体の傾向では「Account Metrics」を選択</li>
+        <li>Scheduleと同じリージョンを選択し、対象のSchedule Groupとメトリクスを選択</li>
+        <li>「グラフ化したメトリクス」で統計を<code>Sum</code>、期間をScheduleの実行間隔に合わせ、実行予定時刻の前後を表示</li>
+      </ol>
       <table>
         <thead><tr><th>メトリクス</th><th>確認できること</th><th>増加時の初動</th></tr></thead>
         <tbody>
@@ -357,26 +362,89 @@
           <tr><td><code>InvocationThrottleCount</code></td><td>Scheduler側の呼び出しクォータで抑制された回数</td><td>Scheduleの集中を避け、必要に応じてService Quotasを確認</td></tr>
           <tr><td><code>InvocationDroppedCount</code></td><td>再試行を使い切り、Target呼び出しを終了した回数</td><td>DLQ、最大イベント保持時間、最大再試行回数を確認</td></tr>
           <tr><td><code>InvocationsSentToDeadLetterCount</code></td><td>失敗イベントをDLQへ正常に送信した回数</td><td>SQSコンソールでメッセージを取得し、エラーコードと内容を確認</td></tr>
+          <tr><td><code>InvocationsFailedToBeSentToDeadLetterCount</code></td><td>失敗イベントをDLQへ送信できなかった回数</td><td>DLQ ARN、<code>sqs:SendMessage</code>、キューポリシー、KMSキーポリシーを確認</td></tr>
         </tbody>
       </table>
+      <div class="callout callout-info"><strong>ℹ️ Schedule単位ではなくSchedule Group単位</strong><p><code>AWS/Scheduler</code>のディメンションは<code>ScheduleGroup</code>であり、同じグループ内の複数Scheduleが集計される。Schedule単位で切り分ける必要がある場合は、グループ設計、DLQの<code>SCHEDULE_ARN</code>、CloudTrail、Targetサービスのイベントを組み合わせる</p></div>
       <p>メトリクスはベストエフォートで配信されるため、完全な処理台帳としては扱わない。監視項目とGUIでの表示手順は、AWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/monitoring-cloudwatch.html">EventBridge SchedulerのCloudWatch監視</a>を参照する</p>
 
-      <h3 id="operations-dlq">DLQとTargetサービスで失敗を確認</h3>
+      <h3 id="operations-notification">CloudWatchアラームとSNSで失敗を通知</h3>
+      <p>失敗を人へ通知する場合は、SchedulerのエラーメトリクスをCloudWatchアラームで評価し、Amazon SNSトピックからメール、SMS、HTTPS、Lambdaなどの購読先へ配信する</p>
+      <ol>
+        <li>CloudWatchの「すべてのメトリクス」「Scheduler」「Schedule Group Metrics」で対象グループの<code>TargetErrorCount</code>を選択</li>
+        <li>「アクション」「アラームの作成」を開き、統計を<code>Sum</code>、しきい値を<code>1以上</code>に設定</li>
+        <li>欠落データは「適正（しきい値を超えていない）」として扱い、通常時にデータがないことによる誤通知を防止</li>
+        <li>通知先としてSNSトピックを選択または新規作成し、メール購読では受信した確認メールから購読を確定</li>
+        <li><code>InvocationDroppedCount</code>と<code>InvocationsFailedToBeSentToDeadLetterCount</code>にも同じ流れでアラームを作成</li>
+        <li>検証用の単発Scheduleで意図的に安全な失敗を発生させ、アラーム、SNS通知、DLQ格納までを確認</li>
+      </ol>
+      <table>
+        <thead><tr><th>通知したい状態</th><th>検知元</th><th>通知経路</th></tr></thead>
+        <tbody>
+          <tr><td>Target APIがエラーを返した</td><td><code>TargetErrorCount &gt;= 1</code></td><td>CloudWatchアラーム → SNS</td></tr>
+          <tr><td>再試行を使い切った</td><td><code>InvocationDroppedCount &gt;= 1</code></td><td>CloudWatchアラーム → SNS</td></tr>
+          <tr><td>DLQへの保存にも失敗した</td><td><code>InvocationsFailedToBeSentToDeadLetterCount &gt;= 1</code></td><td>CloudWatchアラーム → SNS</td></tr>
+          <tr><td>EC2が実際に停止または起動した</td><td>EC2 Instance State-change Notification</td><td>EventBridgeルール → SNS</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning"><strong>⚠️ 呼び出し試行と処理完了は別</strong><p><code>InvocationAttemptCount</code>はTarget APIを呼び出そうとした回数であり、EC2やRDSの状態遷移完了を示さない。停止・起動の完了通知が必要な場合は、Targetサービスが発行する状態変更イベントをEventBridgeルールで検知してSNSへ通知する</p></div>
+
+      <h3 id="operations-dlq">SQS DLQで失敗理由を確認</h3>
       <ol>
         <li><code>TargetErrorCount</code>または<code>InvocationDroppedCount</code>が増加したら、Amazon SQSコンソールでScheduleに設定したDLQを開く</li>
-        <li>「メッセージを送受信」でポーリングし、失敗イベントのエラーコード、エラーメッセージ、Target ARN、実行時刻を確認</li>
+        <li>「メッセージを送受信」「メッセージをポーリング」を選択し、受信したメッセージの「メッセージ属性」を開く</li>
+        <li><code>SCHEDULE_ARN</code>または<code>TARGET_ARN</code>で対象を特定し、<code>ERROR_CODE</code>、<code>ERROR_MESSAGE</code>、<code>EXHAUSTED_RETRY_CONDITION</code>を確認</li>
         <li>EC2、RDS、WorkSpacesなどTargetサービスのコンソールを開き、対象リソースの状態遷移とイベントを確認</li>
         <li>失敗メトリクスが増えてもDLQが空の場合は、SchedulerからSQSへの送信権限、DLQ ARN、KMSキーポリシーを確認</li>
       </ol>
+      <table>
+        <thead><tr><th>メッセージ属性</th><th>切り分けに使用する内容</th></tr></thead>
+        <tbody>
+          <tr><td><code>ERROR_CODE</code> / <code>ERROR_MESSAGE</code></td><td>Target APIから返されたエラーコードと原因</td></tr>
+          <tr><td><code>SCHEDULE_ARN</code> / <code>TARGET_ARN</code></td><td>失敗したScheduleと呼び出し先API</td></tr>
+          <tr><td><code>SCHEDULED_TIME</code> / <code>EXECUTION_ID</code></td><td>予定実行時刻と実行単位の識別子</td></tr>
+          <tr><td><code>RETRY_ATTEMPTS</code></td><td>Target APIを再試行した回数</td></tr>
+          <tr><td><code>EXHAUSTED_RETRY_CONDITION</code></td><td>最大再試行回数または最大イベント保持時間のどちらを使い切ったか</td></tr>
+          <tr><td><code>IS_PAYLOAD_TRUNCATED</code></td><td>DLQへ格納されたInputがサイズ超過で切り詰められたか</td></tr>
+        </tbody>
+      </table>
+      <p>SQSコンソールの受信画面はSchedule ARNなどによるサーバー側検索を行わない。メッセージ数が多い場合は、次のCLIで最大10件を受信し、切り分けに必要な属性だけを表示する</p>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sqs receive-message `
+  --queue-url &lt;SCHEDULER_DLQ_URL&gt; `
+  --attribute-names All `
+  --message-attribute-names All `
+  --max-number-of-messages 10 `
+  --query 'Messages[].{MessageId:MessageId,ErrorCode:MessageAttributes.ERROR_CODE.StringValue,ErrorMessage:MessageAttributes.ERROR_MESSAGE.StringValue,ScheduleArn:MessageAttributes.SCHEDULE_ARN.StringValue,TargetArn:MessageAttributes.TARGET_ARN.StringValue,ScheduledTime:MessageAttributes.SCHEDULED_TIME.StringValue,RetryAttempts:MessageAttributes.RETRY_ATTEMPTS.StringValue}' `
+  --output table</code></pre></div>
       <p>Universal targetはSchedule作成時にInputの内容をTarget APIの仕様まで検証しない。誤ったリソースIDやJSONでも作成できるため、定期Scheduleの前に同じInputを使用した単発Scheduleで成功を確認する。詳細はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/troubleshooting.html">EventBridge Schedulerのトラブルシューティング</a>を参照する</p>
 
-      <h3 id="operations-cloudtrail">CloudTrailで変更履歴を確認</h3>
+      <h3 id="operations-cloudtrail">CloudTrailで変更履歴をフィルター</h3>
       <ol>
-        <li>CloudTrailコンソールの「イベント履歴」を開き、Scheduleと同じリージョンを選択</li>
-        <li>イベントソースを<code>scheduler.amazonaws.com</code>で絞り込み、<code>CreateSchedule</code>、<code>UpdateSchedule</code>、<code>DeleteSchedule</code>を確認</li>
-        <li>イベント詳細から実行者、実行日時、送信元IP、変更されたリクエストパラメータを確認</li>
-        <li>Target APIの実行確認では、対象サービス側の<code>StopInstances</code>や<code>StartInstances</code>などのイベントも検索</li>
+        <li>CloudTrailコンソールの「イベント履歴」を開き、Scheduleと同じリージョンと調査対象の時間範囲を選択</li>
+        <li>属性「イベントソース」、値<code>scheduler.amazonaws.com</code>でSchedulerの操作へ絞り込む</li>
+        <li>属性を「イベント名」へ切り替え、<code>CreateSchedule</code>、<code>UpdateSchedule</code>、<code>DeleteSchedule</code>を1つずつ検索</li>
+        <li>対象イベントを開き、ユーザー名、イベント時刻、送信元IP、<code>requestParameters</code>、<code>responseElements</code>を確認</li>
+        <li>Target APIは属性「イベントソース」に<code>ec2.amazonaws.com</code>などを指定するか、属性「イベント名」で<code>StopInstances</code>や<code>StartInstances</code>を検索</li>
       </ol>
+      <table>
+        <thead><tr><th>確認目的</th><th>属性</th><th>完全一致で入力する値</th></tr></thead>
+        <tbody>
+          <tr><td>Schedulerの管理操作</td><td>イベントソース</td><td><code>scheduler.amazonaws.com</code></td></tr>
+          <tr><td>Scheduleの作成</td><td>イベント名</td><td><code>CreateSchedule</code></td></tr>
+          <tr><td>Scheduleの変更</td><td>イベント名</td><td><code>UpdateSchedule</code></td></tr>
+          <tr><td>Scheduleの削除</td><td>イベント名</td><td><code>DeleteSchedule</code></td></tr>
+          <tr><td>EC2停止API</td><td>イベント名</td><td><code>StopInstances</code></td></tr>
+          <tr><td>EC2起動API</td><td>イベント名</td><td><code>StartInstances</code></td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info"><strong>ℹ️ イベント履歴のフィルター制約</strong><p>CloudTrailのイベント履歴は現在のリージョンにある過去90日間の管理イベントを対象とし、属性フィルターは1回に1つだけ指定できる。イベントソースとイベント名を同時指定できないため、時間範囲を絞ったうえで条件を切り替えて確認する。複数属性や長期データを横断検索する場合はCloudTrail Lakeを使用する</p></div>
+      <p>CLIではイベントソースで取得した結果から、Scheduleの作成、変更、削除だけを表示できる</p>
+      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws cloudtrail lookup-events `
+  --lookup-attributes AttributeKey=EventSource,AttributeValue=scheduler.amazonaws.com `
+  --start-time &lt;START_TIME_ISO8601&gt; `
+  --end-time &lt;END_TIME_ISO8601&gt; `
+  --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' `
+  --output table</code></pre></div>
       <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a>を参照する</p>
 
       <h3 id="operations-change">変更時の確認手順</h3>
@@ -407,9 +475,10 @@
       <a href="#iam-policy">カスタムIAMポリシー</a>
       <a href="#iam-role">IAMロール</a>
       <a href="#procedure">Schedule作成</a>
-      <a href="#operations">確認・監視</a>
+      <a href="#operations">モニタリング・通知</a>
       <a href="#operations-console">GUI設定確認</a>
       <a href="#operations-metrics">CloudWatch</a>
+      <a href="#operations-notification">通知</a>
       <a href="#operations-dlq">DLQ</a>
       <a href="#operations-cloudtrail">CloudTrail</a>
       <a href="#operations-change">変更管理</a>
