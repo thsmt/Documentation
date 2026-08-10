@@ -349,6 +349,11 @@ li {
   border-bottom: 1px solid var(--line);
 }
 
+.code .user-value {
+  color: #ff9900;
+  font-weight: 700;
+}
+
 .tab {
   appearance: none;
   padding: 0 0 10px;

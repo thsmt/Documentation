@@ -82,16 +82,23 @@
           <tr><td>AWS Auto Scaling</td><td><code>updateAutoScalingGroup</code>で容量を0へ縮退</td><td><code>updateAutoScalingGroup</code>で復帰値を設定</td><td>最小・最大・希望容量を変更する方式。ほかのスケーリングポリシーとの競合を確認</td></tr>
         </tbody>
       </table>
-      <p>採用前に対象リージョン、リソース状態、API入力、料金、サービス固有の制約を公式ドキュメントで確認する</p>
       <h2 id="iam-policy">カスタムIAMポリシーの作成</h2>
-      <p>EC2停止専用のカスタマー管理ポリシー<code>EC2InstanceStopPolicy</code>を作成する。IAMコンソールで「ポリシーを作成」を開き、JSONタブへ次の許可ポリシーを貼り付けて作成する</p>
-      <ol>
-        <li>IAMの「ポリシーを作成」を開く</li>
-        <li>JSONタブを選択し、停止用の許可ポリシーを登録する</li>
-        <li>ポリシー名を<code>EC2InstanceStopPolicy</code>として作成する</li>
-      </ol>
-      <p>停止用の許可ポリシーは次のとおり</p>
-      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+      <p>IAMコンソールで「ポリシーを作成」を開き、JSONタブへ対象Scheduleに対応する許可ポリシーを貼り付けて作成する。停止用と起動用は別ポリシーとして管理する</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="EventBridge Scheduler IAM policies">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="scheduler-policy-ec2-stop">EC2停止</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-ec2-start">EC2起動</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-rds-stop">RDS停止</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-rds-start">RDS起動</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-lightsail-stop">Lightsail停止</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-lightsail-start">Lightsail起動</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-workspaces-stop">WorkSpaces停止</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="scheduler-policy-workspaces-start">WorkSpaces起動</button>
+        </div>
+
+        <section class="tab-panel active" id="scheduler-policy-ec2-stop" role="tabpanel">
+          <p>ポリシー名: <code>EC2InstanceStopPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
   "Version": "2012-10-17",
   "Statement": [{
     "Sid": "PolicyForStopEC2Instance",
@@ -100,6 +107,99 @@
     "Resource": "*"
   }]
 }</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-ec2-start" role="tabpanel">
+          <p>ポリシー名: <code>EC2InstanceStartPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStartEC2Instance",
+    "Effect": "Allow",
+    "Action": "ec2:StartInstances",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-rds-stop" role="tabpanel">
+          <p>ポリシー名: <code>RDSInstanceStopPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStopRDSInstance",
+    "Effect": "Allow",
+    "Action": "rds:StopDBInstance",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-rds-start" role="tabpanel">
+          <p>ポリシー名: <code>RDSInstanceStartPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStartRDSInstance",
+    "Effect": "Allow",
+    "Action": "rds:StartDBInstance",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-lightsail-stop" role="tabpanel">
+          <p>ポリシー名: <code>LightsailInstanceStopPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStopLightsailInstance",
+    "Effect": "Allow",
+    "Action": "lightsail:StopInstance",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-lightsail-start" role="tabpanel">
+          <p>ポリシー名: <code>LightsailInstanceStartPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStartLightsailInstance",
+    "Effect": "Allow",
+    "Action": "lightsail:StartInstance",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-workspaces-stop" role="tabpanel">
+          <p>ポリシー名: <code>WorkSpacesStopPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStopWorkSpaces",
+    "Effect": "Allow",
+    "Action": "workspaces:StopWorkspaces",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+
+        <section class="tab-panel" id="scheduler-policy-workspaces-start" role="tabpanel">
+          <p>ポリシー名: <code>WorkSpacesStartPolicy</code></p>
+          <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PolicyForStartWorkSpaces",
+    "Effect": "Allow",
+    "Action": "workspaces:StartWorkspaces",
+    "Resource": "*"
+  }]
+}</code></pre></div>
+        </section>
+      </div>
       <div class="callout callout-warning"><strong>⚠️ Resourceの範囲</strong><p>上記はコンソール検証を進めやすくするため<code>Resource</code>を<code>*</code>としている。実運用では、停止を許可するEC2インスタンスARNだけへ制限する。RDSやWorkSpacesは同じポリシーへ混在させず、サービスと操作単位で権限を分離する</p></div>
 
       <h2 id="iam-role">IAMロールの作成</h2>
@@ -182,9 +282,9 @@
       <h3 id="ec2-stop-cli">EC2停止ScheduleをAWS CLIで作成</h3>
       <p>コンソールと同じ設定をAWS CLIで作成する場合は、Target定義とScheduleを次のように指定する</p>
       <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
-  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/EventBridgeSchedulerEC2Stop",
+  "RoleArn": "arn:aws:iam::<span class="user-value">&lt;ACCOUNT_ID&gt;</span>:role/<span class="user-value">EventBridgeSchedulerEC2Stop</span>",
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:stopInstances",
-  "Input": "{\"InstanceIds\":[\"&lt;EC2_INSTANCE_ID_1&gt;\",\"&lt;EC2_INSTANCE_ID_2&gt;\"]}"
+  "Input": "{\"InstanceIds\":[\"<span class="user-value">&lt;EC2_INSTANCE_ID_1&gt;</span>\",\"<span class="user-value">&lt;EC2_INSTANCE_ID_2&gt;</span>\"]}"
 }</code></pre></div>
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule `
   --name ec2-stop-daily-schedule `
