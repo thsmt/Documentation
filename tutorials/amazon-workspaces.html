@@ -39,16 +39,15 @@
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
-      <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
-      <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
-      <a href="windows-server-2022.html">[構築] Windows Server 2022</a>
-      <a href="windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="rhel9-ops.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10-ops.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
-      <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="apache-rhel8-rhel9.html">Apache</a>
       <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
       <a href="terraform.html">Terraform</a>
@@ -56,6 +55,7 @@
       <a href="container.html">コンテナ</a>
       <a href="github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
+      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="eol.html">EOL / ライフサイクル一覧表</a>
       <a href="glossary.html">用語集</a>
     </aside>
@@ -540,7 +540,7 @@ Get-WindowsCapability -Online |
       <p>公式情報: <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
 
       <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
-      <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>ws-7g6w44k9g</code>で変更を確認する</p>
+      <p>PCoIPバンドルから作成したWindows WorkSpaceは、OS、アプリケーション、ユーザーデータを保持したままDCV (WSP) へ変更できます。ここでは、検証用WorkSpace <code>&lt;WORKSPACE_ID&gt;</code>で変更を確認する</p>
 
       <div class="callout callout-warning">
         <strong>⚠️ 本番変更前に検証</strong>
@@ -556,17 +556,17 @@ Get-WindowsCapability -Online |
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/workspaces/workspaces-protocol-pcoip-before-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがPCoIPかつ使用可能であることを確認した画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更前: <code>ws-7g6w44k9g</code>はPCoIPで使用可能</figcaption>
+        <img src="../assets/img/workspaces/workspaces-protocol-pcoip-before-redacted.png" alt="Amazon WorkSpacesコンソールで対象WorkSpaceがPCoIPかつ使用可能であることを確認した画面" width="1716" height="492" loading="lazy">
+        <figcaption>変更前: <code>&lt;WORKSPACE_ID&gt;</code>はPCoIPで使用可能</figcaption>
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/workspaces/workspaces-protocol-change-in-progress-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gのステータスがプロトコルを変更中になった画面" width="1716" height="492" loading="lazy">
+        <img src="../assets/img/workspaces/workspaces-protocol-change-in-progress-redacted.png" alt="Amazon WorkSpacesコンソールで対象WorkSpaceのステータスがプロトコルを変更中になった画面" width="1716" height="492" loading="lazy">
         <figcaption>変更中: ステータスが「プロトコルを変更中」になる</figcaption>
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/workspaces/workspaces-protocol-dcv-completed-redacted.png" alt="Amazon WorkSpacesコンソールでws-7g6w44k9gがDCV WSPかつ使用可能になった画面" width="1716" height="492" loading="lazy">
+        <img src="../assets/img/workspaces/workspaces-protocol-dcv-completed-redacted.png" alt="Amazon WorkSpacesコンソールで対象WorkSpaceがDCV WSPかつ使用可能になった画面" width="1716" height="492" loading="lazy">
         <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが「使用可能」になったことを確認</figcaption>
       </figure>
 
@@ -575,7 +575,7 @@ Get-WindowsCapability -Online |
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
-  --workspace-ids ws-7g6w44k9g \
+  --workspace-ids &lt;WORKSPACE_ID&gt; \
   --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,BundleId:BundleId,Protocols:WorkspaceProperties.Protocols}' \
   --output table</code></pre>
       </div>
@@ -584,7 +584,7 @@ Get-WindowsCapability -Online |
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces modify-workspace-properties \
-  --workspace-id ws-7g6w44k9g \
+  --workspace-id &lt;WORKSPACE_ID&gt; \
   --workspace-properties "Protocols=[WSP]"</code></pre>
       </div>
 
@@ -592,7 +592,7 @@ Get-WindowsCapability -Online |
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
-  --workspace-ids ws-7g6w44k9g \
+  --workspace-ids &lt;WORKSPACE_ID&gt; \
   --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' \
   --output table</code></pre>
       </div>

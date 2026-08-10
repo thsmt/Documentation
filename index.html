@@ -38,16 +38,15 @@
       <a href="tutorials/amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="tutorials/aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
-      <a href="tutorials/rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
-      <a href="tutorials/rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
-      <a href="tutorials/amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
-      <a href="tutorials/windows-server-2022.html">[構築] Windows Server 2022</a>
-      <a href="tutorials/windows-server-2025.html">[構築] Windows Server 2025</a>
+      <a href="tutorials/rhel9-ops.html">Red Hat Enterprise Linux 9</a>
+      <a href="tutorials/rhel10-ops.html">Red Hat Enterprise Linux 10</a>
+      <a href="tutorials/amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="tutorials/windows-server-2022.html">Windows Server 2022</a>
+      <a href="tutorials/windows-server-2025.html">Windows Server 2025</a>
       <a href="tutorials/windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
-      <a href="tutorials/apache-rhel8-rhel9.html">Apache HTTP Server</a>
+      <a href="tutorials/apache-rhel8-rhel9.html">Apache</a>
       <a href="tutorials/mariadb-rhel8-rhel9.html">MariaDB</a>
       <a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a>
-      <a href="tutorials/linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="tutorials/git-github-basics.html">Git / GitHub 基本編</a>
       <a href="tutorials/terraform.html">Terraform</a>
@@ -55,6 +54,7 @@
       <a href="tutorials/container.html">コンテナ</a>
       <a href="tutorials/github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
+      <a href="tutorials/linux-troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="tutorials/eol.html">EOL / ライフサイクル一覧表</a>
       <a href="tutorials/glossary.html">用語集</a>
     </aside>
@@ -107,23 +107,23 @@
       <h2 id="os-server">OS／ミドルウェア</h2>
       <section class="card-grid" aria-label="OS／ミドルウェア">
         <article class="card">
-          <strong><a href="tutorials/rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a></strong>
+          <strong><a href="tutorials/rhel9-ops.html">Red Hat Enterprise Linux 9</a></strong>
           <p>基本パッケージ導入、logrotate設定、ミドルウェア別logrotate設定の注意点を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a></strong>
+          <strong><a href="tutorials/rhel10-ops.html">Red Hat Enterprise Linux 10</a></strong>
           <p>x86-64-v3、RHUI / RHSM、DNFモジュール廃止を踏まえた初期構築手順を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/amazon-linux-2023.html">[構築] Amazon Linux 2023</a></strong>
+          <strong><a href="tutorials/amazon-linux-2023.html">Amazon Linux 2023</a></strong>
           <p>Amazon Linux 2023の初期設定、追加パッケージ、rsyslog、cron、リリース固定を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/windows-server-2022.html">[構築] Windows Server 2022</a></strong>
+          <strong><a href="tutorials/windows-server-2022.html">Windows Server 2022</a></strong>
           <p>EC2起動、RDP接続、ローカルユーザー作成、OS初期設定、Windows Updateの確認観点を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/windows-server-2025.html">[構築] Windows Server 2025</a></strong>
+          <strong><a href="tutorials/windows-server-2025.html">Windows Server 2025</a></strong>
           <p>Windows Server 2022との差分、Credential Guard、OpenSSH、SMBセキュリティを含む構築手順を整理する</p>
         </article>
         <article class="card">
@@ -131,7 +131,7 @@
           <p>EC2上のWindows Server 2016を、インストールメディアでWindows Server 2025へインプレースアップグレードする手順を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/apache-rhel8-rhel9.html">Apache HTTP Server</a></strong>
+          <strong><a href="tutorials/apache-rhel8-rhel9.html">Apache</a></strong>
           <p>Apacheの構築・運用で必要なTLS、SELinux、認証、リバースプロキシ、ログ調査を整理する</p>
         </article>
         <article class="card">
@@ -141,10 +141,6 @@
         <article class="card">
           <strong><a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a></strong>
           <p>Zabbix Agent、ホスト登録、監視項目、メンテナンス設定、作業前後エビデンス取得の観点を整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/linux-troubleshooting.html">障害切り分けチェックリスト</a></strong>
-          <p>Linux障害発生時の初動記録、ログ、リソース、ネットワーク、サービス状態の確認観点を整理する</p>
         </article>
       </section>
 
@@ -174,6 +170,10 @@
 
       <h2 id="reference">リファレンス</h2>
       <section class="card-grid" aria-label="リファレンス">
+        <article class="card">
+          <strong><a href="tutorials/linux-troubleshooting.html">障害切り分けチェックリスト</a></strong>
+          <p>Linux障害発生時の初動記録、ログ、リソース、ネットワーク、サービス状態の確認観点を整理する</p>
+        </article>
         <article class="card">
           <strong><a href="tutorials/eol.html">EOL / ライフサイクル一覧表</a></strong>
           <p>OS、AWSサービス、ミドルウェア、エージェントのサポート期限と確認リンクを整理する</p>

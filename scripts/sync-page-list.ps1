@@ -23,16 +23,15 @@ $groups = @(
     [pscustomobject]@{
         Label = 'OS／ミドルウェア'
         Pages = @(
-            [pscustomobject]@{ File = 'rhel9-ops.html'; Label = '[構築] Red Hat Enterprise Linux 9' }
-            [pscustomobject]@{ File = 'rhel10-ops.html'; Label = '[構築] Red Hat Enterprise Linux 10' }
-            [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = '[構築] Amazon Linux 2023' }
-            [pscustomobject]@{ File = 'windows-server-2022.html'; Label = '[構築] Windows Server 2022' }
-            [pscustomobject]@{ File = 'windows-server-2025.html'; Label = '[構築] Windows Server 2025' }
+            [pscustomobject]@{ File = 'rhel9-ops.html'; Label = 'Red Hat Enterprise Linux 9' }
+            [pscustomobject]@{ File = 'rhel10-ops.html'; Label = 'Red Hat Enterprise Linux 10' }
+            [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = 'Amazon Linux 2023' }
+            [pscustomobject]@{ File = 'windows-server-2022.html'; Label = 'Windows Server 2022' }
+            [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
-            [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server' }
+            [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache' }
             [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
-            [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
         )
     }
     [pscustomobject]@{
@@ -48,6 +47,7 @@ $groups = @(
     [pscustomobject]@{
         Label = 'リファレンス'
         Pages = @(
+            [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
             [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
             [pscustomobject]@{ File = 'glossary.html'; Label = '用語集' }
         )

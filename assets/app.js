@@ -103,7 +103,9 @@ const highlightUserValues = () => {
   });
 };
 
-highlightUserValues();
+if (document.body.dataset.userValueHighlighting !== "off") {
+  highlightUserValues();
+}
 
 document.querySelectorAll(".copy").forEach((button) => {
   button.addEventListener("click", async () => {
