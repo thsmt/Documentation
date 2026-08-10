@@ -30,20 +30,20 @@
       <a href="cloudformation.html">CloudFormation 運用手順集</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a class="active" href="eventbridge-scheduler-start-stop.html">EventBridge Scheduler</a>
+      <a class="active" href="eventbridge-scheduler.html">EventBridge Scheduler</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
-      <a href="rhel9-ops.html">Red Hat Enterprise Linux 9</a>
-      <a href="rhel10-ops.html">Red Hat Enterprise Linux 10</a>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
       <a href="windows-server-2022.html">Windows Server 2022</a>
       <a href="windows-server-2025.html">Windows Server 2025</a>
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
-      <a href="apache-rhel8-rhel9.html">Apache</a>
-      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="apache.html">Apache</a>
+      <a href="mariadb.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -52,7 +52,7 @@
       <a href="container.html">コンテナ</a>
       <a href="github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="eol.html">EOL / ライフサイクル一覧表</a>
       <a href="glossary.html">用語集</a>
     </aside>
@@ -335,7 +335,51 @@
 }</code></pre></div>
 
       <h2 id="operations">確認・監視・変更管理</h2>
-      <p>Schedule作成後は、設定値、次回実行時刻、実行ロール、Target ARN、入力JSONを確認する。最初の実行は検証リソースで実施し、対象サービスの状態遷移、CloudTrailイベント、CloudWatch LogsまたはDLQ通知を確認してから本番相当の対象へ広げる</p>
+      <p>Schedule作成後の運用は、設定が正しいか、予定時刻に呼び出しを試行したか、Target APIが成功したか、誰が設定を変更したかを分けて確認する。設定内容はSchedulerコンソール、実行状況はCloudWatchメトリクス、失敗理由はSQS DLQ、設定変更履歴はCloudTrailからGUIで確認できる</p>
+
+      <h3 id="operations-console">Schedulerコンソールで設定を確認</h3>
+      <ol>
+        <li>AWSマネジメントコンソールでAmazon EventBridgeを開き、ナビゲーションから「Scheduler」「スケジュール」を選択</li>
+        <li>Scheduleを作成したリージョンへ切り替え、ScheduleグループとSchedule名で対象を検索</li>
+        <li>Scheduleの状態、スケジュール式、タイムゾーン、Flexible time window、Target ARN、Input、実行ロール、再試行、DLQ、暗号化設定を確認</li>
+        <li>時刻を変更する場合は「編集」を開き、今後10回の実行日時プレビューが意図した業務時刻になることを確認して保存</li>
+      </ol>
+      <div class="callout callout-info"><strong>ℹ️ Schedulerコンソールだけでは完結しない</strong><p>Schedulerコンソールは設定内容の確認に使用する。個々の呼び出しが成功したかを判断する完全な実行履歴画面ではないため、CloudWatchメトリクスとTargetサービスの状態を合わせて確認する</p></div>
+
+      <h3 id="operations-metrics">CloudWatchで実行と失敗を監視</h3>
+      <p>CloudWatchコンソールで「メトリクス」「すべてのメトリクス」「Scheduler」を開き、Schedule Group MetricsまたはAccount Metricsを選択する。リージョンをScheduleと合わせ、統計をSum、期間を実行間隔に合わせて確認する</p>
+      <table>
+        <thead><tr><th>メトリクス</th><th>確認できること</th><th>増加時の初動</th></tr></thead>
+        <tbody>
+          <tr><td><code>InvocationAttemptCount</code></td><td>SchedulerがTargetの呼び出しを試行した回数</td><td>0の場合はSchedule状態、cron式、タイムゾーン、開始・終了日時を確認</td></tr>
+          <tr><td><code>TargetErrorCount</code></td><td>Target APIが例外を返した回数</td><td>実行ロール、Input、対象リソースの状態、DLQメッセージを確認</td></tr>
+          <tr><td><code>TargetErrorThrottledCount</code></td><td>TargetサービスのAPIスロットリングで失敗した回数</td><td>実行時刻の分散、再試行設定、Target側クォータを確認</td></tr>
+          <tr><td><code>InvocationThrottleCount</code></td><td>Scheduler側の呼び出しクォータで抑制された回数</td><td>Scheduleの集中を避け、必要に応じてService Quotasを確認</td></tr>
+          <tr><td><code>InvocationDroppedCount</code></td><td>再試行を使い切り、Target呼び出しを終了した回数</td><td>DLQ、最大イベント保持時間、最大再試行回数を確認</td></tr>
+          <tr><td><code>InvocationsSentToDeadLetterCount</code></td><td>失敗イベントをDLQへ正常に送信した回数</td><td>SQSコンソールでメッセージを取得し、エラーコードと内容を確認</td></tr>
+        </tbody>
+      </table>
+      <p>メトリクスはベストエフォートで配信されるため、完全な処理台帳としては扱わない。監視項目とGUIでの表示手順は、AWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/monitoring-cloudwatch.html">EventBridge SchedulerのCloudWatch監視</a>を参照する</p>
+
+      <h3 id="operations-dlq">DLQとTargetサービスで失敗を確認</h3>
+      <ol>
+        <li><code>TargetErrorCount</code>または<code>InvocationDroppedCount</code>が増加したら、Amazon SQSコンソールでScheduleに設定したDLQを開く</li>
+        <li>「メッセージを送受信」でポーリングし、失敗イベントのエラーコード、エラーメッセージ、Target ARN、実行時刻を確認</li>
+        <li>EC2、RDS、WorkSpacesなどTargetサービスのコンソールを開き、対象リソースの状態遷移とイベントを確認</li>
+        <li>失敗メトリクスが増えてもDLQが空の場合は、SchedulerからSQSへの送信権限、DLQ ARN、KMSキーポリシーを確認</li>
+      </ol>
+      <p>Universal targetはSchedule作成時にInputの内容をTarget APIの仕様まで検証しない。誤ったリソースIDやJSONでも作成できるため、定期Scheduleの前に同じInputを使用した単発Scheduleで成功を確認する。詳細はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/troubleshooting.html">EventBridge Schedulerのトラブルシューティング</a>を参照する</p>
+
+      <h3 id="operations-cloudtrail">CloudTrailで変更履歴を確認</h3>
+      <ol>
+        <li>CloudTrailコンソールの「イベント履歴」を開き、Scheduleと同じリージョンを選択</li>
+        <li>イベントソースを<code>scheduler.amazonaws.com</code>で絞り込み、<code>CreateSchedule</code>、<code>UpdateSchedule</code>、<code>DeleteSchedule</code>を確認</li>
+        <li>イベント詳細から実行者、実行日時、送信元IP、変更されたリクエストパラメータを確認</li>
+        <li>Target APIの実行確認では、対象サービス側の<code>StopInstances</code>や<code>StartInstances</code>などのイベントも検索</li>
+      </ol>
+      <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a>を参照する</p>
+
+      <h3 id="operations-change">変更時の確認手順</h3>
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule `
   --name &lt;SCHEDULE_NAME&gt; `
   --group-name ec2-schedule-group `
@@ -346,13 +390,14 @@
       <table>
         <thead><tr><th>確認タイミング</th><th>確認内容</th></tr></thead>
         <tbody>
-          <tr><td>作成直後</td><td>時刻、タイムゾーン、Target ARN、Input、実行ロール、Schedule状態</td></tr>
+          <tr><td>作成直後</td><td>GUIと<code>get-schedule</code>で時刻、タイムゾーン、Target ARN、Input、実行ロール、Schedule状態を確認</td></tr>
           <tr><td>停止前</td><td>利用者接続、実行中バッチ、バックアップ、メンテナンス、依存先の稼働状況</td></tr>
-          <tr><td>停止後</td><td>対象リソースの状態、失敗応答、DLQ、監視アラーム抑止の要否、費用影響</td></tr>
-          <tr><td>起動後</td><td>リソース稼働、ヘルスチェック、アプリ接続、ジョブ、監視復帰、利用者通知</td></tr>
+          <tr><td>停止後</td><td>Targetサービスの状態、<code>InvocationAttemptCount</code>、エラーメトリクス、DLQ、費用影響を確認</td></tr>
+          <tr><td>起動後</td><td>リソース稼働、ヘルスチェック、アプリ接続、ジョブ、CloudWatchアラーム、利用者通知を確認</td></tr>
+          <tr><td>設定変更後</td><td>変更前後の設定値、今後10回の実行日時、CloudTrailの<code>UpdateSchedule</code>、検証用単発Scheduleの結果を記録</td></tr>
         </tbody>
       </table>
-      <div class="callout callout-warning"><strong>⚠️ 例外日と重複実行</strong><p>祝日、棚卸し、月次処理などの例外は、Scheduleの無効化または一時的な時刻変更で管理する。Schedulerは少なくとも1回の配信を前提とするため、起動・停止以外の更新APIでは重複実行時の安全性を検証する</p></div>
+      <div class="callout callout-warning"><strong>⚠️ 変更時刻と重複実行</strong><p>実行予定時刻の直前にScheduleを更新すると、変更前の設定で呼び出される可能性がある。変更は実行時刻から離して行い、反映後にGUIと<code>get-schedule</code>で再確認する。祝日、棚卸し、月次処理などの例外はScheduleの無効化または一時的な時刻変更で管理し、更新APIでは重複実行時の安全性を検証する</p></div>
 
     </main>
 
@@ -363,6 +408,11 @@
       <a href="#iam-role">IAMロール</a>
       <a href="#procedure">Schedule作成</a>
       <a href="#operations">確認・監視</a>
+      <a href="#operations-console">GUI設定確認</a>
+      <a href="#operations-metrics">CloudWatch</a>
+      <a href="#operations-dlq">DLQ</a>
+      <a href="#operations-cloudtrail">CloudTrail</a>
+      <a href="#operations-change">変更管理</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

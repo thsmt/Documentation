@@ -13,7 +13,7 @@ $groups = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
-            [pscustomobject]@{ File = 'eventbridge-scheduler-start-stop.html'; Label = 'EventBridge Scheduler' }
+            [pscustomobject]@{ File = 'eventbridge-scheduler.html'; Label = 'EventBridge Scheduler' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
@@ -23,14 +23,14 @@ $groups = @(
     [pscustomobject]@{
         Label = 'OS／ミドルウェア'
         Pages = @(
-            [pscustomobject]@{ File = 'rhel9-ops.html'; Label = 'Red Hat Enterprise Linux 9' }
-            [pscustomobject]@{ File = 'rhel10-ops.html'; Label = 'Red Hat Enterprise Linux 10' }
+            [pscustomobject]@{ File = 'rhel9.html'; Label = 'Red Hat Enterprise Linux 9' }
+            [pscustomobject]@{ File = 'rhel10.html'; Label = 'Red Hat Enterprise Linux 10' }
             [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = 'Amazon Linux 2023' }
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = 'Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
-            [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache' }
-            [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
+            [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
+            [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
         )
     }
@@ -47,7 +47,7 @@ $groups = @(
     [pscustomobject]@{
         Label = 'リファレンス'
         Pages = @(
-            [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
+            [pscustomobject]@{ File = 'troubleshooting.html'; Label = '障害切り分けチェックリスト' }
             [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
             [pscustomobject]@{ File = 'glossary.html'; Label = '用語集' }
         )

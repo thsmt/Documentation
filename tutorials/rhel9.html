@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Red Hat Enterprise Linux 10 | Documentation</title>
-  <meta name="description" content="Amazon EC2上でRed Hat Enterprise Linux 10を初期構築・運用するための手順。">
+  <title>Red Hat Enterprise Linux 9 | Documentation</title>
+  <meta name="description" content="Amazon EC2上でRed Hat Enterprise Linux 9を初期構築・運用するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body data-user-value-highlighting="off">
@@ -30,20 +30,20 @@
       <a href="cloudformation.html">CloudFormation 運用手順集</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a href="eventbridge-scheduler-start-stop.html">EventBridge Scheduler</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
-      <a href="rhel9-ops.html">Red Hat Enterprise Linux 9</a>
-      <a class="active" href="rhel10-ops.html">Red Hat Enterprise Linux 10</a>
+      <a class="active" href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
       <a href="windows-server-2022.html">Windows Server 2022</a>
       <a href="windows-server-2025.html">Windows Server 2025</a>
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
-      <a href="apache-rhel8-rhel9.html">Apache</a>
-      <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
+      <a href="apache.html">Apache</a>
+      <a href="mariadb.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -52,7 +52,7 @@
       <a href="container.html">コンテナ</a>
       <a href="github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
-      <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="eol.html">EOL / ライフサイクル一覧表</a>
       <a href="glossary.html">用語集</a>
     </aside>
@@ -63,16 +63,8 @@
         <span>トピック</span>
       </nav>
 
-      <h1>Red Hat Enterprise Linux 10</h1>
-      <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 10を初期構築し、CPU要件、リポジトリ、パッケージ、ログ、セキュリティ設定を確認する手順を整理する</p>
-
-      <div class="callout">
-        <strong>ℹ️ Red Hat Enterprise Linux 10の主な変更点</strong>
-        <p>x86_64版は<code>x86-64-v3</code>命令セットを前提とするため、使用するEC2インスタンスタイプが対応していることを確認する</p>
-        <p>モジュール形式のApplication Streamは廃止されています。<code>dnf module</code>ではなく、通常のRPMパッケージとして導入する</p>
-        <p>PAYG AMIはRHUI、BYOSまたはRed Hat Gold ImageはRHSMを利用します。AMIの提供方式を確認してから<code>subscription-manager</code>の扱いを決定する</p>
-        <p><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/10.0_release_notes/distribution">Red Hat Enterprise Linux 10 - Content distribution</a></p>
-      </div>
+      <h1>Red Hat Enterprise Linux 9</h1>
+      <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 9を初期構築し、SELinux、パッケージ、ログ、時刻同期、セキュリティ設定を確認する手順を整理する</p>
 
       <h2 id="step-01">1. 起動時の確認</h2>
       <p>Amazon EC2はLinuxインスタンスでRSAとED25519をサポートしています。この手順の対象環境では、組織の暗号鍵ポリシーでRSAキーペアを許可していないため、<code>ED25519</code>キーペアを使用する</p>
@@ -86,7 +78,7 @@
       </table>
 
       <h2 id="step-02">2. SELinuxの設定変更</h2>
-      <p>Red Hat Enterprise Linux 10では<code>SELINUX=disabled</code>を設定ファイルへ指定する方式は使用せず、無効化が必要な場合はカーネルパラメーターで管理します。本手順では監査ログを残すため<code>permissive</code>へ変更する</p>
+      <p>Red Hat Enterprise Linux 9では <code>SELINUX=disabled</code> にすると起動や動作に影響する場合があるため、ログ出力のみの <code>permissive</code> に変更する</p>
       <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -577,31 +569,29 @@ swapon /.swapfile</code></pre>
       </div>
 
       <h2 id="step-11">11. ミドルウェアの導入</h2>
-      <p>Red Hat Enterprise Linux 10ではモジュール形式のApplication Streamが廃止されています。利用可能な通常のRPMパッケージを確認し、OS標準リポジトリを優先する</p>
-      <p class="procedure-step"><strong>1. MariaDB、PostgreSQL、PHPの提供バージョンを確認</strong></p>
+      <p class="procedure-step"><strong>1. 導入するバージョンをApplication Streamsで確認し、OS標準リポジトリを優先します。標準リポジトリで要件を満たせない場合だけ、提供元と保守期限を確認したうえで外部リポジトリを追加</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf info mariadb-server
-dnf info postgresql-server
-dnf info php php-fpm</code></pre>
+        <pre><code>dnf module list &lt;MIDDLEWARE_NAME&gt;</code></pre>
       </div>
 
-      <p class="procedure-step"><strong>2. DBクライアントとPHP-FPMの導入例</strong></p>
+      <p class="procedure-step"><strong>2. PostgreSQLの例</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y mariadb postgresql php php-fpm</code></pre>
+        <pre><code>dnf module list postgresql
+dnf module enable postgresql:15
+dnf module list postgresql
+dnf module install postgresql/client</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        初期リリースではMariaDB 10.11、PostgreSQL 16が提供されます。後続バージョンは別名のRPMストリームとして提供される場合があるため、導入前にパッケージ名とライフサイクルを確認する
-      </div>
+      <p>パッケージライフサイクルは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_application-streams_considerations-in-adopting-rhel-9">Application Streams</a> を確認します。Red Hat Enterprise Linux 9で削除・変更されたモジュールは <a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html-single/considerations_in_adopting_rhel_9/index">Red Hat Enterprise Linux 9導入時の考慮事項</a> も確認する</p>
 
       <h2 id="step-12">12. Postfix設定</h2>
       <p class="procedure-step"><strong>1. PostfixとSASL認証パッケージのインストール</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y postfix cyrus-sasl-plain</code></pre>
+        <pre><code>yum install postfix
+yum install cyrus-sasl-plain</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
@@ -703,7 +693,7 @@ systemctl is-enabled postfix.service</code></pre>
       <p class="procedure-step"><strong>9. <code>s-nail</code>（<code>mail</code>、<code>mailx</code>コマンド）のインストール</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y s-nail</code></pre>
+        <pre><code>yum install s-nail</code></pre>
       </div>
 
       <p class="procedure-step"><strong>10. メール送信の確認</strong></p>
@@ -716,7 +706,8 @@ systemctl is-enabled postfix.service</code></pre>
       <p class="procedure-step"><strong>1. Apache関連パッケージの導入</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y httpd httpd-devel httpd-filesystem httpd-tools mod_ssl</code></pre>
+        <pre><code>yum install httpd.x86_64 httpd-devel.x86_64 httpd-filesystem.noarch httpd-tools.x86_64
+yum install mod_ssl</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
@@ -799,7 +790,7 @@ IncludeOptional /etc/httpd/conf.d/*.conf</code></pre>
       <div class="callout">
         <strong>ℹ️ 情報</strong>
         <p>prefork MPMは接続ごとにプロセスを割り当てるため、同時接続数が増えるほどメモリ使用量が増える</p>
-        <p>非スレッドセーフなモジュールや従来の<code>mod_php</code>構成が必要な場合を除き、Red Hat Enterprise Linux 10ではPHP-FPMと組み合わせやすいevent MPMを優先します。preforkは各プロセスが1リクエストを処理するため、同じ同時接続数ではスレッド型のevent MPMより多くのメモリを消費する</p>
+        <p>非スレッドセーフなモジュールや従来の<code>mod_php</code>構成が必要な場合を除き、Red Hat Enterprise Linux 9ではPHP-FPMと組み合わせやすいevent MPMを優先します。preforkは各プロセスが1リクエストを処理するため、同じ同時接続数ではスレッド型のevent MPMより多くのメモリを消費する</p>
         <p>preforkが必要な場合は、<code>MaxRequestWorkers</code>と1プロセス当たりのメモリ使用量から上限を算出し、対象モジュールと負荷条件を事前に検証する</p>
       </div>
 
@@ -922,10 +913,10 @@ systemctl is-enabled httpd.service</code></pre>
       </div>
 
       <h2 id="step-14">14. 運用支援ツールの導入</h2>
-      <p class="procedure-step"><strong>1. 運用・障害対応で利用する補助ツールをDNFで導入</strong></p>
+      <p class="procedure-step"><strong>1. 運用・障害対応で利用する補助ツールの導入。Red Hat Enterprise Linux 9では<code>yum</code>もDNFへの互換コマンドですが、この手順では<code>dnf</code>を使用</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf install -y telnet lftp plocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
+        <pre><code>dnf install -y telnet lftp mlocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
       </div>
 
       <table>
@@ -933,7 +924,7 @@ systemctl is-enabled httpd.service</code></pre>
         <tbody>
           <tr><td><code>telnet</code></td><td>TCPポートの到達性確認。対話ログインには使用しない</td></tr>
           <tr><td><code>lftp</code></td><td>FTP/SFTPによるファイル転送と接続確認</td></tr>
-          <tr><td><code>plocate</code></td><td><code>locate</code>によるファイルパス検索（RHEL 10では<code>mlocate</code>から置換）</td></tr>
+          <tr><td><code>mlocate</code></td><td><code>locate</code>によるファイルパス検索</td></tr>
           <tr><td><code>libyaml</code></td><td>YAMLを扱うツールの依存ライブラリ</td></tr>
           <tr><td><code>wget</code></td><td>HTTP/HTTPSのファイル取得</td></tr>
           <tr><td><code>mtr</code></td><td>経路上の遅延・パケットロス確認</td></tr>
