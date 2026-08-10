@@ -42,8 +42,34 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
-const userValueSplitPattern = /(<[A-Z][A-Z0-9_:-]*>)/;
-const userValueTest = /<[A-Z][A-Z0-9_:-]*>/;
+const userValuePatterns = [
+  { pattern: /<[A-Z][A-Z0-9_:-]*>/g, group: 0 },
+  { pattern: /\{[A-Z][A-Z0-9_:-]*\}/g, group: 0 },
+  { pattern: /[:/]role\/([A-Za-z0-9+=,.@_-]+)/g, group: 1 },
+  { pattern: /--[a-z0-9][a-z0-9-]*[ \t]+("(?:\\.|[^"\r\n])*"|'(?:\\.|[^'\r\n])*'|[^\s`]+)/gi, group: 1 },
+  { pattern: /-[A-Z][A-Za-z0-9]*[ \t]+("(?:\\.|[^"\r\n])*"|'(?:\\.|[^'\r\n])*'|[^\s`]+)/g, group: 1 },
+];
+
+const collectUserValueRanges = (text) => {
+  const ranges = [];
+
+  userValuePatterns.forEach(({ pattern, group }) => {
+    pattern.lastIndex = 0;
+    let match;
+
+    while ((match = pattern.exec(text))) {
+      const value = match[group];
+      const offset = group === 0 ? 0 : match[0].lastIndexOf(value);
+      const start = match.index + offset;
+      const end = start + value.length;
+      const overlaps = ranges.some((range) => start < range.end && end > range.start);
+
+      if (!overlaps) ranges.push({ start, end });
+    }
+  });
+
+  return ranges.sort((left, right) => left.start - right.start);
+};
 
 const highlightUserValues = () => {
   document.querySelectorAll(".code pre code").forEach((code) => {
@@ -52,27 +78,27 @@ const highlightUserValues = () => {
     let textNode;
 
     while ((textNode = walker.nextNode())) {
-      if (!textNode.parentElement?.closest(".user-value") && userValueTest.test(textNode.nodeValue)) {
+      if (!textNode.parentElement?.closest(".user-value") && collectUserValueRanges(textNode.nodeValue).length > 0) {
         textNodes.push(textNode);
       }
     }
 
     textNodes.forEach((node) => {
       const fragment = document.createDocumentFragment();
-      const parts = node.nodeValue.split(userValueSplitPattern);
+      const ranges = collectUserValueRanges(node.nodeValue);
+      let cursor = 0;
 
-      parts.forEach((part) => {
-        if (!part) return;
+      ranges.forEach(({ start, end }) => {
+        if (start > cursor) fragment.append(document.createTextNode(node.nodeValue.slice(cursor, start)));
 
-        if (userValueTest.test(part)) {
-          const value = document.createElement("span");
-          value.className = "user-value";
-          value.textContent = part;
-          fragment.append(value);
-        } else {
-          fragment.append(document.createTextNode(part));
-        }
+        const value = document.createElement("span");
+        value.className = "user-value";
+        value.textContent = node.nodeValue.slice(start, end);
+        fragment.append(value);
+        cursor = end;
       });
+
+      if (cursor < node.nodeValue.length) fragment.append(document.createTextNode(node.nodeValue.slice(cursor)));
 
       node.replaceWith(fragment);
     });

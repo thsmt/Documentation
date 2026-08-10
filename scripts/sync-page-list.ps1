@@ -8,20 +8,20 @@ $root = Split-Path -Parent $PSScriptRoot
 $tutorialsRoot = Join-Path $root 'tutorials'
 $groups = @(
     [pscustomobject]@{
-        Label = 'AWS／クラウド'
+        Label = 'AWS'
         Pages = @(
-            [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation' }
+            [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
-            [pscustomobject]@{ File = 'eventbridge-scheduler-start-stop.html'; Label = 'EventBridge Scheduler 自動停止・起動' }
+            [pscustomobject]@{ File = 'eventbridge-scheduler-start-stop.html'; Label = 'EventBridge Scheduler' }
             [pscustomobject]@{ File = 'amazon-workspaces.html'; Label = 'Amazon WorkSpaces' }
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
-            [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'ACM / TLS証明書' }
+            [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'AWS Certificate Manager (ACM) と証明書運用' }
         )
     }
     [pscustomobject]@{
-        Label = 'OS／サーバー'
+        Label = 'OS／ミドルウェア'
         Pages = @(
             [pscustomobject]@{ File = 'rhel9-ops.html'; Label = '[構築] Red Hat Enterprise Linux 9' }
             [pscustomobject]@{ File = 'rhel10-ops.html'; Label = '[構築] Red Hat Enterprise Linux 10' }
@@ -31,18 +31,18 @@ $groups = @(
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache-rhel8-rhel9.html'; Label = 'Apache HTTP Server' }
             [pscustomobject]@{ File = 'mariadb-rhel8-rhel9.html'; Label = 'MariaDB' }
-            [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0' }
+            [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
             [pscustomobject]@{ File = 'linux-troubleshooting.html'; Label = '障害切り分けチェックリスト' }
         )
     }
     [pscustomobject]@{
-        Label = '自動化／基盤'
+        Label = '開発／自動化'
         Pages = @(
             [pscustomobject]@{ File = 'git-github-basics.html'; Label = 'Git / GitHub 基本編' }
-            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform ※移行中' }
-            [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible ※移行中' }
-            [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ ※移行中' }
-            [pscustomobject]@{ File = 'github-actions.html'; Label = 'GitHub Actions ※移行中' }
+            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform' }
+            [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible' }
+            [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ' }
+            [pscustomobject]@{ File = 'github-actions.html'; Label = 'GitHub Actions' }
         )
     }
     [pscustomobject]@{

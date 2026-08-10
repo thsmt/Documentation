@@ -26,16 +26,16 @@
         <h2>ページ一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
       </div>
-      <p class="sidebar-group">AWS／クラウド</p>
-      <a href="cloudformation.html">CloudFormation</a>
+      <p class="sidebar-group">AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a class="active" href="eventbridge-scheduler-start-stop.html">EventBridge Scheduler</a>
       <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
       <a href="amazon-ses.html">Amazon SES</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">ACM / TLS証明書</a>
-      <p class="sidebar-group">OS／サーバー</p>
+      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a>
+      <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9-ops.html">[構築] Red Hat Enterprise Linux 9</a>
       <a href="rhel10-ops.html">[構築] Red Hat Enterprise Linux 10</a>
       <a href="amazon-linux-2023.html">[構築] Amazon Linux 2023</a>
@@ -44,15 +44,14 @@
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
       <a href="apache-rhel8-rhel9.html">Apache HTTP Server</a>
       <a href="mariadb-rhel8-rhel9.html">MariaDB</a>
-      <a href="zabbix-ops.html">Zabbix 6.0</a>
+      <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <a href="linux-troubleshooting.html">障害切り分けチェックリスト</a>
-      <p class="sidebar-group">自動化／基盤</p>
+      <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
-      <a href="git-github-practical.html">Git / GitHub 実践編</a>
-      <a href="terraform.html">Terraform ※移行中</a>
-      <a href="awx-ansible.html">AWX / Ansible ※移行中</a>
-      <a href="container.html">コンテナ ※移行中</a>
-      <a href="github-actions.html">GitHub Actions ※移行中</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="container.html">コンテナ</a>
+      <a href="github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
       <a href="eol.html">EOL / ライフサイクル一覧表</a>
       <a href="glossary.html">用語集</a>
@@ -64,6 +63,7 @@
         <span>トピック</span>
       </nav>
       <h1>EventBridge Scheduler</h1>
+      <p class="lead">AWSサービスの停止・起動を指定時刻に実行するための設定手順を整理する</p>
 
       <h2 id="services">自動停止・起動を適用できる主なサービス</h2>
       <p>対象可否は「サービス名」ではなく「そのAPI操作がUniversal targetで利用可能か」「リソースが状態遷移をサポートするか」「実行ロールに権限があるか」で判断する</p>
@@ -205,9 +205,9 @@
       <h2 id="iam-role">IAMロールの作成</h2>
       <p>次に、Schedulerが引き受ける実行ロール<code>EventBridgeSchedulerEC2Stop</code>を作成する。IAMコンソールで「ロールを作成」を開き、「カスタム信頼ポリシー」を選択してScheduler用の信頼ポリシーを登録する</p>
       <ol>
-        <li>IAMの「ロールを作成」を開き、「カスタム信頼ポリシー」を選択する</li>
-        <li>次の信頼ポリシーを登録する</li>
-        <li>許可ポリシーとして<code>EC2InstanceStopPolicy</code>をアタッチし、ロール名を<code>EventBridgeSchedulerEC2Stop</code>として作成する</li>
+        <li>IAMの「ロールを作成」を開き、「カスタム信頼ポリシー」を選択</li>
+        <li>次の信頼ポリシーを登録</li>
+        <li>許可ポリシーとして<code>EC2InstanceStopPolicy</code>をアタッチし、ロール名を<code>EventBridgeSchedulerEC2Stop</code>として作成</li>
       </ol>
       <p>実行ロールのカスタム信頼ポリシーは次のとおり</p>
       <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
