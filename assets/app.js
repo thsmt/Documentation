@@ -46,8 +46,6 @@ const userValuePatterns = [
   { pattern: /<[A-Z][A-Z0-9_:-]*>/g, group: 0 },
   { pattern: /\{[A-Z][A-Z0-9_:-]*\}/g, group: 0 },
   { pattern: /[:/]role\/([A-Za-z0-9+=,.@_-]+)/g, group: 1 },
-  { pattern: /--[a-z0-9][a-z0-9-]*[ \t]+("(?:\\.|[^"\r\n])*"|'(?:\\.|[^'\r\n])*'|[^\s`]+)/gi, group: 1 },
-  { pattern: /-[A-Z][A-Za-z0-9]*[ \t]+("(?:\\.|[^"\r\n])*"|'(?:\\.|[^'\r\n])*'|[^\s`]+)/g, group: 1 },
 ];
 
 const collectUserValueRanges = (text) => {
