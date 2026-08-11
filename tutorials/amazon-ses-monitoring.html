@@ -141,7 +141,25 @@
           <tr><td>Amazon CloudWatch</td><td>イベント件数をメトリクス化し、ダッシュボードとアラームで監視</td><td><code>AWS/SES</code>メトリクスで確認</td></tr>
         </tbody>
       </table>
-      <p>最初の検証では<code>Send</code>、<code>Delivery</code>、<code>Bounce</code>、<code>Complaint</code>、<code>DeliveryDelay</code>、<code>Reject</code>を対象とする。<code>Open</code>と<code>Click</code>はエンゲージメント追跡を利用する場合だけ追加する</p>
+      <h3 id="event-types">イベントタイプの選択</h3>
+      <p>「イベントタイプの選択」では、SESからイベント送信先へ発行する送信結果を選ぶ。今回の基本監視では「送信」「拒否」「配信」「ハードバウンス」「苦情数」「配信の遅延」を選択し、利用している機能に応じて残りの項目を追加する</p>
+      <table>
+        <thead><tr><th>コンソールの項目</th><th>今回の選択</th><th>確認できること</th></tr></thead>
+        <tbody>
+          <tr><td>送信</td><td>選択</td><td>送信リクエストが成功し、SESが受信者のメールサーバーへの配信処理を開始したこと</td></tr>
+          <tr><td>レンダリングの失敗</td><td>テンプレート送信時に選択</td><td>テンプレートデータの不足や不一致により、メールが送信されなかったこと</td></tr>
+          <tr><td>拒否</td><td>選択</td><td>SESがウイルスを含むと判断し、受信者のメールサーバーへ配信しなかったこと</td></tr>
+          <tr><td>配信</td><td>選択</td><td>SESが受信者のメールサーバーへ正常に引き渡したこと。受信トレイへの格納を保証するイベントではない</td></tr>
+          <tr><td>ハードバウンス</td><td>選択</td><td>受信者のメールサーバーが恒久的に拒否したこと。SESが再試行後に配信を終了したソフトバウンスも含む</td></tr>
+          <tr><td>苦情数</td><td>選択</td><td>配信後に受信者がスパムとして報告したこと</td></tr>
+          <tr><td>配信の遅延</td><td>選択</td><td>メールボックス容量不足や受信側サーバーの一時障害などにより、配信が遅延していること</td></tr>
+          <tr><td>サブスクリプション</td><td>リスト管理使用時に選択</td><td>受信者が購読解除ヘッダーまたはフッターから購読設定を変更したこと</td></tr>
+          <tr><td>開封数</td><td>開封追跡時に選択</td><td>受信者のメールクライアントでメッセージが開かれたこと</td></tr>
+          <tr><td>クリック数</td><td>クリック追跡時に選択</td><td>受信者がメール内のリンクをクリックしたこと</td></tr>
+        </tbody>
+      </table>
+      <p>「開封数」と「クリック数」は、追跡によるURL書き換え、個人情報の取り扱い、セキュリティ製品による自動アクセスを確認したうえで選択する。「すべて選択」は、使用していない機能のイベントまで収集するため、検証目的が明確な場合だけ使用する</p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/event-destinations-manage.html">イベント送信先の作成</a></p>
 
       <h3 id="destination-sns">Amazon SNS</h3>
       <ol>
@@ -175,14 +193,21 @@
       <h3 id="destination-eventbridge">Amazon EventBridge</h3>
       <ol>
         <li>Configuration Setの「イベント送信先」「送信先を追加」を選択</li>
-        <li>対象イベントを選択し、送信先タイプにAmazon EventBridgeを指定</li>
-        <li>名前を<code>ses-event-bridge</code>としてイベント発行を有効化</li>
-        <li>Amazon EventBridgeコンソールでデフォルトイベントバスを開く</li>
+        <li>「イベントタイプの選択」の「送信と配信」で「送信」「拒否」「配信」「ハードバウンス」「苦情数」「配信の遅延」をチェック</li>
+        <li>テンプレート送信を監視する場合は「レンダリングの失敗」、リスト管理を使用する場合は「サブスクリプション」を追加</li>
+        <li>開封・クリック追跡を使用する場合だけ「開封数」と「クリック数」を追加し、「次へ」を選択</li>
+        <li>「送信先を指定」の「送信先オプション」で、送信先タイプに「Amazon EventBridge」を選択</li>
+        <li>名前へ<code>ses-event-bridge</code>を入力し、「イベント発行」を有効化</li>
+        <li>SESイベントがEventBridgeのデフォルトイベントバスへ送信される説明を確認し、「次へ」を選択</li>
+        <li>確認画面でイベントタイプ、送信先タイプ、名前、イベント発行の状態を確認し、「送信先を追加」を選択</li>
+        <li>成功メッセージとイベント送信先の概要を確認</li>
+        <li>Amazon EventBridgeコンソールで「イベントバス」「デフォルトイベントバス」を開く</li>
         <li>「ルールを作成」でイベントパターンを使用するルールを作成</li>
-        <li>イベントソースを<code>aws.ses</code>、通知対象の詳細タイプを指定</li>
+        <li>イベントソースに「AWSサービス」、AWSサービスに「SES」を選択し、通知対象のイベントタイプを指定</li>
         <li>TargetへSNSトピック<code>ses-events-notification</code>を指定</li>
         <li>必要に応じて再試行とSQS DLQを設定し、ルールを有効化</li>
       </ol>
+      <p>次のイベントパターンは、SESから発行される基本監視イベントのうち、通知が必要な失敗系の「ハードバウンス」「苦情数」「配信の遅延」「拒否」だけをSNSへ転送する例。「送信」と「配信」はイベント送信先からEventBridgeへ発行されるが、このルールの通知対象には含めない</p>
       <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
   "source": ["aws.ses"],
   "detail-type": [
