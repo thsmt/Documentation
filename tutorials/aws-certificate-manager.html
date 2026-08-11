@@ -117,7 +117,7 @@
 
       <h2 id="managed">AWS統合サービスでの自動更新</h2>
       <p>ACM統合サービスに関連付けたAmazon発行証明書は、更新条件を満たす場合、ACMが更新し、統合サービスへ新しい証明書を配置します。DNS検証を使用する場合は、検証用CNAMEレコードを削除しない</p>
-      <div class="code"><div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm describe-certificate \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm describe-certificate \
   --certificate-arn &lt;CERTIFICATE_ARN&gt; \
   --region ap-northeast-1 \
   --query 'Certificate.{Status:Status,InUseBy:InUseBy,NotAfter:NotAfter,RenewalStatus:RenewalSummary.RenewalStatus}'</code></pre></div>
@@ -129,7 +129,7 @@
         <strong>ℹ️ エクスポート可能な証明書の料金</strong>
         <p>2026年7月時点では、発行時と更新時にFQDNごとに7 USD、ワイルドカード名ごとに79 USDです。証明書エクスポートAPIは、アカウントごとに月10,000回まで無料です。料金は変更される可能性があるため、導入時にAWS公式料金ページを確認する</p>
       </div>
-      <div class="code"><div class="code-header"><span>request</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm request-certificate \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm request-certificate \
   --domain-name example.com \
   --subject-alternative-names www.example.com \
   --validation-method DNS \
@@ -138,7 +138,7 @@
   --region ap-northeast-1</code></pre></div>
       <p>発行後はDNS検証を完了させます。ワイルドカードの <code>*.example.com</code> は <code>example.com</code> 自体を含まないため、両方を利用する場合はSANへそれぞれ指定する</p>
 
-      <div class="code"><div class="code-header"><span>export</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm export-certificate \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm export-certificate \
   --certificate-arn &lt;CERTIFICATE_ARN&gt; \
   --passphrase fileb:///secure/path/passphrase.txt \
   --region ap-northeast-1 \

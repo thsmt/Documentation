@@ -164,21 +164,21 @@
       <h3>1. 作業前の棚卸しとベースライン取得</h3>
       <p>対象DB、エンジンとバージョン、トポロジー、保留中の変更、バックアップ、監視、外部連携、接続方式を記録。AWS CLIは意図したアカウントとリージョンを明示し、出力は変更記録に保管</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances `
-  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
-  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Engine:Engine,EngineVersion:EngineVersion,Class:DBInstanceClass,MultiAZ:MultiAZ,Endpoint:Endpoint.Address,BackupRetention:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances \
+  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; \
+  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Engine:Engine,EngineVersion:EngineVersion,Class:DBInstanceClass,MultiAZ:MultiAZ,Endpoint:Endpoint.Address,BackupRetention:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}" \
   --output json</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances `
-  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
-  --query "DBInstances[0].ReadReplicaDBInstanceIdentifiers" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances \
+  --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; \
+  --query "DBInstances[0].ReadReplicaDBInstanceIdentifiers" \
   --output json</code></pre>
       </div>
 
@@ -218,11 +218,11 @@ ORDER BY 1, 2;</code></pre>
       <h3>4. Blue/Green Deploymentを作成</h3>
       <p>RDSコンソールの「Databases」でBlueのプライマリを選択し、Actionsから「Create blue/green deployment」を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds create-blue-green-deployment `
-  --blue-green-deployment-name &lt;BLUE_GREEN_DEPLOYMENT_NAME&gt; `
-  --source arn:aws:rds:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:db:&lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; `
-  --target-engine-version &lt;TARGET_ENGINE_VERSION&gt; `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds create-blue-green-deployment \
+  --blue-green-deployment-name &lt;BLUE_GREEN_DEPLOYMENT_NAME&gt; \
+  --source arn:aws:rds:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:db:&lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; \
+  --target-engine-version &lt;TARGET_ENGINE_VERSION&gt; \
   --target-db-parameter-group-name &lt;TARGET_DB_PARAMETER_GROUP&gt;</code></pre>
       </div>
       <p>上記は最小例。インスタンスクラス、ストレージ、IOPS、スループット、Optimized Writesなどの変更を同時に行う場合は、実機の選択値と<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/create-blue-green-deployment.html">create-blue-green-deployment</a>の引数を対応付けて実行</p>
@@ -230,17 +230,17 @@ ORDER BY 1, 2;</code></pre>
       <h3>5. Greenの作成完了と同期状態を確認</h3>
       <p>作成直後は、スナップショットから復元したGreenのストレージで遅延ロードが進む。十分なI/O性能が必要な試験では、ストレージ初期化の進捗も確認してから測定を開始</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-blue-green-deployments `
-  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
-  --query "BlueGreenDeployments[0].{Status:Status,Replication:StatusDetails,Source:Source,Target:Target,Tasks:Tasks}" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-blue-green-deployments \
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
+  --query "BlueGreenDeployments[0].{Status:Status,Replication:StatusDetails,Source:Source,Target:Target,Tasks:Tasks}" \
   --output json</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances `
-  --db-instance-identifier &lt;GREEN_DB_INSTANCE_IDENTIFIER&gt; `
-  --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances \
+  --db-instance-identifier &lt;GREEN_DB_INSTANCE_IDENTIFIER&gt; \
+  --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" \
   --output json</code></pre>
       </div>
 
@@ -272,26 +272,26 @@ WHERE slot_type = 'logical';</code></pre>
       <h3>8. スイッチオーバーを実行</h3>
       <p>RDSコンソールでBlue/Green Deploymentを選択し、Actionsから「Switch over」を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds switchover-blue-green-deployment `
-  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds switchover-blue-green-deployment \
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
   --switchover-timeout 600</code></pre>
       </div>
 
       <h3>9. 切替後の受入確認と旧Blueの保護</h3>
       <p>新本番のDB識別子とエンドポイントが従来どおりであること、アプリが再接続して書き込みを再開したこと、エラー率と遅延が許容範囲であることを確認。旧Blueは<code>-old&lt;n&gt;</code>が付いた読み取り専用のリソースとして残るため、削除判断が完了するまで書き込みを有効化しない</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-blue-green-deployments `
-  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; `
-  --query "BlueGreenDeployments[0].{Status:Status,Source:Source,Target:Target}" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-blue-green-deployments \
+  --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
+  --query "BlueGreenDeployments[0].{Status:Status,Source:Source,Target:Target}" \
   --output json</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws rds describe-db-instances `
-  --db-instance-identifier &lt;PRODUCTION_DB_INSTANCE_IDENTIFIER&gt; `
-  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Endpoint:Endpoint.Address,EngineVersion:EngineVersion,Status:DBInstanceStatus}" `
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws rds describe-db-instances \
+  --db-instance-identifier &lt;PRODUCTION_DB_INSTANCE_IDENTIFIER&gt; \
+  --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Endpoint:Endpoint.Address,EngineVersion:EngineVersion,Status:DBInstanceStatus}" \
   --output json</code></pre>
       </div>
 

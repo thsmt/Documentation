@@ -287,13 +287,13 @@
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:stopInstances",
   "Input": "{\"InstanceIds\":[\"<span class="user-value">&lt;EC2_INSTANCE_ID_1&gt;</span>\",\"<span class="user-value">&lt;EC2_INSTANCE_ID_2&gt;</span>\"]}"
 }</code></pre></div>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule `
-  --name ec2-stop-daily-schedule `
-  --group-name ec2-schedule-group `
-  --schedule-expression "cron(0 18 * * ? *)" `
-  --schedule-expression-timezone "Asia/Tokyo" `
-  --flexible-time-window '{"Mode":"OFF"}' `
-  --target file://target-ec2-stop.json `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
+  --name ec2-stop-daily-schedule \
+  --group-name ec2-schedule-group \
+  --schedule-expression "cron(0 18 * * ? *)" \
+  --schedule-expression-timezone "Asia/Tokyo" \
+  --flexible-time-window '{"Mode":"OFF"}' \
+  --target file://target-ec2-stop.json \
   --state ENABLED</code></pre></div>
       <h3 id="ec2-start">EC2起動Schedule</h3>
       <p>起動用は停止用と別のTarget定義と実行ロールを使用し、毎日09:00 JSTに設定する。起動後のアプリケーション初期化時間、EBSボリュームチェック、監視エージェントの起動時間を含めて時刻を決める</p>
@@ -302,13 +302,13 @@
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:startInstances",
   "Input": "{\"InstanceIds\":[\"&lt;EC2_INSTANCE_ID_1&gt;\",\"&lt;EC2_INSTANCE_ID_2&gt;\"]}"
 }</code></pre></div>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule `
-  --name ec2-start-daily-schedule `
-  --group-name ec2-schedule-group `
-  --schedule-expression "cron(0 9 * * ? *)" `
-  --schedule-expression-timezone "Asia/Tokyo" `
-  --flexible-time-window '{"Mode":"OFF"}' `
-  --target file://target-ec2-start.json `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
+  --name ec2-start-daily-schedule \
+  --group-name ec2-schedule-group \
+  --schedule-expression "cron(0 9 * * ? *)" \
+  --schedule-expression-timezone "Asia/Tokyo" \
+  --flexible-time-window '{"Mode":"OFF"}' \
+  --target file://target-ec2-start.json \
   --state ENABLED</code></pre></div>
       <h3 id="rds">RDS DB instance停止・起動</h3>
       <p>RDSでは<code>DBInstanceIdentifier</code>を入力に指定する。停止できない構成ではAPIが失敗するため、事前確認の結果とDLQを必ず確認する。停止状態を7日より長く維持する設計には向かない</p>
@@ -410,12 +410,12 @@
         </tbody>
       </table>
       <p>SQSコンソールの受信画面はSchedule ARNなどによるサーバー側検索を行わない。メッセージ数が多い場合は、次のCLIで最大10件を受信し、切り分けに必要な属性だけを表示する</p>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sqs receive-message `
-  --queue-url &lt;SCHEDULER_DLQ_URL&gt; `
-  --attribute-names All `
-  --message-attribute-names All `
-  --max-number-of-messages 10 `
-  --query 'Messages[].{MessageId:MessageId,ErrorCode:MessageAttributes.ERROR_CODE.StringValue,ErrorMessage:MessageAttributes.ERROR_MESSAGE.StringValue,ScheduleArn:MessageAttributes.SCHEDULE_ARN.StringValue,TargetArn:MessageAttributes.TARGET_ARN.StringValue,ScheduledTime:MessageAttributes.SCHEDULED_TIME.StringValue,RetryAttempts:MessageAttributes.RETRY_ATTEMPTS.StringValue}' `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sqs receive-message \
+  --queue-url &lt;SCHEDULER_DLQ_URL&gt; \
+  --attribute-names All \
+  --message-attribute-names All \
+  --max-number-of-messages 10 \
+  --query 'Messages[].{MessageId:MessageId,ErrorCode:MessageAttributes.ERROR_CODE.StringValue,ErrorMessage:MessageAttributes.ERROR_MESSAGE.StringValue,ScheduleArn:MessageAttributes.SCHEDULE_ARN.StringValue,TargetArn:MessageAttributes.TARGET_ARN.StringValue,ScheduledTime:MessageAttributes.SCHEDULED_TIME.StringValue,RetryAttempts:MessageAttributes.RETRY_ATTEMPTS.StringValue}' \
   --output table</code></pre></div>
       <p>Universal targetはSchedule作成時にInputの内容をTarget APIの仕様まで検証しない。誤ったリソースIDやJSONでも作成できるため、定期Scheduleの前に同じInputを使用した単発Scheduleで成功を確認する。詳細はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/troubleshooting.html">EventBridge Schedulerのトラブルシューティング</a>を参照する</p>
 
@@ -440,21 +440,21 @@
       </table>
       <div class="callout callout-info"><strong>ℹ️ イベント履歴のフィルター制約</strong><p>CloudTrailのイベント履歴は現在のリージョンにある過去90日間の管理イベントを対象とし、属性フィルターは1回に1つだけ指定できる。イベントソースとイベント名を同時指定できないため、時間範囲を絞ったうえで条件を切り替えて確認する。複数属性や長期データを横断検索する場合はCloudTrail Lakeを使用する</p></div>
       <p>CLIではイベントソースで取得した結果から、Scheduleの作成、変更、削除だけを表示できる</p>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws cloudtrail lookup-events `
-  --lookup-attributes AttributeKey=EventSource,AttributeValue=scheduler.amazonaws.com `
-  --start-time &lt;START_TIME_ISO8601&gt; `
-  --end-time &lt;END_TIME_ISO8601&gt; `
-  --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=EventSource,AttributeValue=scheduler.amazonaws.com \
+  --start-time &lt;START_TIME_ISO8601&gt; \
+  --end-time &lt;END_TIME_ISO8601&gt; \
+  --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' \
   --output table</code></pre></div>
       <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a>を参照する</p>
 
       <h3 id="operations-change">変更時の確認手順</h3>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule `
-  --name &lt;SCHEDULE_NAME&gt; `
-  --group-name ec2-schedule-group `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule \
+  --name &lt;SCHEDULE_NAME&gt; \
+  --group-name ec2-schedule-group \
   --output json</code></pre></div>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler list-schedules `
-  --group-name ec2-schedule-group `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler list-schedules \
+  --group-name ec2-schedule-group \
   --output table</code></pre></div>
       <table>
         <thead><tr><th>確認タイミング</th><th>確認内容</th></tr></thead>

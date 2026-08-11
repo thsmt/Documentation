@@ -98,8 +98,8 @@
         <li>サプレッションリストとVDMはアカウント設定を継承し、必要な場合だけConfiguration Set単位で上書き</li>
         <li>タグを設定し、「セットの作成」を選択</li>
       </ol>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set `
-  --configuration-set-name ses-postfix-monitoring `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set \
+  --configuration-set-name ses-postfix-monitoring \
   --region ap-northeast-1</code></pre></div>
       <div class="callout">
         <strong>🧪 実機検証で記録する内容</strong>
@@ -192,9 +192,9 @@
         <li>デフォルト設定セットへ<code>ses-postfix-monitoring</code>を指定</li>
         <li>保存後、IDの設定画面へ設定セット名が表示されることを確認</li>
       </ol>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity `
-  --email-identity zexample.com `
-  --region ap-northeast-1 `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity \
+  --email-identity zexample.com \
+  --region ap-northeast-1 \
   --query "{IdentityType:IdentityType,VerifiedForSendingStatus:VerifiedForSendingStatus,ConfigurationSetName:ConfigurationSetName}"</code></pre></div>
       <p>メール単位でデフォルト設定を上書きする場合は、SMTP送信するMIMEヘッダーへ次の値を追加する</p>
       <div class="code"><div class="code-header"><span>text</span><button class="copy-button" type="button">Copy</button></div><pre><code>X-SES-CONFIGURATION-SET: ses-postfix-monitoring</code></pre></div>
@@ -306,14 +306,14 @@
         <li>対象を選択して「レポートを表示」を開き、原因となったイベントを確認</li>
         <li>誤登録と判断できる場合だけ、宛先の有効性と再送許可を確認して削除</li>
       </ol>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations `
-  --region ap-northeast-1 `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations \
+  --region ap-northeast-1 \
   --output table</code></pre></div>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination `
-  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination \
+  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region ap-northeast-1</code></pre></div>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination `
-  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination \
+  --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region ap-northeast-1</code></pre></div>
       <div class="callout callout-warning"><strong>⚠️ 安易に削除しない</strong><p>ハードバウンスした無効な宛先を削除して再送すると、バウンス率が悪化する。アドレスの誤入力修正、受信者からの再登録、管理者による有効性確認など、再送できる根拠を記録してから削除する</p></div>
       <div class="callout"><strong>🧪 実機検証で記録する内容</strong><p>アカウントレベル設定、一覧、理由、登録日時、レポート詳細を画像で記録する。メールアドレスとMessage IDは公開前にマスクする</p></div>
@@ -346,8 +346,8 @@
         <li>1秒あたりの最大送信レートを確認</li>
         <li>送信量が上限へ近づく前に、用途と送信パターンを整理して引き上げを申請</li>
       </ol>
-      <div class="code"><div class="code-header"><span>powershell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-account `
-  --region ap-northeast-1 `
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-account \
+  --region ap-northeast-1 \
   --query "{ProductionAccessEnabled:ProductionAccessEnabled,EnforcementStatus:EnforcementStatus,SendQuota:SendQuota,SendingEnabled:SendingEnabled}"</code></pre></div>
       <table>
         <thead><tr><th>項目</th><th>サンドボックス</th><th>本番アクセス</th></tr></thead>

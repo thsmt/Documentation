@@ -159,10 +159,10 @@
 
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws cloudformation validate-template `
+        <pre><code>aws cloudformation validate-template \
   --template-body file://templates/example.yml</code></pre>
       </div>
 
@@ -216,10 +216,10 @@
       <p>テンプレートをS3へアップロードする</p>
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws s3 cp templates/example.yml `
+        <pre><code>aws s3 cp templates/example.yml \
   s3://&lt;BUCKET_NAME&gt;/cloudformation/templates/example.yml</code></pre>
       </div>
 
@@ -324,13 +324,13 @@ deployments/stg-stack.yaml</code></pre>
 
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws cloudformation create-stack `
-  --stack-name sample-stack `
-  --template-body file://templates/example.yml `
-  --parameters file://parameters/example.json `
+        <pre><code>aws cloudformation create-stack \
+  --stack-name sample-stack \
+  --template-body file://templates/example.yml \
+  --parameters file://parameters/example.json \
   --capabilities CAPABILITY_NAMED_IAM</code></pre>
       </div>
 
@@ -341,24 +341,24 @@ deployments/stg-stack.yaml</code></pre>
 
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws cloudformation create-change-set `
-  --stack-name sample-stack `
-  --change-set-name update-20260712 `
-  --template-body file://templates/example.yml `
-  --parameters file://parameters/example.json `
+        <pre><code>aws cloudformation create-change-set \
+  --stack-name sample-stack \
+  --change-set-name update-20260712 \
+  --template-body file://templates/example.yml \
+  --parameters file://parameters/example.json \
   --capabilities CAPABILITY_NAMED_IAM</code></pre>
       </div>
 
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws cloudformation describe-change-set `
-  --stack-name sample-stack `
+        <pre><code>aws cloudformation describe-change-set \
+  --stack-name sample-stack \
   --change-set-name update-20260712</code></pre>
       </div>
 
@@ -393,10 +393,10 @@ deployments/stg-stack.yaml</code></pre>
       <p>手動変更の有無を確認する場合は、ドリフト検出を実行する</p>
       <div class="code">
         <div class="code-header">
-          <span>powershell</span>
+          <span>CloudShell</span>
           <button class="copy" type="button">Copy</button>
         </div>
-        <pre><code>aws cloudformation detect-stack-drift `
+        <pre><code>aws cloudformation detect-stack-drift \
   --stack-name sample-stack</code></pre>
       </div>
 

@@ -574,7 +574,7 @@ Get-WindowsCapability -Online |
       <h3>AWS CLIで変更</h3>
       <p>AWS CLIでもプロトコルを変更できます。対象WorkSpaceの状態とプロトコルを確認する</p>
       <div class="code">
-        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
   --workspace-ids &lt;WORKSPACE_ID&gt; \
   --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,BundleId:BundleId,Protocols:WorkspaceProperties.Protocols}' \
@@ -583,7 +583,7 @@ Get-WindowsCapability -Online |
 
       <p>プロトコルをDCV (WSP)へ変更します。<code>Protocols</code>の値は大文字・小文字を区別する</p>
       <div class="code">
-        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces modify-workspace-properties \
   --workspace-id &lt;WORKSPACE_ID&gt; \
   --workspace-properties "Protocols=[WSP]"</code></pre>
@@ -591,7 +591,7 @@ Get-WindowsCapability -Online |
 
       <p>最大40分待機し、変更後の状態を確認する</p>
       <div class="code">
-        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
   --workspace-ids &lt;WORKSPACE_ID&gt; \
   --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' \

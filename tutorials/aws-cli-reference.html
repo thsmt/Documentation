@@ -115,14 +115,14 @@ aws --version</code></pre>
       <h3 id="identity">認証情報の確認</h3>
       <p>現在の認証情報が、想定しているAWSアカウントとIAMユーザー/ロールを向いているか確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
 
       <h3 id="credentials">認証情報の設定</h3>
       <p>作業端末で初めてAWS CLIを使う場合は、デフォルト認証情報を設定する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure</code></pre>
       </div>
 
@@ -134,7 +134,7 @@ aws --version</code></pre>
       <h3 id="region">リージョン確認</h3>
       <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure set region ap-northeast-1</code></pre>
       </div>
 
@@ -153,25 +153,25 @@ aws --version</code></pre>
 
       <p>IAMユーザーを作成する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <p>IAMグループを作成する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-group --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>作成したIAMユーザーを既存グループに追加する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>AWS管理ポリシーをIAMグループにアタッチします。例では読み取り専用の <code>ReadOnlyAccess</code> を使用する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam attach-group-policy --group-name &lt;GROUP_NAME&gt; --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess</code></pre>
       </div>
 
@@ -194,31 +194,31 @@ aws --version</code></pre>
 
       <p>JSONファイルからカスタマー管理ポリシーを作成する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-policy --policy-name &lt;POLICY_NAME&gt; --policy-document file://policy.json</code></pre>
       </div>
 
       <p>作成したカスタマー管理ポリシーをIAMグループにアタッチする</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam attach-group-policy --group-name &lt;GROUP_NAME&gt; --policy-arn &lt;CUSTOM_POLICY_ARN&gt;</code></pre>
       </div>
 
       <p>IAMグループにアタッチされているポリシーを確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-attached-group-policies --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>ユーザーの所属グループを確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-groups-for-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <p>IAMユーザーのアクセスキーを発行する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-access-key --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
@@ -230,7 +230,7 @@ aws --version</code></pre>
 
       <p>IAMユーザーへコンソールログイン用のログインプロファイルを作成する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-login-profile --user-name &lt;USER_NAME&gt; --password "&lt;TEMPORARY_PASSWORD&gt;" --password-reset-required</code></pre>
       </div>
 
@@ -254,43 +254,43 @@ aws --version</code></pre>
 
       <p>作業前に、対象Security Groupの現在のルールを確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt;</code></pre>
       </div>
 
       <p>HTTPの80/tcpだけを許可する例</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>説明欄を付けて80/tcpを許可する例です。ルールの説明はトップレベルの <code>--description</code> ではなく、<code>--ip-permissions</code> の <code>IpRanges</code> 側に指定する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=&lt;CIDR&gt;,Description="&lt;DESCRIPTION&gt;"}]'</code></pre>
       </div>
 
       <p>全プロトコル・全ポートを許可する例です。検証や一時作業以外では原則として避け、作業後に必ず削除する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>Security GroupルールID、CIDR、説明欄を一覧で確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-security-group-rules --filters Name=group-id,Values=&lt;SECURITY_GROUP_ID&gt; --query "SecurityGroupRules[*].[SecurityGroupRuleId,IsEgress,IpProtocol,FromPort,ToPort,CidrIpv4,Description]" --output table</code></pre>
       </div>
 
       <p>80/tcpの許可ルールを削除する例</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>全プロトコル・全ポートの許可ルールを削除する例</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
@@ -320,31 +320,31 @@ aws --version</code></pre>
 
       <p>Prefix Listを作成し、初期CIDRを登録します。登録するIPアドレスが複数ある場合は、<code>Cidr=...</code> の指定を追加する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-managed-prefix-list --prefix-list-name &lt;PREFIX_LIST_NAME&gt; --address-family IPv4 --max-entries &lt;MAX_ENTRIES&gt; --entries Cidr=&lt;CIDR_1&gt;,Description="&lt;DESCRIPTION_1&gt;" Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code></pre>
       </div>
 
       <p>作成したPrefix ListのID、現在のバージョン、最大エントリ数を確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=&lt;PREFIX_LIST_NAME&gt; --query "PrefixLists[*].[PrefixListId,PrefixListName,Version,MaxEntries,State]" --output table</code></pre>
       </div>
 
       <p>既存のPrefix Listへ接続元CIDRを追加します。更新時は、直前に確認した <code>Version</code> を <code>&lt;CURRENT_VERSION&gt;</code> に指定する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-managed-prefix-list --prefix-list-id &lt;PREFIX_LIST_ID&gt; --current-version &lt;CURRENT_VERSION&gt; --add-entries Cidr=&lt;CIDR_3&gt;,Description="&lt;DESCRIPTION_3&gt;"</code></pre>
       </div>
 
       <p>Prefix Listに登録されているCIDRを確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 get-managed-prefix-list-entries --prefix-list-id &lt;PREFIX_LIST_ID&gt; --query "Entries[*].[Cidr,Description]" --output table</code></pre>
       </div>
 
       <p>Security GroupのインバウンドルールでPrefix Listを参照します。例では、Prefix Listに登録した接続元CIDR群から <code>&lt;PORT&gt;</code> へのTCP通信を許可する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions IpProtocol=tcp,FromPort=&lt;PORT&gt;,ToPort=&lt;PORT&gt;,PrefixListIds=[{PrefixListId=&lt;PREFIX_LIST_ID&gt;}]</code></pre>
       </div>
 
@@ -362,19 +362,19 @@ aws --version</code></pre>
 
       <p>SNS Topicを作成する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns create-topic --name &lt;TOPIC_NAME&gt;</code></pre>
       </div>
 
       <p>SNS Topic一覧を確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns list-topics</code></pre>
       </div>
 
       <p>メール通知先をSubscriptionとして登録する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns subscribe --topic-arn &lt;TOPIC_ARN&gt; --protocol email --notification-endpoint &lt;MAIL_ADDRESS&gt;</code></pre>
       </div>
 
@@ -386,25 +386,25 @@ aws --version</code></pre>
 
       <p>Topicに紐づくSubscriptionを確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns list-subscriptions-by-topic --topic-arn &lt;TOPIC_ARN&gt;</code></pre>
       </div>
 
       <p>Topic属性を確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns get-topic-attributes --topic-arn &lt;TOPIC_ARN&gt;</code></pre>
       </div>
 
       <p>通知テストを実行する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test"</code></pre>
       </div>
 
       <p>不要になったSubscriptionを解除する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns unsubscribe --subscription-arn &lt;SUBSCRIPTION_ARN&gt;</code></pre>
       </div>
 
@@ -420,25 +420,25 @@ aws --version</code></pre>
 
       <p>作業前の復旧ポイントとしてスナップショットを作成</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-snapshot --volume-id &lt;VOLUME_ID&gt; --description "pre-resize backup"</code></pre>
       </div>
 
       <p>権限と入力値の事前確認。<code>DryRunOperation</code> が返る場合は、実行権限がある</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt; --dry-run</code></pre>
       </div>
 
       <p>EBSボリュームの拡張</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt;</code></pre>
       </div>
 
       <p>変更状況の確認。OS側の拡張は、状態が <code>optimizing</code> または <code>completed</code> になってから実施する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-volumes-modifications --volume-ids &lt;VOLUME_ID&gt; --query "VolumesModifications[*].[VolumeId,ModificationState,OriginalSize,TargetSize,Progress]" --output table</code></pre>
       </div>
 
@@ -462,7 +462,7 @@ aws --version</code></pre>
 
       <p>現在のアドレスとロックトークンの取得。CloudFrontスコープの場合は <code>--region us-east-1</code> を追加する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws wafv2 get-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt;</code></pre>
       </div>
 
@@ -477,7 +477,7 @@ aws --version</code></pre>
 
       <p>IPセットの更新</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws wafv2 update-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt; --lock-token &lt;LOCK_TOKEN&gt; --addresses file://ip-set-addresses.json</code></pre>
       </div>
 
@@ -499,14 +499,14 @@ aws --version</code></pre>
 
       <p>アクセスキーの確認と無効化</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-access-keys --user-name &lt;USER_NAME&gt;
 aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCESS_KEY_ID&gt; --status Inactive</code></pre>
       </div>
 
       <p>コンソールログインの停止</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam delete-login-profile --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
