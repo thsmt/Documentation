@@ -74,7 +74,7 @@
       <div class="callout">
         <strong>ℹ️ このページの対象</strong>
         <p>対象はAmazon RDS for MySQL、MariaDB、PostgreSQLのBlue/Green Deployments。Amazon AuroraのBlue/Green Deploymentsは別機能のため、Aurora固有の対応可否はAuroraの公式ドキュメントで確認</p>
-        <p>記載内容は2026年8月時点のAWS公式ドキュメントに基づく。対応エンジン・バージョン・リージョンは更新されるため、実施直前に<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RDS_Fea_Regions_DB-eng.Feature.BlueGreenDeployments.html">Supported Regions and DB engines</a>を再確認</p>
+        <p>記載内容は2026年8月時点のAWS公式ドキュメントに基づく。対応エンジン・バージョン・リージョンは更新されるため、実施直前にAWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RDS_Fea_Regions_DB-eng.Feature.BlueGreenDeployments.html">Supported Regions and DB engines</a></p>
       </div>
 
       <h2 id="lab-environment">今回の検証環境</h2>
@@ -296,7 +296,7 @@ ORDER BY 1, 2;</code></pre>
   --target-engine-version &lt;TARGET_ENGINE_VERSION&gt; \
   --target-db-parameter-group-name &lt;TARGET_DB_PARAMETER_GROUP&gt;</code></pre>
       </div>
-      <p>上記は最小例。インスタンスクラス、ストレージ、IOPS、スループット、Optimized Writesなどの変更を同時に行う場合は、実機の選択値と<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/create-blue-green-deployment.html">create-blue-green-deployment</a>の引数を対応付けて実行</p>
+      <p>上記は最小例。インスタンスクラス、ストレージ、IOPS、スループット、Optimized Writesなどの変更を同時に行う場合は、実機の選択値とAWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/create-blue-green-deployment.html">create-blue-green-deployment</a>の引数を対応付けて実行</p>
 
       <h3>5. Greenの作成完了と同期状態を確認</h3>
       <p>作成直後は、スナップショットから復元したGreenのストレージで遅延ロードが進む。十分なI/O性能が必要な試験では、ストレージ初期化の進捗も確認してから測定を開始</p>
@@ -501,12 +501,12 @@ SET default_transaction_read_only = on;</code></pre>
 
       <h2 id="references">公式ドキュメント</h2>
       <ul>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-overview.html">AWS - Overview of Amazon RDS Blue/Green Deployments</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-creating.html">AWS - Creating a blue/green deployment in Amazon RDS</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-switching.html">AWS - Switching a blue/green deployment in Amazon RDS</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html">AWS - Limitations and considerations for Amazon RDS blue/green deployments</a></li>
-        <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.ExtensionUpgrades.html">AWS - Upgrading PostgreSQL extensions</a></li>
-        <li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/assembly_managing-versions-of-application-stream-content_managing-software-with-the-dnf-tool">Red Hat - Managing versions of Application Stream content</a></li>
+        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-overview.html">AWS - Overview of Amazon RDS Blue/Green Deployments</a></li>
+        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-creating.html">AWS - Creating a blue/green deployment in Amazon RDS</a></li>
+        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-switching.html">AWS - Switching a blue/green deployment in Amazon RDS</a></li>
+        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html">AWS - Limitations and considerations for Amazon RDS blue/green deployments</a></li>
+        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.ExtensionUpgrades.html">AWS - Upgrading PostgreSQL extensions</a></li>
+        <li>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/assembly_managing-versions-of-application-stream-content_managing-software-with-the-dnf-tool">Red Hat - Managing versions of Application Stream content</a></li>
       </ul>
 
     </main>

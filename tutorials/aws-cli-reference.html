@@ -139,7 +139,7 @@ aws --version</code></pre>
       </div>
 
       <h2 id="iam">AWS Identity and Access Management (IAM)</h2>
-      <p>人のログイン用途はAWS IAM Identity Centerの利用を優先します。ここでは、個別要件でIAMユーザー、IAMグループ、IAMポリシー、アクセスキー、コンソールログインプロファイルをCLIで扱う場合の基本操作を整理します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-group.html">create-group</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/attach-group-policy.html">attach-group-policy</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-policy.html">create-policy</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-login-profile.html">create-login-profile</a> を確認する</p>
+      <p>人のログイン用途はAWS IAM Identity Centerの利用を優先します。ここでは、個別要件でIAMユーザー、IAMグループ、IAMポリシー、アクセスキー、コンソールログインプロファイルをCLIで扱う場合の基本操作を整理します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-group.html">create-group</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/attach-group-policy.html">attach-group-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-policy.html">create-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-login-profile.html">create-login-profile</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -242,7 +242,7 @@ aws --version</code></pre>
 
       <h2 id="security-group">Security Group ルール追加・削除</h2>
       <p>Security Group変更は影響範囲が広いため、対象SG、方向、プロトコル、ポート、送信元/宛先、説明欄を事前に確定する</p>
-      <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用する</p>
+      <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用する</p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -295,7 +295,7 @@ aws --version</code></pre>
       </div>
 
       <h2 id="prefix-list">Prefix List作成・IP登録</h2>
-      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加するのではなく、Customer-managed Prefix ListにまとめてからSecurity Groupで参照します。変更対象をPrefix List側に寄せられるため、接続元IPの追加・削除を運用しやすくなります。詳細は <a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/create-managed-prefix-list.html">create-managed-prefix-list</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-managed-prefix-list.html">modify-managed-prefix-list</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">authorize-security-group-ingress</a> を確認する</p>
+      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加するのではなく、Customer-managed Prefix ListにまとめてからSecurity Groupで参照します。変更対象をPrefix List側に寄せられるため、接続元IPの追加・削除を運用しやすくなります。AWS公式手順：<a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/create-managed-prefix-list.html">create-managed-prefix-list</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-managed-prefix-list.html">modify-managed-prefix-list</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">authorize-security-group-ingress</a></p>
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
         Security Groupの画面上は1つのPrefix List参照として整理できます。ただし、Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われます。最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計する
@@ -349,7 +349,7 @@ aws --version</code></pre>
       </div>
 
       <h2 id="sns">SNS Topic・Subscription作成</h2>
-      <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テスト、設定確認、不要時の解除までを一連の手順として扱います。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/sns/subscribe.html">subscribe</a> を確認する</p>
+      <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テスト、設定確認、不要時の解除までを一連の手順として扱います。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/sns/subscribe.html">subscribe</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -409,7 +409,7 @@ aws --version</code></pre>
       </div>
 
       <h2 id="ebs-expand">EC2 / EBS ボリューム拡張</h2>
-      <p>ファイルシステムの空き容量が不足した場合に、EBSボリュームの容量をオンラインで拡張します。EBSは縮小できないため、作業前にスナップショットを取得し、必要なサイズを確定します。OS側のパーティション・ファイルシステム拡張は <a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a> を参照する</p>
+      <p>ファイルシステムの空き容量が不足した場合に、EBSボリュームの容量をオンラインで拡張します。EBSは縮小できないため、作業前にスナップショットを取得し、必要なサイズを確定します。OS側のパーティション・ファイルシステム拡張は <a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -449,7 +449,7 @@ aws --version</code></pre>
       </div>
 
       <h2 id="waf-ip-set">AWS WAF IPセットの更新</h2>
-      <p>接続元IPアドレスの追加・削除が発生する場合は、Web ACLに関連付けたIPセットを更新します。変更前に現在のアドレスとロックトークンを取得し、全アドレスを含む一覧を指定して更新します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a> を確認する</p>
+      <p>接続元IPアドレスの追加・削除が発生する場合は、Web ACLに関連付けたIPセットを更新します。変更前に現在のアドレスとロックトークンを取得し、全アドレスを含む一覧を指定して更新します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>

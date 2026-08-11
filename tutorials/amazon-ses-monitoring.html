@@ -126,13 +126,13 @@
       </table>
       <p><strong>注意：</strong>上書きだけを有効にし、設定セット側のサプレッションリストを有効化しない構成では、アカウントレベルの抑止設定が使用されない。意図せず抑止を解除しないよう、上書きの有無と抑止理由を保存前に確認する</p>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list-config-level.html">設定セットレベルのサプレッションリスト</a></p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set \
   --configuration-set-name ses-postfix-monitoring \
   --region ap-northeast-1</code></pre></div>
       <p>作成後は設定セットの概要を開き、評判オプション、サプレッションリスト、VDM、送信状態が意図した設定になっていることを確認する</p>
 
       <h2 id="destinations">イベント送信先の作成</h2>
-      <p>Configuration Setの「イベント送信先」で、収集するイベントと出力先を設定する。1つのConfiguration Setには複数のイベント送信先を作成できるため、通知用SNS、振り分け用EventBridge、集計用CloudWatchを分けて設定する。選択できるイベントと送信先はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/event-destinations-manage.html">イベント送信先の作成</a>を参照する</p>
+      <p>Configuration Setの「イベント送信先」で、収集するイベントと出力先を設定する。1つのConfiguration Setには複数のイベント送信先を作成できるため、通知用SNS、振り分け用EventBridge、集計用CloudWatchを分けて設定する。選択できるイベントと送信先はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/event-destinations-manage.html">イベント送信先の作成</a></p>
       <table>
         <thead><tr><th>送信先</th><th>向いている用途</th><th>保持・確認方法</th></tr></thead>
         <tbody>
@@ -172,7 +172,7 @@
         <li>イベント発行を有効にして保存</li>
       </ol>
       <p>SNSトピックのアクセスポリシーには、対象Configuration Setからの<code>sns:Publish</code>だけを許可する</p>
-      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
   "Version": "2012-10-17",
   "Statement": [{
     "Sid": "AllowSESPublish",
@@ -208,7 +208,7 @@
         <li>必要に応じて再試行とSQS DLQを設定し、ルールを有効化</li>
       </ol>
       <p>次のイベントパターンは、SESから発行される基本監視イベントのうち、通知が必要な失敗系の「ハードバウンス」「苦情数」「配信の遅延」「拒否」だけをSNSへ転送する例。「送信」と「配信」はイベント送信先からEventBridgeへ発行されるが、このルールの通知対象には含めない</p>
-      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
   "source": ["aws.ses"],
   "detail-type": [
     "Email Bounced",
@@ -242,17 +242,17 @@
         <li>デフォルト設定セットへ<code>ses-postfix-monitoring</code>を指定</li>
         <li>保存後、IDの設定画面へ設定セット名が表示されることを確認</li>
       </ol>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity \
   --email-identity zexample.com \
   --region ap-northeast-1 \
   --query "{IdentityType:IdentityType,VerifiedForSendingStatus:VerifiedForSendingStatus,ConfigurationSetName:ConfigurationSetName}"</code></pre></div>
       <p>メール単位でデフォルト設定を上書きする場合は、SMTP送信するMIMEヘッダーへ次の値を追加する</p>
-      <div class="code"><div class="code-header"><span>text</span><button class="copy-button" type="button">Copy</button></div><pre><code>X-SES-CONFIGURATION-SET: ses-postfix-monitoring</code></pre></div>
+      <div class="code"><div class="code-header"><span>text</span><button class="copy" type="button">Copy</button></div><pre><code>X-SES-CONFIGURATION-SET: ses-postfix-monitoring</code></pre></div>
       <div class="callout callout-warning"><strong>デフォルト設定セットの削除</strong><p>送信IDへ割り当てたデフォルトConfiguration Setを先に削除すると、そのIDを使用した送信が失敗する。削除前に送信IDとの関連付けを解除する</p></div>
       <p>設定後は送信IDの設定セットタブを開き、デフォルトConfiguration Setが表示されていることを確認する</p>
 
       <h2 id="simulator">メールボックスシミュレーター</h2>
-      <p>メールボックスシミュレーターは、実在しない受信者を作成せずに配信、バウンス、苦情、自動応答、サプレッションを再現する。サンドボックスでも利用でき、日次送信クォータ、バウンス率、苦情率、VDMメトリクスには影響しないが、送信料金と最大送信レートは通常どおり適用される。動作条件はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/send-an-email-from-console.html">メールボックスシミュレーター</a>を参照する</p>
+      <p>メールボックスシミュレーターは、実在しない受信者を作成せずに配信、バウンス、苦情、自動応答、サプレッションを再現する。サンドボックスでも利用でき、日次送信クォータ、バウンス率、苦情率、VDMメトリクスには影響しないが、送信料金と最大送信レートは通常どおり適用される。動作条件はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/send-an-email-from-console.html">メールボックスシミュレーター</a></p>
       <table>
         <thead><tr><th>シナリオ</th><th>宛先</th><th>期待する結果</th></tr></thead>
         <tbody>
@@ -265,15 +265,15 @@
       </table>
 
       <h3>正常配信</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES delivery monitoring test" | mailx -v -r no-reply@zexample.com -s "SES success test" success@simulator.amazonses.com</code></pre></div>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES delivery monitoring test" | mailx -v -r no-reply@zexample.com -s "SES success test" success@simulator.amazonses.com</code></pre></div>
       <h3>バウンス</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES bounce monitoring test" | mailx -v -r no-reply@zexample.com -s "SES bounce test" bounce@simulator.amazonses.com</code></pre></div>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES bounce monitoring test" | mailx -v -r no-reply@zexample.com -s "SES bounce test" bounce@simulator.amazonses.com</code></pre></div>
       <h3>苦情</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES complaint monitoring test" | mailx -v -r no-reply@zexample.com -s "SES complaint test" complaint@simulator.amazonses.com</code></pre></div>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES complaint monitoring test" | mailx -v -r no-reply@zexample.com -s "SES complaint test" complaint@simulator.amazonses.com</code></pre></div>
       <h3>自動応答</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES out-of-office monitoring test" | mailx -v -r no-reply@zexample.com -s "SES OOTO test" ooto@simulator.amazonses.com</code></pre></div>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES out-of-office monitoring test" | mailx -v -r no-reply@zexample.com -s "SES OOTO test" ooto@simulator.amazonses.com</code></pre></div>
       <h3>サプレッション</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy-button" type="button">Copy</button></div><pre><code>echo "SES suppression monitoring test" | mailx -v -r no-reply@zexample.com -s "SES suppression test" suppressionlist@simulator.amazonses.com</code></pre></div>
+      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES suppression monitoring test" | mailx -v -r no-reply@zexample.com -s "SES suppression test" suppressionlist@simulator.amazonses.com</code></pre></div>
       <p>テスト後はPostfixログ、SNS通知、EventBridgeイベント、CloudWatchメトリクスを、同じ送信時刻とSES Message IDで照合する</p>
 
       <h2 id="event-check">SNS／EventBridgeイベントの確認</h2>
@@ -286,7 +286,7 @@
         <li>Complaintでは<code>complaint.complaintFeedbackType</code>と対象受信者を確認</li>
         <li>Deliveryでは<code>delivery.smtpResponse</code>、<code>processingTimeMillis</code>、<code>remoteMtaIp</code>を確認</li>
       </ol>
-      <div class="code"><div class="code-header"><span>json</span><button class="copy-button" type="button">Copy</button></div><pre><code>{
+      <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
   "eventType": "Bounce",
   "mail": {
     "messageId": "&lt;SES_MESSAGE_ID&gt;",
@@ -327,7 +327,7 @@
       </table>
 
       <h2 id="alarms">CloudWatchアラームと通知</h2>
-      <p>SESはアカウントレベルの<code>Reputation.BounceRate</code>と<code>Reputation.ComplaintRate</code>をCloudWatchへ発行する。しきい値到達前にSNSへ通知し、送信停止やリスト修正を開始できる状態にする。推奨しきい値と設定手順はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/reputationdashboard-cloudwatch-alarm.html">レピュテーション監視アラーム</a>を参照する</p>
+      <p>SESはアカウントレベルの<code>Reputation.BounceRate</code>と<code>Reputation.ComplaintRate</code>をCloudWatchへ発行する。しきい値到達前にSNSへ通知し、送信停止やリスト修正を開始できる状態にする。推奨しきい値と設定手順はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/reputationdashboard-cloudwatch-alarm.html">レピュテーション監視アラーム</a></p>
       <ol>
         <li>SESの「レピュテーションメトリクス」でバウンス率の「CloudWatchで表示」を選択</li>
         <li><code>Reputation.BounceRate</code>のアラームアイコンを選択</li>
@@ -347,7 +347,7 @@
       <p>作成後はSESレピュテーション画面、CloudWatchアラーム条件、SNS通知先、アラーム状態を確認する</p>
 
       <h2 id="suppression">サプレッションリスト</h2>
-      <p>アカウントレベルのサプレッションリストは、ハードバウンスまたは苦情が発生した宛先への再送を抑止する。AWSアカウントとリージョン単位で管理され、Configuration Setから抑止理由を上書きできる。動作と制約はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list.html">アカウントレベルのサプレッションリスト</a>を参照する</p>
+      <p>アカウントレベルのサプレッションリストは、ハードバウンスまたは苦情が発生した宛先への再送を抑止する。AWSアカウントとリージョン単位で管理され、Configuration Setから抑止理由を上書きできる。動作と制約はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list.html">アカウントレベルのサプレッションリスト</a></p>
       <ol>
         <li>Amazon SESコンソールの「設定」「サプレッションリスト」を開く</li>
         <li>「アカウントレベルの設定」でサプレッションリストが有効であることを確認</li>
@@ -356,20 +356,20 @@
         <li>対象を選択して「レポートを表示」を開き、原因となったイベントを確認</li>
         <li>誤登録と判断できる場合だけ、宛先の有効性と再送許可を確認して削除</li>
       </ol>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations \
   --region ap-northeast-1 \
   --output table</code></pre></div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination \
   --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region ap-northeast-1</code></pre></div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination \
   --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region ap-northeast-1</code></pre></div>
       <div class="callout callout-warning"><strong>安易に削除しない</strong><p>ハードバウンスした無効な宛先を削除して再送すると、バウンス率が悪化する。アドレスの誤入力修正、受信者からの再登録、管理者による有効性確認など、再送できる根拠を記録してから削除する</p></div>
       <p>確認時はアカウントレベル設定、一覧、理由、登録日時、レポート詳細を照合する。公開用の画像ではメールアドレスとMessage IDをマスクする</p>
 
       <h2 id="vdm">Virtual Deliverability Manager</h2>
-      <p>Virtual Deliverability Manager（VDM）は、SESの配信結果をアカウント、ISP、送信ID、Configuration Set、Message ID単位で分析し、到達性に影響する設定をAdvisorで確認する有料機能。機能はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/vdm.html">Virtual Deliverability Manager</a>、利用前の料金は<a href="https://aws.amazon.com/ses/pricing/">Amazon SES料金</a>を確認する</p>
+      <p>Virtual Deliverability Manager（VDM）は、SESの配信結果をアカウント、ISP、送信ID、Configuration Set、Message ID単位で分析し、到達性に影響する設定をAdvisorで確認する有料機能。機能はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/vdm.html">Virtual Deliverability Manager</a>、利用前の料金は出典：<a href="https://aws.amazon.com/ses/pricing/">Amazon SES料金</a></p>
       <ol>
         <li>Amazon SESコンソールの「Virtual Deliverability Manager」「概要」を開く</li>
         <li>使用開始を選択し、料金と対象リージョンを確認</li>
@@ -388,7 +388,7 @@
       <p>VDMを検証するときは、設定、Dashboard、ISP、送信ID、Configuration Set、Messages、Advisorを確認する。公開用の画像では受信者、件名、Message ID、アカウント情報をマスクする</p>
 
       <h2 id="quota">送信クォータとサンドボックス</h2>
-      <p>送信クォータとサンドボックス状態はAWSアカウントとリージョンごとに独立する。上限値と調整可否はAWS公式の<a href="https://docs.aws.amazon.com/ses/latest/dg/quotas.html">Amazon SES Service Quotas</a>を参照する</p>
+      <p>送信クォータとサンドボックス状態はAWSアカウントとリージョンごとに独立する。上限値と調整可否はAWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/quotas.html">Amazon SES Service Quotas</a></p>
       <ol>
         <li>Amazon SESコンソールの「アカウントダッシュボード」を開く</li>
         <li>本番アクセスが有効か、サンドボックスかを確認</li>
@@ -396,7 +396,7 @@
         <li>1秒あたりの最大送信レートを確認</li>
         <li>送信量が上限へ近づく前に、用途と送信パターンを整理して引き上げを申請</li>
       </ol>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy-button" type="button">Copy</button></div><pre><code>aws sesv2 get-account \
+      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-account \
   --region ap-northeast-1 \
   --query "{ProductionAccessEnabled:ProductionAccessEnabled,EnforcementStatus:EnforcementStatus,SendQuota:SendQuota,SendingEnabled:SendingEnabled}"</code></pre></div>
       <table>
@@ -428,7 +428,7 @@
       </table>
       <div class="callout callout-warning"><strong>公開前のマスク</strong><p>コンソール画像とイベントJSONにはAWSアカウントID、メールアドレス、ドメイン、Message ID、件名、送信元IP、IAM情報が含まれる。画像追加時は必要な状態と設定値を残し、個人情報とアカウント固有情報をマスクする</p></div>
 
-      <p>関連する構築手順は<a href="amazon-ses.html">Amazon SES SMTPリレー</a>を参照する</p>
+      <p>関連する構築手順は<a href="amazon-ses.html">Amazon SES SMTPリレー</a></p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">

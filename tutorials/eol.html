@@ -83,7 +83,7 @@
 
       <h3>OSと有効なリポジトリ</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cat /etc/os-release
 uname -r
 rpm -q rpm dnf
@@ -93,7 +93,7 @@ dnf repolist --all</code></pre>
 
       <h3>パッケージのバージョンと導入元</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>PACKAGE=&lt;PACKAGE_NAME&gt;
 
 rpm -q "$PACKAGE"
@@ -113,7 +113,7 @@ rpm -q --qf '%{NAME} %{VERSION}-%{RELEASE} | Vendor: %{VENDOR} | Packager: %{PAC
         <summary>ミドルウェア別の実行例</summary>
         <p>以下は表示形式の例です<br>バージョン、リリース番号、アーキテクチャ、リポジトリIDは環境によって異なる</p>
         <div class="code">
-          <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+          <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
           <pre><code># Red Hat Application StreamsのPHP
 dnf repoquery --installed --qf '%{name} %{version}-%{release} | %{repoid}' php
 # php 8.0.x-x.el9 | rhel-9-for-x86_64-appstream-rpms
@@ -142,14 +142,14 @@ dnf repoquery --installed --qf '%{name} %{version}-%{release} | %{repoid}' nginx
 
       <h3>主要パッケージの一括確認</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>rpm -q httpd php mariadb-server postgresql-server openssl rsyslog
 rpm -qi httpd</code></pre>
       </div>
 
       <h3>ファイルを提供するパッケージ</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>rpm -qf /usr/sbin/httpd
 rpm -qf /usr/bin/openssl
 dnf provides '*/semanage'</code></pre>
@@ -157,14 +157,14 @@ dnf provides '*/semanage'</code></pre>
 
       <h3>DNFの変更履歴</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf history list
 dnf history info &lt;TRANSACTION_ID&gt;</code></pre>
       </div>
 
       <h3>Module Stream</h3>
       <div class="code">
-        <div class="code-header"><span>root shell</span><button class="copy">Copy</button></div>
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf module list
 dnf module list php
 dnf module list postgresql
@@ -175,12 +175,12 @@ dnf module info php:8.2</code></pre>
       <table>
         <thead><tr><th>OS</th><th>一覧</th><th>用途</th></tr></thead>
         <tbody>
-          <tr><td>Amazon Linux 2023</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html">All packages</a></td><td>リリース別パッケージ一覧への入口</td></tr>
-          <tr><td>Amazon Linux 2023.12</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages-AL2023.12.html">AL2023.12 package list</a></td><td>2023.12リリースで提供されるパッケージ</td></tr>
-          <tr><td>Amazon Linux 2023</td><td><a href="https://docs.aws.amazon.com/linux/al2023/release-notes/support-info-by-package.html">Package support statements</a></td><td>パッケージ単位のサポート情報</td></tr>
-          <tr><td>Red Hat Enterprise Linux 8</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
-          <tr><td>Red Hat Enterprise Linux 9</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
-          <tr><td>Red Hat Enterprise Linux 10</td><td><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+          <tr><td>Amazon Linux 2023</td><td>AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html">All packages</a></td><td>リリース別パッケージ一覧への入口</td></tr>
+          <tr><td>Amazon Linux 2023.12</td><td>AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages-AL2023.12.html">AL2023.12 package list</a></td><td>2023.12リリースで提供されるパッケージ</td></tr>
+          <tr><td>Amazon Linux 2023</td><td>AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/release-notes/support-info-by-package.html">Package support statements</a></td><td>パッケージ単位のサポート情報</td></tr>
+          <tr><td>Red Hat Enterprise Linux 8</td><td>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+          <tr><td>Red Hat Enterprise Linux 9</td><td>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
+          <tr><td>Red Hat Enterprise Linux 10</td><td>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/package_manifest/repositories">Package manifest</a></td><td>BaseOS、AppStreamなどの収録パッケージ</td></tr>
         </tbody>
       </table>
 
@@ -205,61 +205,61 @@ dnf module info php:8.2</code></pre>
             <td>CentOS Linux 7</td>
             <td>2014/07/07</td>
             <td>End of Life: 2024/06/30</td>
-            <td><a href="https://www.redhat.com/en/topics/linux/centos-linux-eol">CentOS Linux EOL</a></td>
+            <td>出典：<a href="https://www.redhat.com/en/topics/linux/centos-linux-eol">CentOS Linux EOL</a></td>
           </tr>
           <tr>
             <td>Red Hat Enterprise Linux 8</td>
             <td>2019/05/07</td>
             <td>Full Support: 2024/05/31<br>Maintenance Support: 2029/05/31</td>
-            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+            <td>出典：<a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
           </tr>
           <tr>
             <td>Red Hat Enterprise Linux 9</td>
             <td>2022/05/18</td>
             <td>Full Support: 2027/05/31<br>Maintenance Support: 2032/05/31</td>
-            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+            <td>出典：<a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
           </tr>
           <tr>
             <td>Red Hat Enterprise Linux 10</td>
             <td>2025/05/20</td>
             <td>Full Support: 2030/05/31<br>Maintenance Support: 2035/05/31</td>
-            <td><a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
+            <td>出典：<a href="https://access.redhat.com/support/policy/updates/errata">Red Hat Enterprise Linux Life Cycle</a></td>
           </tr>
           <tr>
             <td>Windows Server 2016</td>
             <td>2016/10/15</td>
             <td>Mainstream End: 2022/01/11<br>Extended End: 2027/01/12</td>
-            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2016">Microsoft Lifecycle</a></td>
+            <td>出典：<a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2016">Microsoft Lifecycle</a></td>
           </tr>
           <tr>
             <td>Windows Server 2019</td>
             <td>2018/11/13</td>
             <td>Mainstream End: 2024/01/09<br>Extended End: 2029/01/09</td>
-            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2019">Microsoft Lifecycle</a></td>
+            <td>出典：<a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2019">Microsoft Lifecycle</a></td>
           </tr>
           <tr>
             <td>Windows Server 2022</td>
             <td>2021/08/18</td>
             <td>Mainstream End: 2026/10/13<br>Extended End: 2031/10/14</td>
-            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2022">Microsoft Lifecycle</a></td>
+            <td>出典：<a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2022">Microsoft Lifecycle</a></td>
           </tr>
           <tr>
             <td>Windows Server 2025</td>
             <td>2024/11/01</td>
             <td>Mainstream End: 2029/11/13<br>Extended End: 2034/11/14</td>
-            <td><a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025">Microsoft Lifecycle</a></td>
+            <td>出典：<a href="https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025">Microsoft Lifecycle</a></td>
           </tr>
           <tr>
             <td>Amazon Linux 2</td>
             <td>2017/12/13</td>
             <td>Support End: 2026/06/30</td>
-            <td><a href="https://aws.amazon.com/amazon-linux-2/faqs/">Amazon Linux 2 FAQs</a></td>
+            <td>出典：<a href="https://aws.amazon.com/amazon-linux-2/faqs/">Amazon Linux 2 FAQs</a></td>
           </tr>
           <tr>
             <td>Amazon Linux 2023</td>
             <td>2023/03/15</td>
             <td>Support End: 2029/06/30</td>
-            <td><a href="https://docs.aws.amazon.com/linux/al2023/ug/release-cadence.html">Amazon Linux 2023 release cadence</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/ug/release-cadence.html">Amazon Linux 2023 release cadence</a></td>
           </tr>
         </tbody>
       </table>
@@ -400,11 +400,10 @@ dnf module info php:8.2</code></pre>
         </tbody>
       </table>
 
-      <p>
-        公式情報: <a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">Red Hat Enterprise Linux Application Streams Life Cycle</a> /
-        <a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/considerations_in_adopting_rhel_10/software-management">Software management changes in Red Hat Enterprise Linux 10</a> /
-        <a href="https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html">Comparing Amazon Linux 2 and Amazon Linux 2023</a> /
-        <a href="https://docs.aws.amazon.com/linux/al2023/ug/deterministic-upgrades.html">Deterministic upgrades through versioned repositories</a>
+      <p>出典：<a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">Red Hat Enterprise Linux Application Streams Life Cycle</a> /
+        出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/considerations_in_adopting_rhel_10/software-management">Software management changes in Red Hat Enterprise Linux 10</a> /
+        AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/ug/compare-with-al2.html">Comparing Amazon Linux 2 and Amazon Linux 2023</a> /
+        AWS公式手順：<a href="https://docs.aws.amazon.com/linux/al2023/ug/deterministic-upgrades.html">Deterministic upgrades through versioned repositories</a>
       </p>
 
       <h2 id="rhel-appstream">Red Hat Enterprise Linux Application Streams</h2>
@@ -473,52 +472,52 @@ dnf module info php:8.2</code></pre>
           <tr>
             <td>Amazon RDS for MariaDB</td>
             <td>DBエンジンのメジャー/マイナーバージョン、Extended Support、アップグレードパス、メンテナンスウィンドウ</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MariaDB.Concepts.VersionMgmt.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon RDS for MySQL</td>
             <td>DBエンジンのメジャー/マイナーバージョン、Extended Support、アップグレードパス、クライアント互換性</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon RDS for PostgreSQL</td>
             <td>DBエンジンのメジャー/マイナーバージョン、リリースカレンダー、拡張機能互換性、保留中の変更</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-release-calendar.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon Aurora MySQL</td>
             <td>Aurora MySQLバージョン、互換MySQLバージョン、リリースノート、クラスター更新方式</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Updates.Versions.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon Aurora PostgreSQL</td>
             <td>Aurora PostgreSQLバージョン、リリースカレンダー、拡張機能互換性、アップグレード方式</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">日本語</a> / <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraPostgreSQLReleaseNotes/aurorapostgresql-release-calendar.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon ElastiCache</td>
             <td>Valkey、Redis OSS、Memcachedのエンジンバージョン、アップグレード可否、ダウングレード不可の制約</td>
-            <td><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/SelectEngine.html">ElastiCache engine versions</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/SelectEngine.html">ElastiCache engine versions</a></td>
           </tr>
           <tr>
             <td>Amazon OpenSearch Service</td>
             <td>OpenSearch / Elasticsearchバージョン、サポートされるアップグレードパス、互換性チェック、事前スナップショット</td>
-            <td><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/version-migration.html">Upgrading domains</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/version-migration.html">Upgrading domains</a></td>
           </tr>
           <tr>
             <td>AWS Lambda runtime</td>
             <td>Python、Node.js、Java、.NETなどのランタイム、OSベース、非推奨日、作成/更新ブロック日</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/lambda-runtimes.html">日本語</a> / <a href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/lambda-runtimes.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html">English</a></td>
           </tr>
           <tr>
             <td>Amazon ECS / AWS Fargate</td>
             <td>Fargateプラットフォームバージョン、ECS Optimized AMI、コンテナイメージのOS/ランタイムバージョン</td>
-            <td><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform-fargate.html">Fargate platform versions</a> / <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html">ECS optimized AMI</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform-fargate.html">Fargate platform versions</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html">ECS optimized AMI</a></td>
           </tr>
           <tr>
             <td>Amazon EKS / Kubernetes</td>
             <td>Kubernetesバージョン、標準サポート、延長サポート、アドオン、Node AMI、Helm Chart互換性</td>
-            <td><a href="https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/kubernetes-versions.html">日本語</a> / <a href="https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html">English</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/kubernetes-versions.html">日本語</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html">English</a></td>
           </tr>
         </tbody>
       </table>
@@ -544,37 +543,37 @@ dnf module info php:8.2</code></pre>
             <td>Remi Repository</td>
             <td>PHP、PECL拡張、関連ライブラリ</td>
             <td>Remiから導入してもPHP本体のサポート期限は延長されない<br>PHP 8.2は2026/12/31、8.3は2027/12/31、8.4は2028/12/31、8.5は2029/12/31にSecurity Support終了予定</td>
-            <td><a href="https://rpms.remirepo.net/wizard/">Remi Repository Wizard</a><br><a href="https://www.php.net/supported-versions.php">PHP Supported Versions</a></td>
+            <td>出典：<a href="https://rpms.remirepo.net/wizard/">Remi Repository Wizard</a><br>出典：<a href="https://www.php.net/supported-versions.php">PHP Supported Versions</a></td>
           </tr>
           <tr>
             <td>EPEL</td>
             <td>RHEL標準に含まれない追加パッケージ</td>
             <td>対応するRHELメジャーバージョンの期間を基準に判断<br>個別パッケージは先に廃止されることがあるため、パッケージの状態も確認</td>
-            <td><a href="https://docs.fedoraproject.org/en-US/epel/">EPEL Documentation</a></td>
+            <td>出典：<a href="https://docs.fedoraproject.org/en-US/epel/">EPEL Documentation</a></td>
           </tr>
           <tr>
             <td>PostgreSQL Global Development Group</td>
             <td>PostgreSQL Server、Client、拡張機能</td>
             <td>各メジャーバージョンは5年間サポート<br>14は2026/11/12、15は2027/11/11、16は2028/11/09、17は2029/11/08、18は2030/11/14に終了予定</td>
-            <td><a href="https://www.postgresql.org/support/versioning/">Versioning Policy</a></td>
+            <td>出典：<a href="https://www.postgresql.org/support/versioning/">Versioning Policy</a></td>
           </tr>
           <tr>
             <td>MariaDB Repository</td>
             <td>MariaDB Server、Client、関連ツール</td>
             <td>Community Serverの終了予定は10.6が2026/07/06、10.11が2028/02/16、11.4が2029/05/29、11.8が2028/06/04</td>
-            <td><a href="https://mariadb.org/about/">MariaDB Maintenance Policy</a></td>
+            <td>出典：<a href="https://mariadb.org/about/">MariaDB Maintenance Policy</a></td>
           </tr>
           <tr>
             <td>NGINX Repository</td>
             <td>NGINX Mainline / Stable</td>
             <td>提供中ブランチとパッケージ公開状況を確認<br>OS標準版とは更新経路を分けて管理</td>
-            <td><a href="https://nginx.org/en/linux_packages.html">NGINX Linux Packages</a></td>
+            <td>出典：<a href="https://nginx.org/en/linux_packages.html">NGINX Linux Packages</a></td>
           </tr>
           <tr>
             <td>Zabbix Repository</td>
             <td>Zabbix Server、Proxy、Agent、Agent 2</td>
             <td>LTSとStandard Releaseで保守期間が異なる<br>Server、Proxy、Agentの組み合わせと対象OS対応を確認</td>
-            <td><a href="https://www.zabbix.com/life_cycle_and_release_policy">Lifecycle and Release Policy</a></td>
+            <td>出典：<a href="https://www.zabbix.com/life_cycle_and_release_policy">Lifecycle and Release Policy</a></td>
           </tr>
         </tbody>
       </table>
@@ -600,61 +599,61 @@ dnf module info php:8.2</code></pre>
             <td>Postfix / OpenSSH / OpenSSL</td>
             <td>OS標準リポジトリ、外部ビルド、コンテナイメージ</td>
             <td>OS標準版はOSベンダーの保守期限を適用<br>外部ビルドは配布元とアップストリームを確認</td>
-            <td><a href="https://access.redhat.com/support/policy/updates/errata">RHEL Life Cycle</a></td>
+            <td>出典：<a href="https://access.redhat.com/support/policy/updates/errata">RHEL Life Cycle</a></td>
           </tr>
           <tr>
             <td>Apache HTTP Server / NGINX</td>
             <td>OS標準、Application Streams、NGINX公式、コンテナイメージ</td>
             <td>OS標準版はOSまたはApplication Stream、NGINX公式版は提供ブランチと公開状況を確認</td>
-            <td><a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">RHEL Application Streams</a><br><a href="https://nginx.org/en/linux_packages.html">NGINX Packages</a></td>
+            <td>出典：<a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">RHEL Application Streams</a><br>出典：<a href="https://nginx.org/en/linux_packages.html">NGINX Packages</a></td>
           </tr>
           <tr>
             <td>PHP</td>
             <td>RHEL Application Streams、Remi、コンテナイメージ</td>
             <td>RHEL標準版はApplication Stream期限、Remi版はPHP本体のSecurity Support終了日を適用</td>
-            <td><a href="https://www.php.net/supported-versions.php">PHP supported versions</a></td>
+            <td>出典：<a href="https://www.php.net/supported-versions.php">PHP supported versions</a></td>
           </tr>
           <tr>
             <td>PostgreSQL / MariaDB</td>
             <td>OS標準、Application Streams、PGDG、MariaDB公式、コンテナイメージ</td>
             <td>外部リポジトリ版は各メジャーバージョンの公式期限を適用<br>OS標準版とは保守元が異なるため分離して判断</td>
-            <td><a href="https://www.postgresql.org/support/versioning/">PostgreSQL</a><br><a href="https://mariadb.org/about/">MariaDB</a></td>
+            <td>出典：<a href="https://www.postgresql.org/support/versioning/">PostgreSQL</a><br>出典：<a href="https://mariadb.org/about/">MariaDB</a></td>
           </tr>
           <tr>
             <td>Python</td>
             <td>OS標準、仮想環境、コンテナ、Lambdaランタイム</td>
             <td>OS標準版、Python本体、Lambdaランタイム、pip依存ライブラリを別々に確認</td>
-            <td><a href="https://devguide.python.org/versions/">Python versions</a></td>
+            <td>出典：<a href="https://devguide.python.org/versions/">Python versions</a></td>
           </tr>
           <tr>
             <td>Node.js</td>
             <td>OS標準、NodeSource、nvm、コンテナ、Lambdaランタイム</td>
             <td>Node.js本体のLTS / Maintenance / EOLと、Lambdaランタイム、npm依存ライブラリを確認</td>
-            <td><a href="https://nodejs.org/en/about/previous-releases">Node.js releases</a></td>
+            <td>出典：<a href="https://nodejs.org/en/about/previous-releases">Node.js releases</a></td>
           </tr>
           <tr>
             <td>AWS Systems Manager Agent</td>
             <td>AWS提供パッケージまたはAMI同梱版</td>
             <td>導入バージョン、対象OS対応、Run Command / Session Manager利用可否、自動更新設定を確認</td>
-            <td><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html">Working with SSM Agent</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html">Working with SSM Agent</a></td>
           </tr>
           <tr>
             <td>Amazon CloudWatch Agent</td>
             <td>AWS提供パッケージ、Systems Manager Distributor</td>
             <td>導入バージョン、対象OS対応、メトリクス/ログ/トレース設定の互換性を確認</td>
-            <td><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html">CloudWatch Agent</a></td>
+            <td>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html">CloudWatch Agent</a></td>
           </tr>
           <tr>
             <td>Zabbix Server / Proxy / Agent</td>
             <td>Zabbix公式、OS標準、コンテナイメージ</td>
             <td>LTS / Standard、対象OS、Agent 2対応、Server / Proxy / Agentの組み合わせを確認</td>
-            <td><a href="https://www.zabbix.com/life_cycle_and_release_policy">Zabbix Lifecycle and Release Policy</a></td>
+            <td>出典：<a href="https://www.zabbix.com/life_cycle_and_release_policy">Zabbix Lifecycle and Release Policy</a></td>
           </tr>
           <tr>
             <td>Trend Micro Workload Security / Deep Security Agent</td>
             <td>Trend Micro配布パッケージ</td>
             <td>Agent、対象OS、LTS、管理コンソールとの互換性、カーネル更新時の影響を確認</td>
-            <td><a href="https://help.deepsecurity.trendmicro.com/">Trend Micro Deep Security Help Center</a></td>
+            <td>出典：<a href="https://help.deepsecurity.trendmicro.com/">Trend Micro Deep Security Help Center</a></td>
           </tr>
         </tbody>
       </table>

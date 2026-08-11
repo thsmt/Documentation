@@ -214,7 +214,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         <li>「ネットワーク レベル認証でリモート デスクトップを実行しているコンピューターからのみ接続を許可する」を有効化</li>
       </ol>
       <p>ネットワークレベル認証は、RDPセッションを確立する前に利用者を認証し、未認証接続によるリソース消費と攻撃対象領域を抑える</p>
-      <p><a href="https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/remotepc/remote-desktop-allow-access">Microsoft公式: Remote Desktopとネットワークレベル認証</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/remotepc/remote-desktop-allow-access">Microsoft公式: Remote Desktopとネットワークレベル認証</a></p>
 
       <h4 id="rdp-limit">3.5.2 RDPセッション制限</h4>
       <ol>
@@ -240,7 +240,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         「高」はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
       </div>
 
-      <p><a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
 
       <h3 id="windows-firewall">3.6 Windows Defender Firewallの無効化</h3>
       <p>本手順の対象環境では、通信制御をSecurity Groupなどの上位レイヤーへ集約し、OS側との二重管理による設定差分や疎通障害を避ける社内標準に基づいてWindows Defender Firewallを無効化する</p>
@@ -294,7 +294,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
 
       <h3 id="cloudwatch-config">4.2 CloudWatch Agent設定ファイル作成</h3>
       <p>収集するWindowsイベントログ、パフォーマンスカウンター、収集間隔、CloudWatch Logsのロググループ名をJSON形式の設定ファイルへ定義する</p>
@@ -349,7 +349,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録する
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
 
       <h3 id="cloudwatch-run-command">4.3 Run Commandによる設定適用</h3>
       <p>Parameter Storeに保存した設定を、AWS Systems Manager Run Commandから対象インスタンスへ適用する</p>
@@ -370,7 +370,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行する
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
 
       <h3 id="ec2launch-sysprep">4.4 EC2Launch v2とAMI横展開</h3>
       <p>AWS提供のWindows Server 2022 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化する</p>
@@ -388,7 +388,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しない
       </div>
 
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
 
       <h2 id="security-options">5. 要件に応じた追加設定</h2>
 
@@ -451,7 +451,7 @@ foreach ($protocol in $protocols) {
         Schannel設定はOS全体へ影響します。互換性問題が発生した場合は<code>schannel-before.reg</code>を<code>reg import</code>で復元し、再起動して切り戻します。Microsoftはレジストリの直接変更より、グループポリシーや管理された構成方式の利用を推奨している
       </div>
 
-      <p><a href="https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-10-11-deprecation-in-windows">Microsoft公式: WindowsにおけるTLS 1.0 / 1.1の非推奨化</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-10-11-deprecation-in-windows">Microsoft公式: WindowsにおけるTLS 1.0 / 1.1の非推奨化</a></p>
 
       <h3 id="event-logs">5.2 イベントログとクラッシュダンプ</h3>
       <p>監視要件と障害解析要件に合わせて、Windowsイベントログの最大サイズと上書き方式、ページファイル、クラッシュダンプの保存方式を設計します。ローカルログだけに依存せず、CloudWatch Logsなどの集中管理先へ転送する</p>
@@ -519,7 +519,7 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
         Microsoftはメモリ32GB以下では完全メモリダンプ、32GB超ではシステム管理のページファイルと自動メモリダンプを基本構成として案内しています。完全メモリダンプにはOSボリューム上へ十分なページファイル容量が必要
       </div>
 
-      <p><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/troubleshoot-stop-errors-best-practices-dump-configuration-recommendations">Microsoft公式: クラッシュダンプ設定の推奨事項</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/troubleshoot-stop-errors-best-practices-dump-configuration-recommendations">Microsoft公式: クラッシュダンプ設定の推奨事項</a></p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">

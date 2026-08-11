@@ -116,15 +116,81 @@ if (document.body.dataset.userValueHighlighting !== "off") {
   highlightUserValues();
 }
 
-document.querySelectorAll(".copy").forEach((button) => {
-  button.addEventListener("click", async () => {
-    const code = button.closest(".code").querySelector("code").innerText;
-    await navigator.clipboard.writeText(code);
-    button.innerText = "Copied";
-    setTimeout(() => {
-      button.innerText = "Copy";
-    }, 1400);
-  });
+const copyWithLegacyApi = (text) => {
+  const textarea = document.createElement("textarea");
+  const activeElement = document.activeElement;
+  const selection = document.getSelection();
+  const ranges = selection
+    ? Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index))
+    : [];
+
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "0";
+  textarea.style.left = "-9999px";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.append(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } finally {
+    textarea.remove();
+    if (selection) {
+      selection.removeAllRanges();
+      ranges.forEach((range) => selection.addRange(range));
+    }
+    if (activeElement instanceof HTMLElement) {
+      activeElement.focus({ preventScroll: true });
+    }
+  }
+
+  return copied;
+};
+
+const writeClipboardText = async (text) => {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      console.warn("Clipboard API failed; trying the compatibility fallback", error);
+    }
+  }
+
+  if (!copyWithLegacyApi(text)) {
+    throw new Error("No clipboard method succeeded");
+  }
+};
+
+document.addEventListener("click", async (event) => {
+  const button = event.target instanceof Element ? event.target.closest(".copy") : null;
+  if (!button || button.disabled) return;
+
+  const code = button.closest(".code")?.querySelector("pre code");
+  const originalLabel = button.dataset.copyLabel || button.textContent.trim() || "Copy";
+  button.dataset.copyLabel = originalLabel;
+  button.setAttribute("aria-live", "polite");
+  button.disabled = true;
+
+  try {
+    if (!code) throw new Error("Copy button is not associated with a code block");
+    await writeClipboardText(code.textContent.replace(/\r\n?/g, "\n"));
+    button.textContent = "Copied";
+  } catch (error) {
+    console.error("Code copy failed", error);
+    button.textContent = "Copy failed";
+  }
+
+  setTimeout(() => {
+    button.textContent = originalLabel;
+    button.disabled = false;
+  }, 1400);
 });
 
 document.querySelectorAll("[data-tabs]").forEach((group) => {

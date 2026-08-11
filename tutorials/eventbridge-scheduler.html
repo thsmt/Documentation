@@ -367,7 +367,7 @@
         </tbody>
       </table>
       <div class="callout callout-info"><strong>ℹ️ Schedule単位ではなくSchedule Group単位</strong><p><code>AWS/Scheduler</code>のディメンションは<code>ScheduleGroup</code>であり、同じグループ内の複数Scheduleが集計される。Schedule単位で切り分ける必要がある場合は、グループ設計、DLQの<code>SCHEDULE_ARN</code>、CloudTrail、Targetサービスのイベントを組み合わせる</p></div>
-      <p>メトリクスはベストエフォートで配信されるため、完全な処理台帳としては扱わない。監視項目とGUIでの表示手順は、AWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/monitoring-cloudwatch.html">EventBridge SchedulerのCloudWatch監視</a>を参照する</p>
+      <p>メトリクスはベストエフォートで配信されるため、完全な処理台帳としては扱わない。監視項目とGUIでの表示手順は、AWS公式手順：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/monitoring-cloudwatch.html">EventBridge SchedulerのCloudWatch監視</a></p>
 
       <h3 id="operations-notification">CloudWatchアラームとSNSで失敗を通知</h3>
       <p>失敗を人へ通知する場合は、SchedulerのエラーメトリクスをCloudWatchアラームで評価し、Amazon SNSトピックからメール、SMS、HTTPS、Lambdaなどの購読先へ配信する</p>
@@ -417,7 +417,7 @@
   --max-number-of-messages 10 \
   --query 'Messages[].{MessageId:MessageId,ErrorCode:MessageAttributes.ERROR_CODE.StringValue,ErrorMessage:MessageAttributes.ERROR_MESSAGE.StringValue,ScheduleArn:MessageAttributes.SCHEDULE_ARN.StringValue,TargetArn:MessageAttributes.TARGET_ARN.StringValue,ScheduledTime:MessageAttributes.SCHEDULED_TIME.StringValue,RetryAttempts:MessageAttributes.RETRY_ATTEMPTS.StringValue}' \
   --output table</code></pre></div>
-      <p>Universal targetはSchedule作成時にInputの内容をTarget APIの仕様まで検証しない。誤ったリソースIDやJSONでも作成できるため、定期Scheduleの前に同じInputを使用した単発Scheduleで成功を確認する。詳細はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/troubleshooting.html">EventBridge Schedulerのトラブルシューティング</a>を参照する</p>
+      <p>Universal targetはSchedule作成時にInputの内容をTarget APIの仕様まで検証しない。誤ったリソースIDやJSONでも作成できるため、定期Scheduleの前に同じInputを使用した単発Scheduleで成功を確認する。AWS公式手順：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/troubleshooting.html">EventBridge Schedulerのトラブルシューティング</a></p>
 
       <h3 id="operations-cloudtrail">CloudTrailで変更履歴をフィルター</h3>
       <ol>
@@ -446,7 +446,7 @@
   --end-time &lt;END_TIME_ISO8601&gt; \
   --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' \
   --output table</code></pre></div>
-      <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式の<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a>を参照する</p>
+      <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式手順：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a></p>
 
       <h3 id="operations-change">変更時の確認手順</h3>
       <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule \

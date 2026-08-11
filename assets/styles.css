@@ -464,6 +464,11 @@ li {
   cursor: pointer;
 }
 
+.copy:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
 pre {
   max-width: 100%;
   margin: 0;

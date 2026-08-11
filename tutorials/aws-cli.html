@@ -144,7 +144,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="ec2-ebs-delete-on-termination">EC2 EBS終了時削除属性の変更</h2>
-      <p>EC2起動後にEBSボリュームの <code>DeleteOnTermination</code> 属性を変更する場合は、AWS CLIで <code>modify-instance-attribute</code> を実行します。追加EBSボリュームは終了時削除が無効になっている場合があるため、検証環境や一時サーバーでは削除漏れ防止のために確認します。詳細は <a href="https://docs.aws.amazon.com/ja_jp/ec2/latest/devguide/example_ec2_ModifyInstanceAttribute_section.html">ModifyInstanceAttribute のAWS公式例</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-instance-attribute.html">modify-instance-attribute</a> を確認する</p>
+      <p>EC2起動後にEBSボリュームの <code>DeleteOnTermination</code> 属性を変更する場合は、AWS CLIで <code>modify-instance-attribute</code> を実行します。追加EBSボリュームは終了時削除が無効になっている場合があるため、検証環境や一時サーバーでは削除漏れ防止のために確認します。AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/ec2/latest/devguide/example_ec2_ModifyInstanceAttribute_section.html">ModifyInstanceAttribute のAWS公式例</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-instance-attribute.html">modify-instance-attribute</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -183,7 +183,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="elastic-ip">Elastic IP 解放後の再取得</h2>
-      <p>Elastic IPを誤って解放した場合でも、他のAWSアカウントに割り当てられていなければ、AWS CLIで同じPublic IPv4アドレスを指定して再取得できる場合があります。詳細は <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Amazon EC2 User Guide</a> を確認する</p>
+      <p>Elastic IPを誤って解放した場合でも、他のAWSアカウントに割り当てられていなければ、AWS CLIで同じPublic IPv4アドレスを指定して再取得できる場合があります。AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Amazon EC2 User Guide</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -212,7 +212,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="s3-versioning-restore">Amazon S3 Versioning環境で削除されたフォルダを復元</h2>
-      <p>S3 Versioningが有効なバケットでは、オブジェクト削除時にDelete Markerが作成されます。S3に実体としてのフォルダはないため、フォルダ復元は指定Prefix配下のDelete Markerを確認し、対象のDelete MarkerをVersion ID付きで削除する作業として扱います。詳細は <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/RestoringPreviousVersions.html">Restoring previous versions</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/s3api/list-object-versions.html">list-object-versions</a> を確認する</p>
+      <p>S3 Versioningが有効なバケットでは、オブジェクト削除時にDelete Markerが作成されます。S3に実体としてのフォルダはないため、フォルダ復元は指定Prefix配下のDelete Markerを確認し、対象のDelete MarkerをVersion ID付きで削除する作業として扱います。AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/RestoringPreviousVersions.html">Restoring previous versions</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/s3api/list-object-versions.html">list-object-versions</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -253,7 +253,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="iam-virtual-mfa-cleanup">IAM仮想MFAデバイスの未割当て状態を解消</h2>
-      <p>IAMコンソールで仮想MFAデバイス登録を途中で中断すると、IAMユーザーに割り当てられていない仮想MFAデバイスが残る場合があります。同じ名前で再登録できない場合は、AWS CLIで未割当てデバイスを確認して削除します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/iam/list-virtual-mfa-devices.html">list-virtual-mfa-devices</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/iam/delete-virtual-mfa-device.html">delete-virtual-mfa-device</a> を確認する</p>
+      <p>IAMコンソールで仮想MFAデバイス登録を途中で中断すると、IAMユーザーに割り当てられていない仮想MFAデバイスが残る場合があります。同じ名前で再登録できない場合は、AWS CLIで未割当てデバイスを確認して削除します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/list-virtual-mfa-devices.html">list-virtual-mfa-devices</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/delete-virtual-mfa-device.html">delete-virtual-mfa-device</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -285,7 +285,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="autoscaling-lifecycle-action">Auto Scalingライフサイクルアクションの待機時間を延長・完了</h2>
-      <p>Auto Scalingのライフサイクルフックでインスタンスが <code>Pending:Wait</code> または <code>Terminating:Wait</code> になっている場合、作業時間の延長や処理完了通知をAWS CLIで実行します。デプロイ前の初期設定、監視エージェント登録、終了前のログ退避などで利用します。詳細は <a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/record-lifecycle-action-heartbeat.html">record-lifecycle-action-heartbeat</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/complete-lifecycle-action.html">complete-lifecycle-action</a> を確認する</p>
+      <p>Auto Scalingのライフサイクルフックでインスタンスが <code>Pending:Wait</code> または <code>Terminating:Wait</code> になっている場合、作業時間の延長や処理完了通知をAWS CLIで実行します。デプロイ前の初期設定、監視エージェント登録、終了前のログ退避などで利用します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/record-lifecycle-action-heartbeat.html">record-lifecycle-action-heartbeat</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/complete-lifecycle-action.html">complete-lifecycle-action</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -325,7 +325,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="cloudwatch-logs-kms">既存CloudWatch LogsロググループへKMSキーを関連付け</h2>
-      <p>既存のCloudWatch LogsロググループにCustomer Managed KMS Keyを関連付ける場合は、AWS CLIで <code>associate-kms-key</code> を実行します。監査要件や暗号化キー管理を後から整備する場合に利用します。詳細は <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html">Encrypt log data in CloudWatch Logs using AWS KMS</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/logs/associate-kms-key.html">associate-kms-key</a> を確認する</p>
+      <p>既存のCloudWatch LogsロググループにCustomer Managed KMS Keyを関連付ける場合は、AWS CLIで <code>associate-kms-key</code> を実行します。監査要件や暗号化キー管理を後から整備する場合に利用します。AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html">Encrypt log data in CloudWatch Logs using AWS KMS</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/logs/associate-kms-key.html">associate-kms-key</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -358,7 +358,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="cloudformation-stack-policy">既存CloudFormationスタックへスタックポリシーを設定</h2>
-      <p>CloudFormation Stack Policyを使うと、スタック更新時に特定のLogical IDを誤って変更しないよう保護できます。既存スタックへStack Policyを追加または置き換える場合は、AWS CLIで設定します。詳細は <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html">Prevent updates to stack resources</a> と <a href="https://docs.aws.amazon.com/cli/latest/reference/cloudformation/set-stack-policy.html">set-stack-policy</a> を確認する</p>
+      <p>CloudFormation Stack Policyを使うと、スタック更新時に特定のLogical IDを誤って変更しないよう保護できます。既存スタックへStack Policyを追加または置き換える場合は、AWS CLIで設定します。AWS公式手順：<a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html">Prevent updates to stack resources</a> と AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/cloudformation/set-stack-policy.html">set-stack-policy</a></p>
       <table>
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -412,7 +412,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="compute-optimizer">Compute Optimizer オプトアウト</h2>
-      <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新します。詳細は <a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a> を確認する</p>
+      <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新します。AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a></p>
 
       <p>現在のCompute Optimizer登録状態を確認する</p>
       <div class="code">

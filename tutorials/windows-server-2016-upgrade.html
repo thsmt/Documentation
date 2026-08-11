@@ -98,7 +98,7 @@
         <code>AWSEC2-CloneInstanceAndUpgradeWindows</code>は、元インスタンスを複製した側でアップグレードし、検証用の新しいAMIを作成する方式。実行前にランブックの<code>TargetWindowsVersion</code>で対象バージョンを確認し、対象外の場合や既存インスタンスを更新する場合は本ページのインストールメディア方式を使用する
       </div>
 
-      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverアップグレードを計画する</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/automated-upgrades.html">AWS公式: Automationランブックによるアップグレード</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverアップグレードを計画する</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/automated-upgrades.html">AWS公式: Automationランブックによるアップグレード</a></p>
 
       <h2 id="support">2. サポート期限とアップグレードパス</h2>
 
@@ -163,7 +163,7 @@
           <tr><td>NICチーミング</td><td>事前作業が必要</td><td>アップグレード前に無効化し、完了後に再有効化</td></tr>
         </tbody>
       </table>
-      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/identity/ad-ds/deploy/upgrade-domain-controllers">Microsoft公式: ドメインコントローラーのアップグレード</a> / <a href="https://learn.microsoft.com/ja-jp/windows-server/failover-clustering/cluster-operating-system-rolling-upgrade">Microsoft公式: クラスターOSのローリングアップグレード</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/identity/ad-ds/deploy/upgrade-domain-controllers">Microsoft公式: ドメインコントローラーのアップグレード</a> / 出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/failover-clustering/cluster-operating-system-rolling-upgrade">Microsoft公式: クラスターOSのローリングアップグレード</a></p>
 
       <h2 id="aws-notes">4. Amazon EC2固有の注意点</h2>
       <p>オンプレミスの手順に加えて、EC2では次の点を考慮する</p>
@@ -183,7 +183,7 @@
           <tr><td>起動エージェント</td><td>Windows Server 2016 AMIにはEC2Launch v1またはv2が含まれる。アップグレード前後に実際のエージェントと設定を確認し、v1を使用している場合はv2への移行を別作業として計画</td></tr>
         </tbody>
       </table>
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
 
       <h2 id="lab-setup">5. 事前検証環境の構築例</h2>
 
@@ -221,7 +221,7 @@
   --query "Parameter.Value" `
   --output text</code></pre>
       </div>
-      <p><a href="https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/parameter-store-public-parameters-ami.html">AWS公式: AMIパブリックパラメータの呼び出し</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/parameter-store-public-parameters-ami.html">AWS公式: AMIパブリックパラメータの呼び出し</a></p>
 
       <h3 id="lab-launch">5.3 Windows Server 2016インスタンスの起動</h3>
       <ol>
@@ -254,7 +254,7 @@
       </div>
       <p>アップグレード後の比較用として、稼働サービス、ネットワーク設定、OSビルドを控える。<code>winver</code>で現在のバージョン表示も取得する</p>
 
-      <p><a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/upgrade-in-place">Microsoft公式: Windows Serverのインプレースアップグレードを実行する</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/upgrade-in-place">Microsoft公式: Windows Serverのインプレースアップグレードを実行する</a></p>
 
       <h2 id="pre-tasks">6. アップグレード前の準備</h2>
 
@@ -285,7 +285,7 @@
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12</code></pre>
       </div>
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">AWS公式: PVドライバーのアップグレード</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">AWS公式: ENAドライバーのインストール</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">AWS公式: PVドライバーのアップグレード</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">AWS公式: ENAドライバーのインストール</a></p>
 
       <h3 id="pre-agent">6.3 SSM Agentと起動エージェントの確認</h3>
       <div class="code">
@@ -460,7 +460,7 @@
         <strong>ℹ️ EC2Launch v2への移行</strong>
         インプレースアップグレード後も、アップグレード前の起動エージェントと設定を引き継ぐ可能性がある。EC2Launch v1またはv2のいずれを使用しているかを確認し、v1を使用している場合は運用標準と互換性を確認したうえでv2への移行を別作業として計画する
       </div>
-      <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2.html">AWS公式: EC2Launch v2エージェント</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2.html">AWS公式: EC2Launch v2エージェント</a></p>
 
       <h3 id="post-license">9.4 ライセンス認証の確認</h3>
       <div class="code">
@@ -495,7 +495,7 @@
         </tbody>
       </table>
       <p>数時間経過してもステータスチェックが回復しない場合は、AWSのトラブルシューティング手順に従う</p>
-      <p><a href="https://learn.microsoft.com/ja-jp/windows/deployment/upgrade/setupdiag">Microsoft公式: SetupDiag</a> / <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-upgrade-trbl.html">AWS公式: OSアップグレードのトラブルシューティング</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows/deployment/upgrade/setupdiag">Microsoft公式: SetupDiag</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-upgrade-trbl.html">AWS公式: OSアップグレードのトラブルシューティング</a></p>
 
       <h3 id="trbl-rollback">10.2 ロールバック</h3>
       <p>インプレースアップグレードの確実な切り戻し手段は、6.1で取得したバックアップAMIからの復旧のみ。復旧手順を事前に決めてから作業に着手する</p>
