@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Windows Server 2016 インプレースアップグレード | Documentation</title>
-  <meta name="description" content="Amazon EC2上のWindows Server 2016をWindows Server 2025へインプレースアップグレードする手順とEC2固有の注意点。">
+<title>Windows Server 2016から2025へのインプレースアップグレード | Documentation</title>
+  <meta name="description" content="Amazon EC2上のWindows Server 2016をWindows Server 2025へ直接インプレースアップグレードする実機検証手順。AMI、事前準備、EBSインストールメディア、実行、事後確認、ロールバックを扱う。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -48,6 +48,7 @@
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="git-github-practical.html">Git / GitHub 実践編</a>
       <a href="terraform.html">Terraform</a>
       <a href="awx-ansible.html">AWX / Ansible</a>
       <a href="container.html">コンテナ</a>
@@ -64,8 +65,11 @@
         <span>トピック</span>
       </nav>
 
-<h1>Windows Server 2016 インプレースアップグレード</h1>
-      <p class="lead">Amazon EC2上のWindows Server 2016を、AWS提供のインストールメディアを使用してWindows Server 2025へインプレースアップグレードする手順を整理する。サポート期限、アップグレードパス、EC2固有の注意点、事後確認までを扱う</p>
+<h1>Windows Server 2016から2025へのインプレースアップグレード</h1>
+      <p class="lead">Amazon EC2上に日本語版Windows Server 2016の検証環境を構築し、AWS提供のWindows Server 2025インストールメディアを使用して直接インプレースアップグレードする。実際に選択したAMI、事前バックアップ、EC2ドライバー、EBSメディア、実行中の監視、アップグレード後の受入確認までを一連の手順として記録する</p>
+
+      <p>出典：<a href="https://dev.classmethod.jp/articles/windows-server-2016-2022/">DevelopersIO: Windows Server 2016から2022へのインプレースアップグレード検証</a></p>
+      <p>出典：<a href="https://iret.media/185044">iret.media: EC2インスタンスをWindows Server 2016から2025へインプレースアップグレードしてみる</a></p>
 
       <h2 id="overview">1. インプレースアップグレードの概要</h2>
       <p>インプレースアップグレードは、設定、サーバーの役割、データを保持したまま、既存サーバーのOSを新しいバージョンのWindows Serverへ移行する方式。再構築や移行と比べて作業工数を抑えられる一方、失敗時の切り戻しが難しいため、事前バックアップと事後確認を含めた計画が前提になる</p>
@@ -132,6 +136,8 @@
         Windows Server 2025以降では、非クラスター環境について一度に最大4世代のインプレースアップグレードがサポートされ、Windows Server 2012 R2以降から2025へ直接移行できる。Windows Server 2022以前をアップグレード先とする場合は従来どおり最大2世代まで
       </div>
 
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverのアップグレードパスを計画する</a></p>
+
       <h3 id="support-target">2.3 2022と2025のどちらへ上げるか</h3>
       <table>
         <thead>
@@ -174,7 +180,7 @@
         <tbody>
           <tr><td>バックアップ</td><td>作業前にAMIを作成する。インプレースアップグレードの確実な切り戻し手段はこのAMIのみ</td></tr>
           <tr><td>インストールメディア</td><td>ISOをダウンロードせず、AWSが提供するパブリックスナップショットからEBSボリュームを作成してアタッチする。BYOLの場合は自前のメディアが必要</td></tr>
-          <tr><td>ネットワークドライバー</td><td>事前にAWS PVドライバーとENAドライバーを最新化する。ドライバーが古いとアップグレード後にRDP接続できなくなるおそれがある</td></tr>
+          <tr><td>AWSドライバー</td><td>事前にAWS PV、ENA、NVMeドライバーを確認する。ネットワークやストレージのドライバーが古いと、アップグレード後にRDP接続できない、またはEBSボリュームを認識できないおそれがある</td></tr>
           <tr><td>インスタンスサイズ</td><td>2 vCPU・4 GiB RAM以上での実施をAWSが推奨。小さいインスタンスは一時的にサイズ変更して実施できる</td></tr>
           <tr><td>ルートボリューム空き容量</td><td>Windowsセットアップは容量不足を警告しない場合がある。旧OSが<code>Windows.old</code>として保持される分の空きを確保する</td></tr>
           <tr><td>RDP切断</td><td>セットアップ開始から数分でRDPセッションが切断される。進行状況は「インスタンスのスクリーンショットを取得」で確認する</td></tr>
@@ -185,34 +191,48 @@
       </table>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
 
-      <h2 id="lab-setup">5. 事前検証環境の構築例</h2>
+      <h2 id="lab-setup">5. 今回の検証環境を構築する</h2>
 
-      <h3 id="lab-values">5.1 構築例の値</h3>
+      <h3 id="lab-values">5.1 検証環境</h3>
       <table>
         <thead>
           <tr><th>項目</th><th>値</th></tr>
         </thead>
         <tbody>
-          <tr><td>リージョン</td><td>ap-northeast-1(東京)</td></tr>
-          <tr><td>AMI</td><td><code>Windows_Server-2016-Japanese-Full-Base</code>(最新版)</td></tr>
-          <tr><td>AMI ID(検証時点)</td><td><code>&lt;AMI_ID&gt;</code></td></tr>
-          <tr><td>エディション</td><td>Windows Server 2016 Datacenter(デスクトップエクスペリエンス)</td></tr>
-          <tr><td>インスタンスタイプ</td><td>t3.medium(2 vCPU / 4 GiB)</td></tr>
-          <tr><td>ルートボリューム</td><td>gp3 50 GiB</td></tr>
+          <tr><td>検証基準日</td><td>2026/08/11</td></tr>
+          <tr><td>リージョン</td><td><code>ap-northeast-1</code>(東京)</td></tr>
+          <tr><td>アップグレード元AMI</td><td><code>Windows_Server-2016-Japanese-Full-Base-2026.07.15</code></td></tr>
+          <tr><td>AMI ID</td><td><code>ami-01582627fc1ac1ed5</code></td></tr>
+          <tr><td>AMI提供元</td><td>Microsoft / <code>OwnerAlias: amazon</code>(検証済みプロバイダー)</td></tr>
+          <tr><td>アップグレード元</td><td>Windows Server 2016 Datacenter(デスクトップエクスペリエンス、日本語、64ビット)</td></tr>
+          <tr><td>アップグレード先</td><td>Windows Server 2025 Datacenter(デスクトップエクスペリエンス、日本語、64ビット)</td></tr>
+          <tr><td>インスタンスタイプ</td><td>t3.large(2 vCPU / 8 GiB)</td></tr>
+          <tr><td>ルートボリューム</td><td>gp3 100 GiB</td></tr>
+          <tr><td>AWS PVドライバー</td><td><code>8.6.1</code>(公式Latestパッケージで更新済み)</td></tr>
+          <tr><td>ENAドライバー</td><td><code>2.11.0</code>(確認時点のAWS公式最新バージョン)</td></tr>
+          <tr><td>NVMeドライバー</td><td><code>1.8.2.53</code>(AWS NVMeパッケージ 1.8.2)</td></tr>
           <tr><td>キーペア</td><td><code>&lt;KEY_PAIR_NAME&gt;</code>(RSA)</td></tr>
           <tr><td>バックアップAMI ID</td><td><code>&lt;BACKUP_AMI_ID&gt;</code></td></tr>
-          <tr><td>メディアスナップショットID</td><td><code>&lt;MEDIA_SNAPSHOT_ID&gt;</code></td></tr>
+          <tr><td>メディアスナップショットID</td><td><code>snap-026c037d2821a2ac8</code></td></tr>
           <tr><td>実施日 / 所要時間</td><td><code>&lt;UPGRADE_DATE&gt;</code> / <code>&lt;UPGRADE_DURATION&gt;</code></td></tr>
         </tbody>
       </table>
 
       <div class="callout callout-warning">
         <strong>⚠️ ルートボリューム容量</strong>
-        選択したWindows Server AMIの既定ルートボリューム容量を確認する。アップグレードでは旧OSが<code>Windows.old</code>として保持されるため空きを大きく消費する。容量はワークロードに応じて見積もり、本ページの例では起動時に50 GiBへ変更する
+        Windows Server 2025のシステム要件だけでなく、セットアップの一時ファイルと<code>Windows.old</code>を含めた空きが必要になる。本ページでは容量不足による中断を避けるため、検証用ルートボリュームを100 GiBとする。既存環境では実使用量を確認し、Cドライブに少なくとも32 GiB以上の空きを確保してから実施する
       </div>
 
-      <h3 id="lab-ami">5.2 最新AMI IDの取得</h3>
-      <p>AMI IDはリージョンごとに異なり、AWS Windows AMIは月次で更新される。固定値ではなく、SSMパブリックパラメータから実行時点の最新AMI IDを取得し、5.1の表へ記録する</p>
+      <h3 id="lab-ami">5.2 Windows Server 2016 AMIの確認</h3>
+      <p>今回の検証では、東京リージョンで<code>ami-01582627fc1ac1ed5</code>を選択する。コンソール上でAMI名、アーキテクチャ、言語、所有者のエイリアス、検証済みプロバイダーの表示を確認し、同名の第三者AMIを選択しない</p>
+
+      <p><em>＊画像挿入：Windows Server 2016日本語版AMIの検索結果（AWSアカウントIDをマスキングした添付画像）＊</em></p>
+
+      <div class="callout">
+        <strong>ℹ️ AMI IDは固定値ではない</strong>
+        AMI IDはリージョンごとに異なり、AWS Windows AMIは定期的に更新される。本ページのAMI IDは2026/08/11時点の東京リージョンで選択した値であり、別のリージョンや後日の再検証ではSSMパブリックパラメータから最新値を取得する
+      </div>
+
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ssm get-parameter `
@@ -226,12 +246,20 @@
       <h3 id="lab-launch">5.3 Windows Server 2016インスタンスの起動</h3>
       <ol>
         <li>Amazon EC2コンソールで「インスタンスを起動」を選択</li>
-        <li>「その他のAMIを閲覧する」から、5.2で取得したAMI IDを検索して選択</li>
-        <li>インスタンスタイプに<code>t3.medium</code>を選択</li>
+        <li>「その他のAMIを閲覧する」から<code>ami-01582627fc1ac1ed5</code>を検索</li>
+        <li>AMI名、<code>OwnerAlias: amazon</code>、日本語、64ビット、ENA有効を確認して選択</li>
+        <li>インスタンスタイプに<code>t3.large</code>を選択</li>
         <li>RSAキーペア<code>&lt;KEY_PAIR_NAME&gt;</code>を指定</li>
         <li>検証用VPC・サブネットと、RDP(TCP/3389)を接続元限定で許可するSecurity Groupを設定</li>
-        <li>ルートボリュームを<code>gp3</code> 50 GiBへ変更してインスタンスを起動</li>
+        <li>ルートボリュームを<code>gp3</code> 100 GiBへ変更してインスタンスを起動</li>
       </ol>
+
+      <p><em>＊画像挿入：インスタンス起動前の概要（AMI、t3.large、VPC、Security Group、gp3 100 GiB）＊</em></p>
+
+      <div class="callout">
+        <strong>ℹ️ 検証時のインスタンスサイズ</strong>
+        当初は<code>t3.small</code>(2 GiB)で起動したが、AWSがインプレースアップグレード時に推奨する4 GiB以上を満たすため、検証では<code>t3.large</code>(8 GiB)へ変更した。最低条件を満たす<code>t3.medium</code>(4 GiB)でも実施できるが、セットアップ中の余裕を確保する場合は一時的なサイズアップを検討する
+      </div>
 
       <h3 id="lab-connect">5.4 RDP接続とアップグレード前の記録</h3>
       <p>Administratorパスワードの取得とRDP接続の手順は<a href="windows-server-2025.html">Windows Server 2025</a>の「1. Windowsインスタンス接続」と同じ。接続後、アップグレード前の状態を記録し、サーバー外(手元の端末など)へ退避する</p>
@@ -254,6 +282,8 @@
       </div>
       <p>アップグレード後の比較用として、稼働サービス、ネットワーク設定、OSビルドを控える。<code>winver</code>で現在のバージョン表示も取得する</p>
 
+      <p><em>＊画像挿入：アップグレード前のwinverとシステム情報（Windows Server 2016）＊</em></p>
+
       <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/upgrade-in-place">Microsoft公式: Windows Serverのインプレースアップグレードを実行する</a></p>
 
       <h2 id="pre-tasks">6. アップグレード前の準備</h2>
@@ -272,20 +302,176 @@
         既定ではイメージ作成時にインスタンスが再起動される。「再起動しない」を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する
       </div>
 
-      <h3 id="pre-drivers">6.2 ネットワークドライバーの確認と更新</h3>
-      <p>現在のENAドライバーとAWS PVドライバーのバージョンを確認</p>
+      <p><em>＊画像挿入：バックアップAMIのステータスが「利用可能」になった画面＊</em></p>
+
+      <h3 id="pre-drivers">6.2 AWSドライバーの確認と更新</h3>
+      <p>EC2上でWindows Serverをインプレースアップグレードする前に、AWS PV、ENA、NVMeドライバーを確認する。今回使用する<code>t3.large</code>はNitroベースであり、実際のネットワークとEBSアクセスではENAとNVMeドライバーが重要になる。AWS PVドライバーはNitro世代のデータパスでは使用されないが、パッケージに含まれるLiteAgentなども更新されるため、事前確認の対象に含める</p>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ ドライバー更新前のバックアップ</strong>
+        AWS PV、ENA、NVMeはOSの起動、ストレージ、ネットワーク接続に関係する。6.1のバックアップAMIが「利用可能」になったことを確認してから更新する。PVドライバーのMSI実行後は自動的に再起動し、最大15分程度接続できなくなる場合がある
+      </div>
+
+      <h4 id="pre-pv-driver">6.2.1 AWS PVドライバーの更新</h4>
+      <p>更新前のバージョンはレジストリから確認する。キーが存在しない場合や、対象OSで利用できるバージョンより古い場合は、AWS公式パッケージを使用して更新する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-CimInstance Win32_PnPSignedDriver |
-  Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" -or $_.DeviceName -like "*AWS PV*" } |
-  Select-Object DeviceName, DriverVersion</code></pre>
+        <pre><code>Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver</code></pre>
       </div>
-      <p>最新版でない場合は、AWS公式手順に従いAWS PVドライバーとENAドライバーを更新する。サーバー上のPowerShellから直接ドライバーをダウンロードする場合は、先にTLS 1.2を有効化する</p>
+
+      <p>Windows Server 2016のWindows PowerShellでは、既定の通信プロトコルのままS3へ接続すると「SSL/TLSのセキュリティで保護されているチャネルを作成できませんでした」となり、ZIPを取得できない場合がある。その場合は、現在のPowerShellセッションでTLS 1.2を有効にしてから再実行する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12</code></pre>
       </div>
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">AWS公式: PVドライバーのアップグレード</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">AWS公式: ENAドライバーのインストール</a></p>
+
+      <p>公式の<code>Latest</code> URLからPVドライバーをダウンロードする</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Invoke-WebRequest -UseBasicParsing -Uri "https://s3.amazonaws.com/ec2-windows-drivers-downloads/AWSPV/Latest/AWSPVDriver.zip" -OutFile "$env:USERPROFILE\pv_driver.zip"</code></pre>
+      </div>
+
+      <p>ダウンロードに失敗した状態で<code>Expand-Archive</code>を実行すると、ZIPが存在しないため別のエラーになる。ファイルの存在とサイズを確認してから展開する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-Item "$env:USERPROFILE\pv_driver.zip"</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Expand-Archive -LiteralPath "$env:USERPROFILE\pv_driver.zip" -DestinationPath "$env:USERPROFILE\pv_drivers" -Force</code></pre>
+      </div>
+
+      <p>展開後にMSIの場所を確認し、セットアップウィザードを起動する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>$msi = Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse | Select-Object -First 1
+Start-Process -FilePath $msi.FullName</code></pre>
+      </div>
+
+      <p>セットアップウィザードでは、ライセンスに同意し、インストール先は既定値の<code>C:\Program Files\Amazon\XenTools\</code>を使用する。「Preparation for Upgrade」で自動再起動とバックアップに関する注意事項を確認してから「I'm Ready」を選択し、インストールを開始する</p>
+
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-01-welcome.png" alt="AWS PV Drivers Setup Wizardの開始画面">
+        <figcaption>AWS PV Drivers Setup Wizardを開始する</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-02-license.png" alt="AWS PV Driversのライセンス同意画面">
+        <figcaption>ライセンス内容を確認し「I Agree」を選択する</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-03-folder.png" alt="AWS PV Driversのインストール先選択画面">
+        <figcaption>インストール先は既定のXenToolsフォルダーを使用する</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-04-preparation.png" alt="AWS PV Driversのアップグレード準備確認画面">
+        <figcaption>自動再起動とバックアップの注意事項を確認し「I'm Ready」を選択する</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-05-confirm.png" alt="AWS PV Driversのインストール確認画面">
+        <figcaption>「Next」を選択するとドライバー更新と再起動が始まる</figcaption>
+      </figure>
+
+      <p>再起動後、EC2のステータスチェックとSSMの接続状態が正常に戻ったことを確認してから再接続し、レジストリのバージョンを再確認する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>今回のPVドライバー更新ログを展開する</summary>
+        <p>最初のダウンロードはTLSエラーとなり、ZIPが作成されていない状態で展開したため、続けてパス不存在のエラーが発生した。TLS 1.2を有効化して再実行すると、6,406,958バイトのZIPと<code>AWSPVDriverSetup.msi</code>を取得できた</p>
+        <div class="code">
+          <div class="code-header"><span>PowerShell実行例</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>PS C:\Users\Administrator&gt; Invoke-WebRequest https://s3.amazonaws.com/ec2-windows-drivers-downloads/AWSPV/Latest/AWSPVDriver.zip -OutFile $env:USERPROFILE\pv_driver.zip
+Invoke-WebRequest : 要求は中止されました: SSL/TLS のセキュリティで保護されているチャネルを作成できませんでした
+
+PS C:\Users\Administrator&gt; Expand-Archive $env:USERPROFILE\pv_driver.zip -DestinationPath $env:USERPROFILE\pv_drivers
+Expand-Archive : パス 'C:\Users\Administrator\pv_driver.zip' が存在しないか、または有効なファイル システム パスではありません&#12290;
+
+PS C:\Users\Administrator&gt; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+PS C:\Users\Administrator&gt; Invoke-WebRequest -UseBasicParsing -Uri "https://s3.amazonaws.com/ec2-windows-drivers-downloads/AWSPV/Latest/AWSPVDriver.zip" -OutFile "$env:USERPROFILE\pv_driver.zip"
+PS C:\Users\Administrator&gt; Get-Item "$env:USERPROFILE\pv_driver.zip"
+
+Length  Name
+------  ----
+6406958 pv_driver.zip
+
+PS C:\Users\Administrator&gt; Expand-Archive -LiteralPath "$env:USERPROFILE\pv_driver.zip" -DestinationPath "$env:USERPROFILE\pv_drivers" -Force
+PS C:\Users\Administrator&gt; Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse
+
+Length  Name
+------  ----
+6867456 AWSPVDriverSetup.msi
+
+PS C:\Users\Administrator&gt; $msi = Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse | Select-Object -First 1
+PS C:\Users\Administrator&gt; Start-Process -FilePath $msi.FullName</code></pre>
+        </div>
+
+        <p>MSI実行後に自動再起動し、Fleet Managerから再接続できることを確認した。再起動後のレジストリ値は<code>8.6.1</code>となった</p>
+        <div class="code">
+          <div class="code-header"><span>PowerShell実行例</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>PS C:\Users\Administrator&gt; Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver
+
+Version : 8.6.1
+PSPath  : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Amazon\PVDriver</code></pre>
+        </div>
+      </details>
+
+      <div class="callout">
+        <strong>ℹ️ Latestパッケージとバージョン履歴の差</strong>
+        2026/08/11の実機検証では、AWS公式の<code>Latest</code> URLから取得したパッケージにより<code>8.6.1</code>へ更新された。一方、検証時点のAWS公式バージョン履歴には<code>8.6.0</code>まで掲載されていた。公開ページの表だけでなく、配布パッケージのreadmeと更新後のレジストリ値を作業記録に残す
+      </div>
+
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">EC2 WindowsインスタンスでのPVドライバーのアップグレード</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/xen-drivers-overview.html">Windowsインスタンス用PVドライバーとバージョン履歴</a></p>
+
+      <h4 id="pre-ena-driver">6.2.2 ENAドライバーの確認</h4>
+      <p>ENAドライバーは、Nitroベースインスタンスのネットワーク接続を担う。インプレースアップグレード前に現在のバージョンを確認し、AWS公式の対象OS向け最新バージョンより古い場合だけ更新する</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-CimInstance Win32_PnPSignedDriver |
+  Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" } |
+  Select-Object DeviceName, DriverVersion, DriverDate</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>今回のENAドライバー確認結果を展開する</summary>
+        <p>2026/08/11時点の実機では<code>2.11.0</code>が導入されており、AWS公式の最新バージョンと一致したため、ENAドライバーの再インストールは実施していない</p>
+        <div class="code">
+          <div class="code-header"><span>PowerShell実行例</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>DeviceName               DriverVersion
+----------               -------------
+Elastic Network Adapter  2.11.0</code></pre>
+        </div>
+      </details>
+
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">EC2 WindowsインスタンスへのENAドライバーのインストール</a></p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-driver-releases-windows.html">ENA Windowsドライバーのバージョン履歴</a></p>
+
+      <h4 id="pre-nvme-driver">6.2.3 NVMeドライバーの確認</h4>
+      <p>NitroベースインスタンスではEBSボリュームがNVMeデバイスとして認識される。次のコマンドで確認し、OSアップグレード後も同じ要領で再確認する。2026/08/11時点のAWS公式最新パッケージは<code>1.8.2</code>であり、今回の実機ではドライバーバージョン<code>1.8.2.53</code>が導入されていたため、再インストールは実施していない</p>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Get-CimInstance Win32_PnPSignedDriver |
+  Where-Object { $_.DeviceName -like "*NVMe*" } |
+  Select-Object DeviceName, DriverVersion, DriverDate</code></pre>
+      </div>
+
+      <details class="example-details">
+        <summary>今回のNVMeドライバー確認結果を展開する</summary>
+        <div class="code">
+          <div class="code-header"><span>PowerShell実行例</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>DeviceName                             DriverVersion DriverDate
+----------                             ------------- ----------
+AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></pre>
+        </div>
+      </details>
+
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/nvme-driver-version-history.html">AWS NVMeドライバーのバージョン履歴</a></p>
 
       <h3 id="pre-agent">6.3 SSM Agentと起動エージェントの確認</h3>
       <div class="code">
@@ -313,6 +499,10 @@
       </div>
       <p>空き容量が不足する場合は、EBSボリュームの拡張とOS側のパーティション拡張を先に実施する</p>
 
+      <p><em>＊画像挿入：アップグレード前のCドライブ空き容量＊</em></p>
+
+      <p>出典：<a href="https://iret.media/185044">iret.media: 空き容量、ドライバー、インストールメディアの検証例</a></p>
+
       <h2 id="media">7. インストールメディアの準備</h2>
 
       <h3 id="media-search">7.1 パブリックスナップショットの検索</h3>
@@ -325,6 +515,8 @@
         <li>該当スナップショットのIDを5.1の表の<code>&lt;MEDIA_SNAPSHOT_ID&gt;</code>へ記録</li>
       </ol>
 
+      <p><em>＊画像挿入：Windows Server 2025 Japanese Installation Mediaのパブリックスナップショット検索結果＊</em></p>
+
       <div class="callout callout-warning">
         <strong>⚠️ メディアの言語一致</strong>
         インストールメディアはOSの言語設定と一致させる。日本語AMIから構築したインスタンスにはJapanese、英語版にはEnglishのメディアを選択する。言語の異なるメディアではアップグレードできない
@@ -336,6 +528,8 @@
         <li>アベイラビリティーゾーンを対象インスタンスと同じAZへ変更</li>
         <li>他の設定は既定のままボリュームを作成</li>
       </ol>
+
+      <p><em>＊画像挿入：対象インスタンスと同じAZを指定したEBSボリューム作成画面＊</em></p>
 
       <div class="callout callout-warning">
         <strong>⚠️ アベイラビリティーゾーンの一致</strong>
@@ -354,6 +548,10 @@
         <strong>⚠️ ディスクの初期化はしない</strong>
         「ディスクの管理」で初期化(フォーマット)を実行するとメディアの内容が消える。操作は「オンライン」への切り替えのみ
       </div>
+
+      <p><em>＊画像挿入：ディスクを初期化せずオンラインにし、セットアップメディアを認識した画面＊</em></p>
+
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレード</a></p>
 
       <h2 id="upgrade">8. インプレースアップグレードの実行</h2>
 
@@ -374,16 +572,30 @@
       </div>
 
       <h3 id="upgrade-edition">8.2 エディションの選択</h3>
+      <p>アップグレード元のWindows Server 2016と同じエディション、同じインストールオプションを選択する。今回の環境では<code>Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)</code>を選択した</p>
+
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-01-edition-selection.png" alt="Windows Server 2025 Datacenterのデスクトップエクスペリエンスを選択した画面">
+        <figcaption>Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)を選択する</figcaption>
+      </figure>
+
       <ol>
         <li>セットアップ画面で、現在のエディションとインストールオプションに対応するWindows Server 2025を選択</li>
         <li>ライセンス条項を確認して同意</li>
         <li>「ファイル、設定、アプリを保持する」が選択されていることを確認してインストールを開始</li>
       </ol>
 
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-02-license-terms.png" alt="Windows Server 2025の適用される通知とライセンス条項の画面">
+        <figcaption>通知とライセンス条項を確認し「同意する」を選択する</figcaption>
+      </figure>
+
       <div class="callout callout-warning">
         <strong>⚠️ エディションとインストールオプション</strong>
         既存OSと同じエディション(本ページの例ではDatacenter)、同じインストールオプション(デスクトップエクスペリエンス)を選択する。Server Core版や下位エディションを選ぶとアップグレードを継続できない
       </div>
+
+      <p><em>＊画像挿入：「ファイル、設定、アプリを保持する」が選択されたインストール準備完了画面＊</em></p>
 
       <h3 id="upgrade-monitor">8.3 進行状況の確認</h3>
       <p>セットアップ開始から数分でRDPセッションが切断され、以降はOSへ接続できない。進行状況はコンソール画面のキャプチャで確認する</p>
@@ -399,6 +611,11 @@
         アップグレード中はインスタンスステータスチェックが一時的に失敗状態になり、完了すると回復する。ステータスチェック連動のアラームや自動復旧を設定している場合は、誤検知による再起動を防ぐため事前に無効化する
       </div>
 
+      <figure>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-03-installation-started.png" alt="Fleet Managerの画面に表示されたWindows Serverのインストール開始状態">
+        <figcaption>インストール開始直後の状態。以降は複数回再起動するため、接続が切れてもEC2を停止しない</figcaption>
+      </figure>
+
       <h3 id="upgrade-done">8.4 完了の確認</h3>
       <ol>
         <li>スクリーンショットにロック画面が表示されたらアップグレード完了と判断</li>
@@ -406,6 +623,10 @@
         <li>RDPで再接続し、サインインできることを確認</li>
         <li>開始から完了までの時間を5.1の表の<code>&lt;UPGRADE_DURATION&gt;</code>へ記録</li>
       </ol>
+
+      <p><em>＊画像挿入：アップグレード完了後のロック画面とステータスチェック2/2＊</em></p>
+
+      <p>出典：<a href="https://dev.classmethod.jp/articles/windows-server-2016-2022/">DevelopersIO: RDP切断後の進行確認と完了判定の実例</a></p>
 
       <h2 id="post-check">9. アップグレード後の確認</h2>
       <p>アップグレード成功はバージョン表示の確認では終わらない。サービス、ネットワーク、AWS管理機能、ライセンスまで確認して作業完了とする</p>
@@ -416,6 +637,8 @@
         <pre><code>Get-ComputerInfo -Property WindowsProductName,WindowsBuildLabEx,WindowsEditionID</code></pre>
       </div>
       <p><code>winver</code>でもWindows Server 2025の表示を確認し、5.4で取得した値と比較する</p>
+
+      <p><em>＊画像挿入：アップグレード後のwinver（Windows Server 2025）＊</em></p>
 
       <h3 id="post-os">9.2 OS状態の確認</h3>
       <p>自動起動サービスの停止有無、イベントログのエラー、ネットワーク設定を事前記録と比較</p>
@@ -455,6 +678,8 @@
         <li>Nitro世代のインスタンスではENAドライバーとNVMeドライバーの状態を確認</li>
         <li>.NET Frameworkの更新を求められた場合は適用して再起動を実行</li>
       </ol>
+
+      <p><em>＊画像挿入：アップグレード後のSSM Agent、ENA/NVMeドライバー、EC2Launch確認結果＊</em></p>
 
       <div class="callout">
         <strong>ℹ️ EC2Launch v2への移行</strong>

@@ -39,6 +39,7 @@ $groups = @(
         Label = '開発／自動化'
         Pages = @(
             [pscustomobject]@{ File = 'git-github-basics.html'; Label = 'Git / GitHub 基本編' }
+            [pscustomobject]@{ File = 'git-github-practical.html'; Label = 'Git / GitHub 実践編' }
             [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform' }
             [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible' }
             [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ' }
