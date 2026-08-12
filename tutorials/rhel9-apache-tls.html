@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RHEL 9 Apache TLS構築 | Documentation</title>
+  <meta name="description" content="RHEL 9.8へApacheを導入し、EC P-256秘密鍵、CSR、自己署名証明書を作成してwww.zexample.comのHTTPSを有効化する実機手順。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-user-values="www.zexample.com,zexample.com,ap-northeast-1,JP,Tokyo,Sumida-ku,Example Publishing Ltd,System Dept.,20260831145959Z,2026年8月31日23時59分59秒JST,52.***.***.***">
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <p class="sidebar-group">OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="apache.html">Apache</a>
+      <a class="active" href="rhel9-apache-tls.html">RHEL 9 Apache TLS構築</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
+      <p class="sidebar-group">開発／自動化</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="git-github-practical.html">Git / GitHub 実践編</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="container.html">コンテナ</a>
+      <a href="github-actions.html">GitHub Actions</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>RHEL 9 Apache TLS構築</h1>
+      <p class="lead">EC2上のRed Hat Enterprise Linux 9.8へApache HTTP Serverを導入し、書籍の手順に合わせてEC P-256秘密鍵とCSRを作成した実機記録から、自己署名証明書によるHTTPS終端、DNS、通信確認までを整理する</p>
+
+      <div class="callout callout-warning">
+        <strong>作業再開時の最優先事項</strong>
+        <p>実機では秘密鍵の確認時に<code>priv:</code>を含む出力を画面へ表示している。この秘密鍵は証明書の発行前に必ず再生成し、CSRも新しい鍵から作り直す。本文には秘密鍵の内容、秘密鍵を表示するコマンド、SSH接続元IP、EC2の固定されていないパブリックIPv4を掲載しない</p>
+      </div>
+
+      <div class="callout">
+        <strong>記録の範囲</strong>
+        <p>「実施済み」は2026年8月12日の実行ログで確認した範囲、「この後の手順」は未実施の設計値である。ApacheのVirtualHost作成、自己署名証明書の発行、サービス起動、Security Group、Route 53、ブラウザ確認は、実機での実行後に結果を追記する</p>
+      </div>
+
+      <h2 id="environment">目的と検証環境</h2>
+      <table>
+        <thead><tr><th>項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>OS</td><td>Red Hat Enterprise Linux 9.8 on EC2</td></tr>
+          <tr><td>AWSリージョン</td><td><code>ap-northeast-1</code></td></tr>
+          <tr><td>公開FQDN</td><td><code>www.zexample.com</code></td></tr>
+          <tr><td>Apache</td><td><code>httpd-2.4.62-13.el9_8.5</code></td></tr>
+          <tr><td>TLSモジュール</td><td><code>mod_ssl-2.4.62-13.el9_8.5</code></td></tr>
+          <tr><td>OpenSSL</td><td><code>OpenSSL 3.5.5-6.el9_8</code></td></tr>
+          <tr><td>秘密鍵方式</td><td>EC P-256（<code>prime256v1</code>）</td></tr>
+          <tr><td>最初の証明書</td><td>検証用の自己署名証明書、有効期限は2026年8月31日23時59分59秒JST</td></tr>
+          <tr><td>将来構成</td><td>ACMエクスポート可能なパブリック証明書へ交換し、別ページでAWS Certificate Manager Exported Certificate Automationを検証</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="flow">証明書発行の流れ</h2>
+      <ol>
+        <li>サーバー内での秘密鍵生成</li>
+        <li>秘密鍵に対応する公開鍵と申請者情報を含むCSR生成</li>
+        <li>公開CA利用時のCSR提出。秘密鍵は提出対象外</li>
+        <li>CAによるドメイン管理権限や申請者情報の検証</li>
+        <li>CAからのサーバー証明書と中間証明書の受領</li>
+        <li>秘密鍵、サーバー証明書、必要な証明書チェーンのApache設定</li>
+        <li>鍵の対応、SAN、有効期限、Apache構文、実際のTLS通信の確認</li>
+      </ol>
+      <p>自己署名証明書では手順3から5の公開CAを使わず、CSRを同じ秘密鍵で署名する。暗号化通信はできるが、クライアントが発行者を信頼していないためブラウザ警告が表示される。公開サービスの最終構成には使用しない</p>
+      <p>ACMのエクスポート可能なパブリック証明書は、このページで作成したCSRをACMへ提出する方式ではない。ACMで<code>www.zexample.com</code>を申請し、DNS検証後にACMが管理する鍵と証明書をエクスポートする</p>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-public-certificates.html">ACM - Request a public certificate</a></p>
+
+      <h2 id="paths">ファイルパスと公開可否</h2>
+      <table>
+        <thead><tr><th>種類</th><th>今回のパス</th><th>権限の目安</th><th>公開可否</th></tr></thead>
+        <tbody>
+          <tr><td>DocumentRoot</td><td><code>/var/www/www.zexample.com/public_html</code></td><td><code>0755</code></td><td>パスは公開可</td></tr>
+          <tr><td>秘密鍵</td><td><code>/etc/pki/tls/private/www.zexample.com.key</code></td><td><code>root:root 0600</code></td><td>パスのみ公開可。内容は非公開</td></tr>
+          <tr><td>証明書署名要求</td><td><code>/etc/pki/tls/private/www.zexample.com.csr</code></td><td><code>root:root 0644</code></td><td>内容も公開可</td></tr>
+          <tr><td>サーバー証明書</td><td><code>/etc/pki/tls/certs/www.zexample.com.crt</code></td><td><code>root:root 0644</code></td><td>内容も公開可</td></tr>
+          <tr><td>公開CAのfull chain</td><td><code>/etc/pki/tls/certs/www.zexample.com.fullchain.pem</code></td><td><code>root:root 0644</code></td><td>内容も公開可</td></tr>
+          <tr><td>証明書拡張設定</td><td><code>/etc/pki/tls/certs/www.zexample.com.ext</code></td><td><code>root:root 0644</code></td><td>公開可</td></tr>
+          <tr><td>VirtualHost</td><td><code>/etc/httpd/conf.d/00-www.zexample.com.conf</code></td><td><code>root:root 0644</code></td><td>認証情報を除けば公開可</td></tr>
+          <tr><td>アクセスログ</td><td><code>/var/log/httpd/www.zexample.com-access.log</code></td><td>Apache管理</td><td>IPやCookieを含むため原則非公開</td></tr>
+          <tr><td>エラーログ</td><td><code>/var/log/httpd/www.zexample.com-error.log</code></td><td>Apache管理</td><td>内部情報を確認してから掲載</td></tr>
+        </tbody>
+      </table>
+      <p><code>.crt</code>、<code>.cer</code>、<code>.pem</code>は命名上の拡張子であり、それだけではファイル形式を判定できない。Apacheへ指定する前に<code>openssl x509</code>でPEM形式のX.509証明書として読めることを確認する。業務手順の<code>/etc/httpd/conf/ssl/zexample.com.cer</code>も設定パス、権限、SELinuxコンテキストが一致していれば利用できるが、この検証ではRHEL標準の<code>/etc/pki/tls/private</code>と<code>/etc/pki/tls/certs</code>を使う</p>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-apache-http-server_deploying-web-servers-and-reverse-proxies">Red Hat - Setting up the Apache HTTP web server</a></p>
+
+      <h2 id="completed">実施済み：Apache導入からCSR確認まで</h2>
+      <p>以下の折りたたみには実機の標準出力を記録する。パブリックIPv4は一部を<code>***</code>へ置換し、IMDSv2トークン、SSH接続元IP、EC2内部ホスト名、秘密鍵の<code>priv:</code>値は掲載しない。長いパッケージ導入ログと16進ダンプは、判定に必要な行だけを抜粋する</p>
+
+      <h3>1. 未導入状態の確認</h3>
+      <p>パッケージ導入前に次を実行し、<code>httpd: command not found</code>を確認した。<code>-Ts</code>は以後の確認コマンドには使用せず、構文は<code>httpd -t</code>、VirtualHostは<code>httpd -S</code>で確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -Ts</code></pre></div>
+      <details class="example-details">
+        <summary>今回の実行結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>実行結果</span><button class="copy" type="button">Copy</button></div><pre><code>-bash: httpd: command not found</code></pre></div>
+      </details>
+
+      <h3>2. EC2メタデータの補助確認</h3>
+      <p>IMDSv2トークンを取得し、リージョンとその時点のパブリックIPv4を確認した。トークン値とIP実値はページへ掲載しない</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>TOKEN=$(curl -fsS -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" http://169.254.169.254/latest/api/token)</code></pre></div>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>REGION=$(curl -fsS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region); echo "$REGION"</code></pre></div>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>PUBLIC_IP=$(curl -fsS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4); echo "$PUBLIC_IP"</code></pre></div>
+      <details class="example-details">
+        <summary>今回のメタデータ確認結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>実行結果・マスク済み</span><button class="copy" type="button">Copy</button></div><pre><code>REGION
+ap-northeast-1
+
+PUBLIC_IP
+52.***.***.***</code></pre></div>
+      </details>
+
+      <h3>3. Apacheと関連ツールの導入</h3>
+      <p><code>httpd</code>、TLS終端用の<code>mod_ssl</code>、証明書操作用の<code>openssl</code>、DNS確認用の<code>bind-utils</code>を導入した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install httpd mod_ssl openssl bind-utils</code></pre></div>
+      <p>導入されたパッケージの版を確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>rpm -q httpd mod_ssl openssl</code></pre></div>
+      <p>Apache本体のバージョンを確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -v</code></pre></div>
+      <details class="example-details">
+        <summary>今回のパッケージ導入結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>dnf実行結果・抜粋</span><button class="copy" type="button">Copy</button></div><pre><code>Transaction Summary
+================================================================
+Install  19 Packages
+Upgrade   2 Packages
+
+Upgraded:
+  openssl-1:3.5.5-6.el9_8.x86_64
+  openssl-libs-1:3.5.5-6.el9_8.x86_64
+
+Installed:
+  bind-utils-32:9.16.23-40.el9_8.2.x86_64
+  httpd-2.4.62-13.el9_8.5.x86_64
+  mod_ssl-1:2.4.62-13.el9_8.5.x86_64
+  （依存パッケージは省略）
+
+Complete!</code></pre></div>
+        <div class="code"><div class="code-header"><span>rpm -q実行結果</span><button class="copy" type="button">Copy</button></div><pre><code>httpd-2.4.62-13.el9_8.5.x86_64
+mod_ssl-2.4.62-13.el9_8.5.x86_64
+openssl-3.5.5-6.el9_8.x86_64</code></pre></div>
+        <div class="code"><div class="code-header"><span>httpd -v実行結果</span><button class="copy" type="button">Copy</button></div><pre><code>Server version: Apache/2.4.62 (Red Hat Enterprise Linux)
+Server built:   Jul  9 2026 00:00:00</code></pre></div>
+      </details>
+
+      <h3>4. ホスト名とDocumentRootの作成</h3>
+      <p>OSの静的ホスト名を公開FQDNへ変更した。OSホスト名とApacheの<code>ServerName</code>は別設定だが、今回の単一サイト検証では同じFQDNを使用した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>hostnamectl set-hostname www.zexample.com</code></pre></div>
+      <p>サイト単位のフルドメイン名を含むDocumentRootを作成した。<code>/var/www/tls-lab</code>でも動作するが、複数サイトを扱う場合はFQDN単位のパスが判別しやすい</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -o root -g root -m 0755 /var/www/www.zexample.com/public_html</code></pre></div>
+      <p>実行ログでは<code>/var/www</code>直下を一覧し、FQDN単位のディレクトリが作成されたことを確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /var/www/</code></pre></div>
+      <p>検証用のHTMLを次の内容で作成した</p>
+      <div class="code"><div class="code-header"><span>/var/www/www.zexample.com/public_html/index.html</span><button class="copy" type="button">Copy</button></div><pre><code>tee /var/www/www.zexample.com/public_html/index.html &gt;/dev/null &lt;&lt;'EOF'
+&lt;!doctype html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;www.zexample.com&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;RHEL 9.8 Apache HTTPS&lt;/h1&gt;
+  &lt;p&gt;www.zexample.comでApacheが稼働しています。&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF</code></pre></div>
+      <p>作成したディレクトリの所有者と権限を確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -ld /var/www/www.zexample.com/public_html</code></pre></div>
+      <details class="example-details">
+        <summary>今回のDocumentRoot作成結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>ls -la /var/www/実行結果</span><button class="copy" type="button">Copy</button></div><pre><code>total 4
+drwxr-xr-x.  5 root root   57 Aug 12 08:41 .
+drwxr-xr-x. 20 root root 4096 Aug 12 08:31 ..
+drwxr-xr-x.  2 root root    6 Jul  9 11:49 cgi-bin
+drwxr-xr-x.  2 root root    6 Jul  9 11:49 html
+drwxr-xr-x.  3 root root   25 Aug 12 08:41 www.zexample.com</code></pre></div>
+        <div class="code"><div class="code-header"><span>ls -ld実行結果</span><button class="copy" type="button">Copy</button></div><pre><code>drwxr-xr-x. 2 root root 24 Aug 12 08:42 /var/www/www.zexample.com/public_html</code></pre></div>
+      </details>
+
+      <h3>5. 書籍どおりにEC P-256秘密鍵を生成</h3>
+      <p>秘密鍵用ディレクトリへ移動した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cd /etc/pki/tls/private</code></pre></div>
+      <p>実行ログでは生成前のディレクトリが空であることも確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /etc/pki/tls/private</code></pre></div>
+      <p>書籍の例と同じ<code>genpkey</code>コマンドで、NIST P-256に相当する<code>prime256v1</code>のEC秘密鍵を生成した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out www.zexample.com.key</code></pre></div>
+      <p>秘密鍵をrootだけが読み書きできるようにした</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 600 www.zexample.com.key</code></pre></div>
+      <p>秘密鍵の内容は表示せず、構造と整合性だけを確認する。実機で実行した<code>openssl pkey -noout -text</code>は秘密値も表示するため、以後は次へ置き換える</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in www.zexample.com.key -check -noout</code></pre></div>
+      <details class="example-details">
+        <summary>今回の秘密鍵生成結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>生成前のディレクトリ確認結果</span><button class="copy" type="button">Copy</button></div><pre><code>total 0
+drwxr-xr-x. 2 root root   6 Jul 15 09:44 .
+drwxr-xr-x. 6 root root 143 Jul 15 09:44 ..</code></pre></div>
+        <div class="code"><div class="code-header"><span>秘密鍵生成結果・機密情報除外</span><button class="copy" type="button">Copy</button></div><pre><code>EC P-256秘密鍵生成：標準出力なし
+chmod 600：標準出力なし
+秘密鍵詳細：priv:値を含むため非掲載</code></pre></div>
+      </details>
+
+      <h3>6. 書籍どおりに対話式CSRを生成</h3>
+      <p>秘密鍵からPKCS#10形式のCSRを生成した。コマンドは書籍と同じで、識別名は対話入力した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -new -key www.zexample.com.key -out www.zexample.com.csr</code></pre></div>
+      <table>
+        <thead><tr><th>入力欄</th><th>実機で入力した値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>Country Name</td><td><code>JP</code></td><td>2文字の国コード</td></tr>
+          <tr><td>State or Province Name</td><td><code>Tokyo</code></td><td>都道府県</td></tr>
+          <tr><td>Locality Name</td><td><code>Sumida-ku</code></td><td>市区町村</td></tr>
+          <tr><td>Organization Name</td><td><code>Example Publishing Ltd</code></td><td>組織の正式名称</td></tr>
+          <tr><td>Organizational Unit Name</td><td><code>System Dept.</code></td><td>部署名</td></tr>
+          <tr><td>Common Name</td><td><code>www.zexample.com</code></td><td>証明書を利用するFQDN</td></tr>
+          <tr><td>Email Address</td><td>空欄</td><td>今回のサーバー証明書では未指定</td></tr>
+          <tr><td>challenge password</td><td>空欄</td><td>今回の運用では未指定</td></tr>
+          <tr><td>optional company name</td><td>空欄</td><td>未指定</td></tr>
+        </tbody>
+      </table>
+      <p>CSRのSubject、公開鍵方式、署名アルゴリズムを確認した。実機ではEC P-256と<code>ecdsa-with-SHA256</code>を確認している。ただし<code>Requested Extensions</code>は空で、SANは含まれていない</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -text -in www.zexample.com.csr</code></pre></div>
+      <p>CSRに含まれる公開鍵でCSR自身の署名を検証した。これはCAの信頼性や証明書発行完了を示すものではなく、現在の秘密鍵ファイルとの対応は後述の公開鍵ハッシュで確認する。実機の結果は<code>Certificate request self-signature verify OK</code>だった</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -verify -in www.zexample.com.csr</code></pre></div>
+      <p>秘密鍵とCSRのパス、所有者、権限を確認した</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la</code></pre></div>
+      <details class="example-details">
+        <summary>今回のCSR作成・確認結果を展開する</summary>
+        <div class="code"><div class="code-header"><span>CSR対話入力結果</span><button class="copy" type="button">Copy</button></div><pre><code>Country Name (2 letter code) [XX]:JP
+State or Province Name (full name) []:Tokyo
+Locality Name (eg, city) [Default City]:Sumida-ku
+Organization Name (eg, company) [Default Company Ltd]:Example Publishing Ltd
+Organizational Unit Name (eg, section) []:System Dept.
+Common Name (eg, your name or your server's hostname) []:www.zexample.com
+Email Address []:
+challenge password []:
+optional company name []:</code></pre></div>
+        <div class="code"><div class="code-header"><span>CSR内容確認結果・抜粋</span><button class="copy" type="button">Copy</button></div><pre><code>Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C=JP, ST=Tokyo, L=Sumida-ku, O=Example Publishing Ltd, OU=System Dept., CN=www.zexample.com
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        Attributes:
+            (none)
+            Requested Extensions:
+    Signature Algorithm: ecdsa-with-SHA256
+    Signature Value:
+        （公開値の16進ダンプは省略）</code></pre></div>
+        <div class="code"><div class="code-header"><span>ファイルとCSR署名の確認結果</span><button class="copy" type="button">Copy</button></div><pre><code>total 8
+drwxr-xr-x. 2 root root  62 Aug 12 08:57 .
+drwxr-xr-x. 6 root root 143 Jul 15 09:44 ..
+-rw-r--r--. 1 root root 509 Aug 12 08:57 www.zexample.com.csr
+-rw-------. 1 root root 241 Aug 12 08:54 www.zexample.com.key
+
+Certificate request self-signature verify OK</code></pre></div>
+      </details>
+      <p>出典：<a href="https://docs.openssl.org/3.5/man1/openssl-genpkey/">OpenSSL 3.5 - openssl-genpkey</a></p>
+      <p>出典：<a href="https://docs.openssl.org/3.5/man1/openssl-req/">OpenSSL 3.5 - openssl-req</a></p>
+
+      <h3>実行履歴上の訂正</h3>
+      <table>
+        <thead><tr><th>実行した内容</th><th>判定</th><th>このページでの扱い</th></tr></thead>
+        <tbody>
+          <tr><td><code>httpd -Ts</code></td><td>導入前のため<code>command not found</code></td><td>構文確認は<code>httpd -t</code>、VirtualHost確認は<code>httpd -S</code>を使用</td></tr>
+          <tr><td><code>openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out www.zexample.com.key</code></td><td>作業途中で実行したが不採用</td><td>同じパスへEC P-256鍵を生成して上書きした。採用方式はEC P-256</td></tr>
+          <tr><td><code>openssl pkey -noout -text -in www.zexample.com.key</code></td><td>秘密値を画面へ表示したため使用禁止</td><td>鍵とCSRを再生成し、今後は<code>-check -noout</code>で確認</td></tr>
+          <tr><td>対話式CSR</td><td>CSR自体は検証成功。ただしSANなし</td><td>自己署名時は証明書拡張設定でSANを追加。公開CAへ出す場合はSAN付きCSRを別途生成</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="rotate">この後1：秘密鍵とCSRの再生成</h2>
+      <p>表示済みの秘密鍵を証明書へ使用しない。まだ証明書を発行していないため失効処理は不要であり、新しいEC P-256鍵へ交換してCSRを作り直す</p>
+      <p>一時ファイルへ新しい秘密鍵を生成する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out /etc/pki/tls/private/www.zexample.com.key.new</code></pre></div>
+      <p>新しい秘密鍵の権限を設定する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 600 /etc/pki/tls/private/www.zexample.com.key.new</code></pre></div>
+      <p>秘密値を表示せず、新しい秘密鍵が正常に読めることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in /etc/pki/tls/private/www.zexample.com.key.new -check -noout</code></pre></div>
+      <p>確認済みの新しい秘密鍵で、表示済みの秘密鍵を置き換える</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>mv -f /etc/pki/tls/private/www.zexample.com.key.new /etc/pki/tls/private/www.zexample.com.key</code></pre></div>
+      <p>置換後の秘密鍵の所有者とグループをrootへ固定する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chown root:root /etc/pki/tls/private/www.zexample.com.key</code></pre></div>
+      <p>書籍と同じ対話式コマンドでCSRを再生成し、既存CSRを置き換える</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -new -key /etc/pki/tls/private/www.zexample.com.key -out /etc/pki/tls/private/www.zexample.com.csr</code></pre></div>
+      <p>再生成したCSRの署名を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -verify -in /etc/pki/tls/private/www.zexample.com.csr</code></pre></div>
+
+      <h2 id="ca">この後2：CSR提出先を選ぶ</h2>
+      <table>
+        <thead><tr><th>選択肢</th><th>CSRの扱い</th><th>受け取るもの</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>今回の自己署名</td><td>外部へ提出せず、同じ秘密鍵で署名</td><td>自己署名CRT</td><td>2026年8月末までのサーバー内TLS検証</td></tr>
+          <tr><td>公開CA</td><td>CAの管理画面またはAPIへSAN付きCSRを提出</td><td>サーバー証明書と中間証明書</td><td>一般ブラウザから信頼される公開サービス</td></tr>
+          <tr><td>ACMエクスポート</td><td>このCSRは使わない。ACMでFQDNを申請</td><td>証明書、暗号化された秘密鍵、証明書チェーン</td><td>後続の自動更新検証</td></tr>
+        </tbody>
+      </table>
+      <p>CAへのCSR提出方法に共通コマンドはない。利用する認証局の管理画面で「サーバー証明書」「CSR貼り付け」などを選び、<code>-----BEGIN CERTIFICATE REQUEST-----</code>から<code>-----END CERTIFICATE REQUEST-----</code>までを提出する。秘密鍵ファイルは送信しない</p>
+      <p>公開CAへ提出する場合は、SANを含むCSRを別ファイルとして生成する。次は書籍の対話式コマンドにSAN拡張だけを追加した例である</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -new -key /etc/pki/tls/private/www.zexample.com.key -out /etc/pki/tls/private/www.zexample.com-public-ca.csr -addext "subjectAltName=DNS:www.zexample.com"</code></pre></div>
+      <p>CAへ送る前にCSRのSANと署名を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -in /etc/pki/tls/private/www.zexample.com-public-ca.csr -noout -verify -text</code></pre></div>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/securing_networks/creating-and-managing-tls-keys-and-certificates_securing-networks">Red Hat - Creating and managing TLS keys and certificates</a></p>
+
+      <h2 id="self-signed">この後3：自己署名証明書を発行</h2>
+      <p>対話式CSRにはSANが含まれていないため、署名時にサーバー証明書用の拡張を追加する。EC鍵では鍵交換用の<code>keyEncipherment</code>ではなく、署名用の<code>digitalSignature</code>を指定する</p>
+      <div class="code"><div class="code-header"><span>/etc/pki/tls/certs/www.zexample.com.ext</span><button class="copy" type="button">Copy</button></div><pre><code>tee /etc/pki/tls/certs/www.zexample.com.ext &gt;/dev/null &lt;&lt;'EOF'
+[server_cert]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:www.zexample.com
+subjectKeyIdentifier = hash
+EOF</code></pre></div>
+      <p>CSRを同じEC秘密鍵で自己署名する。<code>20260831145959Z</code>は2026年8月31日14時59分59秒UTCであり、日本時間の8月31日23時59分59秒に相当する。<code>-not_after</code>はOpenSSL 3.5で利用できる</p>
+      <p>実機のOpenSSLが3.5系であることを再確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl version</code></pre></div>
+      <p><code>x509</code>サブコマンドが期限の直接指定に対応していることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -help 2&gt;&amp;1 | grep -E -- '-not_before|-not_after'</code></pre></div>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -req -in /etc/pki/tls/private/www.zexample.com.csr \
+  -key /etc/pki/tls/private/www.zexample.com.key \
+  -sha256 \
+  -set_serial 0x01 \
+  -not_before today \
+  -not_after 20260831145959Z \
+  -extfile /etc/pki/tls/certs/www.zexample.com.ext \
+  -extensions server_cert \
+  -out /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <p>出典：<a href="https://docs.openssl.org/3.5/man1/openssl-x509/">OpenSSL 3.5 - openssl-x509</a></p>
+      <p>証明書とCSRの権限を整える。秘密鍵は<code>0600</code>のまま維持する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 644 /etc/pki/tls/private/www.zexample.com.csr /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.ext</code></pre></div>
+      <p>RHEL既定のSELinuxコンテキストをDocumentRoot、秘密鍵、証明書へ適用する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -RFv /var/www/www.zexample.com /etc/pki/tls/private/www.zexample.com.key /etc/pki/tls/private/www.zexample.com.csr /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.ext</code></pre></div>
+
+      <h2 id="certificate-check">この後4：証明書とEC鍵を確認</h2>
+      <p>証明書のSubject、Issuer、シリアル番号、有効期間、SHA-256フィンガープリント、SANなどを表示する。自己署名ではSubjectとIssuerが同じになる</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -serial -dates -fingerprint -sha256 -ext subjectAltName,basicConstraints,keyUsage,extendedKeyUsage</code></pre></div>
+      <p>証明書が<code>www.zexample.com</code>に一致することを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -checkhost www.zexample.com</code></pre></div>
+      <p>自己署名証明書を自身のトラストアンカーとして署名検証する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl verify -CAfile /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <p>EC秘密鍵から公開鍵をDER形式で取り出し、SHA-256を計算する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in /etc/pki/tls/private/www.zexample.com.key -pubout -outform DER | openssl dgst -sha256</code></pre></div>
+      <p>CSRから同じ形式の公開鍵を取り出し、SHA-256を計算する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -in /etc/pki/tls/private/www.zexample.com.csr -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256</code></pre></div>
+      <p>証明書から同じ形式の公開鍵を取り出し、SHA-256を計算する。3つの結果が完全に一致すれば、秘密鍵、CSR、証明書が対応している</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256</code></pre></div>
+      <div class="callout">
+        <strong>業務手順のハッシュ値との違い</strong>
+        <p><code>openssl rsa -modulus</code>と<code>openssl x509 -modulus</code>の比較はRSA鍵向けであり、今回のEC鍵には使用しない。<code>-subject_hash</code>と<code>-issuer_hash</code>は証明書をSubject名またはIssuer名で検索するための索引値で、鍵と証明書の整合性を示すハッシュではない</p>
+      </div>
+      <p>業務記録としてSubject名の索引値を取得する場合は次を実行する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -subject_hash -noout -in /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <p>Issuer名の索引値を取得する場合は次を実行する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -issuer_hash -noout -in /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+
+      <h2 id="virtualhost">この後5：ApacheでHTTPS終端</h2>
+      <p>HTTPのVirtualHostはHTTPSへ301リダイレクトし、HTTPSのVirtualHostで自己署名証明書を使ってTLS終端する。設定ファイル名を<code>00-</code>から始め、同じIP・ポートの既定VirtualHostとして先に読み込ませる</p>
+      <div class="code"><div class="code-header"><span>/etc/httpd/conf.d/00-www.zexample.com.conf</span><button class="copy" type="button">Copy</button></div><pre><code>tee /etc/httpd/conf.d/00-www.zexample.com.conf &gt;/dev/null &lt;&lt;'EOF'
+&lt;VirtualHost *:80&gt;
+  ServerName www.zexample.com
+  Redirect permanent / https://www.zexample.com/
+&lt;/VirtualHost&gt;
+
+&lt;VirtualHost *:443&gt;
+  ServerName www.zexample.com
+  DocumentRoot /var/www/www.zexample.com/public_html
+
+  SSLEngine on
+  SSLCertificateFile /etc/pki/tls/certs/www.zexample.com.crt
+  SSLCertificateKeyFile /etc/pki/tls/private/www.zexample.com.key
+
+  &lt;Directory "/var/www/www.zexample.com/public_html"&gt;
+    Options -Indexes
+    AllowOverride None
+    Require all granted
+  &lt;/Directory&gt;
+
+  ErrorLog /var/log/httpd/www.zexample.com-error.log
+  CustomLog /var/log/httpd/www.zexample.com-access.log combined
+&lt;/VirtualHost&gt;
+EOF</code></pre></div>
+      <p>VirtualHost設定へRHEL既定のSELinuxコンテキストを適用する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -v /etc/httpd/conf.d/00-www.zexample.com.conf</code></pre></div>
+      <p>公開CAからリーフ証明書と中間証明書を受領した場合は、リーフを先頭、中間証明書を後ろに連結したfull chainを作成する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/pki/tls/certs/www.zexample.com-leaf.crt /etc/pki/tls/certs/&lt;INTERMEDIATE_CA_FILE&gt; &gt; /etc/pki/tls/certs/www.zexample.com.fullchain.pem</code></pre></div>
+      <p>公開CAへ切り替えた後は<code>SSLCertificateFile</code>をfull chainへ変更する。Apache 2.4.8以降は中間証明書を<code>SSLCertificateFile</code>へ含められるため、旧式の<code>SSLCertificateChainFile</code>は使用しない</p>
+      <p>出典：<a href="https://httpd.apache.org/docs/2.4/mod/mod_ssl.html">Apache HTTP Server - mod_ssl</a></p>
+
+      <h2 id="apache-start">この後6：構文確認とApacheの有効化</h2>
+      <p>設定ファイル内の証明書パスを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -nE 'ServerName|DocumentRoot|SSLCertificate(File|KeyFile)' /etc/httpd/conf.d/00-www.zexample.com.conf</code></pre></div>
+      <p>TLSモジュールが読み込まれることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -M | grep ssl_module</code></pre></div>
+      <p>Apacheの構文を確認し、<code>Syntax OK</code>を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
+      <p>80番と443番で<code>www.zexample.com</code>がどのVirtualHostへ割り当てられるかを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -S</code></pre></div>
+      <p>Apacheを起動し、OS起動時の自動起動も有効にする</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now httpd</code></pre></div>
+      <p>設定反映の運用手順としてApacheを再起動する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl restart httpd</code></pre></div>
+      <p>再起動後のサービス状態を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl status httpd --no-pager -l</code></pre></div>
+      <p>今回の起動に関するjournalを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>journalctl -u httpd -b --no-pager -n 100</code></pre></div>
+      <p>80番と443番のLISTENを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
+
+      <h2 id="network">この後7：firewalldとEC2 Security Group</h2>
+      <p>RHEL側のfirewalldが動作しているかを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl is-active firewalld</code></pre></div>
+      <p><code>active</code>の場合は、EC2のネットワークインターフェイスが属する有効ゾーンを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --get-active-zones</code></pre></div>
+      <p>確認したゾーンでHTTPサービスを恒久許可する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-service=http</code></pre></div>
+      <p>確認したゾーンでHTTPSサービスを恒久許可する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-service=https</code></pre></div>
+      <p>firewalldの設定を再読み込みする</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --reload</code></pre></div>
+      <p>許可済みサービスに<code>http</code>と<code>https</code>が含まれることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --zone=&lt;ACTIVE_ZONE&gt; --list-services</code></pre></div>
+      <p>EC2 Security Groupでは、検証中はTCP 80と443の送信元を<code>&lt;TEST_SOURCE_CIDR&gt;</code>に限定する。一般公開する場合だけ要件に従って<code>0.0.0.0/0</code>やIPv6の許可を検討する。SSH 22番はWeb公開範囲へ広げない</p>
+      <table>
+        <thead><tr><th>タイプ</th><th>プロトコル</th><th>ポート</th><th>検証時の送信元</th></tr></thead>
+        <tbody>
+          <tr><td>HTTP</td><td>TCP</td><td>80</td><td><code>&lt;TEST_SOURCE_CIDR&gt;</code></td></tr>
+          <tr><td>HTTPS</td><td>TCP</td><td>443</td><td><code>&lt;TEST_SOURCE_CIDR&gt;</code></td></tr>
+        </tbody>
+      </table>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules-reference.html">EC2 - Security group rules for different use cases</a></p>
+
+      <h2 id="dns">この後8：Route 53へレコード登録</h2>
+      <p>EC2へ直接向ける場合、通常のパブリックIPv4は停止・起動で変わるため、先にElastic IPを割り当てる。Route 53の<code>zexample.com</code>パブリックホストゾーンに次のAレコードを作成する。プライベートIPやEC2内部ホスト名は登録しない</p>
+      <table>
+        <thead><tr><th>項目</th><th>設定値</th></tr></thead>
+        <tbody>
+          <tr><td>レコード名</td><td><code><span class="user-value">www</span></code></td></tr>
+          <tr><td>完全な名前</td><td><code>www.zexample.com</code></td></tr>
+          <tr><td>レコードタイプ</td><td><code>A</code></td></tr>
+          <tr><td>値</td><td><code>&lt;ELASTIC_IP&gt;</code></td></tr>
+          <tr><td>TTL</td><td><code>300</code>秒</td></tr>
+          <tr><td>ルーティングポリシー</td><td>シンプル</td></tr>
+        </tbody>
+      </table>
+      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-ec2-instance.html">Route 53 - Routing traffic to an Amazon EC2 instance</a></p>
+      <p>登録後、権威DNSからAレコードを引けることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dig +short A www.zexample.com</code></pre></div>
+      <p>ローカルキャッシュに依存せず、Google Public DNSを指定して確認する場合は次を実行する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dig @8.8.8.8 +short A www.zexample.com</code></pre></div>
+      <p>後日ALBを上段へ置く場合は、AレコードをElastic IPからALBへのAliasレコードへ変更する。Global AcceleratorでIPを固定する構成では、DNSをGlobal Acceleratorの静的IPまたは割り当てられたDNS名へ向け、EC2への直接公開を閉じる</p>
+
+      <h2 id="communication">この後9：ローカル、外部、ブラウザ確認</h2>
+      <p>サーバー内からHostヘッダーを指定し、HTTPがHTTPSへ301リダイレクトされることを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I -H 'Host: www.zexample.com' http://127.0.0.1/</code></pre></div>
+      <p>DNSを経由せず、ローカルの443番へSNIとHostを指定してHTTPSコンテンツを確認する。自己署名証明書の検証を一時的に省略するため、検証時だけ<code>-k</code>を使う</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -vk --resolve www.zexample.com:443:127.0.0.1 https://www.zexample.com/</code></pre></div>
+      <p>外部からHTTPの301リダイレクトを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I http://www.zexample.com/</code></pre></div>
+      <p>外部から自己署名証明書の提示内容とHTTPS応答を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -vkI https://www.zexample.com/</code></pre></div>
+      <p>SNIを指定して、Apacheが実際に提示する証明書チェーン、Subject、Issuer、有効期間を確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect www.zexample.com:443 -servername www.zexample.com -showcerts &lt;/dev/null</code></pre></div>
+      <p>ブラウザで<code>https://www.zexample.com/</code>を開く。自己署名段階では発行者を信頼できない警告が表示されることが想定結果であり、本番利用者へ警告の回避操作を案内しない。公開CAまたはACMエクスポート証明書へ交換後は、ブラウザ警告が消え、次のコマンドが<code>-k</code>なしで成功することを確認する</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I https://www.zexample.com/</code></pre></div>
+
+      <h2 id="completion">完了判定</h2>
+      <table>
+        <thead><tr><th>確認対象</th><th>合格条件</th></tr></thead>
+        <tbody>
+          <tr><td>秘密鍵</td><td>再生成済み、<code>root:root 0600</code>、内容を表示していない</td></tr>
+          <tr><td>CSR</td><td>自己署名検証がOK、Subjectが想定どおり</td></tr>
+          <tr><td>証明書</td><td>SANに<code>DNS:www.zexample.com</code>、期限が2026年8月31日23時59分59秒JST</td></tr>
+          <tr><td>鍵と証明書</td><td>DER公開鍵のSHA-256が一致</td></tr>
+          <tr><td>Apache</td><td><code>httpd -t</code>が<code>Syntax OK</code>、80・443をLISTEN、再起動後も<code>active</code></td></tr>
+          <tr><td>HTTP</td><td><code>http://www.zexample.com/</code>がHTTPSへ301リダイレクト</td></tr>
+          <tr><td>HTTPS</td><td>SNIで対象証明書を提示し、検証用HTMLを返す</td></tr>
+          <tr><td>ネットワーク</td><td>firewalld、Security Group、Route 53の設定値が一致</td></tr>
+          <tr><td>ブラウザ</td><td>自己署名警告は想定内。公開CAへ交換後は警告なし</td></tr>
+        </tbody>
+      </table>
+
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#environment">目的と検証環境</a>
+      <a href="#flow">証明書発行の流れ</a>
+      <a href="#paths">ファイルパス</a>
+      <a href="#completed">実施済み手順</a>
+      <a href="#rotate">鍵とCSRの再生成</a>
+      <a href="#ca">CSR提出先</a>
+      <a href="#self-signed">自己署名証明書</a>
+      <a href="#certificate-check">証明書とEC鍵の確認</a>
+      <a href="#virtualhost">ApacheのHTTPS終端</a>
+      <a href="#apache-start">Apacheの有効化</a>
+      <a href="#network">ファイアウォール</a>
+      <a href="#dns">Route 53</a>
+      <a href="#communication">通信確認</a>
+      <a href="#completion">完了判定</a>
+    </aside>
+  </div>
+
+  <script src="../assets/app.js"></script>
+</body>
+</html>

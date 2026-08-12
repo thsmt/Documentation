@@ -31,6 +31,7 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
+            [pscustomobject]@{ File = 'rhel9-apache-tls.html'; Label = 'RHEL 9 Apache TLS構築' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
         )
