@@ -314,6 +314,10 @@ li {
   font-size: 17px;
 }
 
+.lead:empty {
+  display: none;
+}
+
 .notice,
 .callout {
   margin: 28px 0;
@@ -360,6 +364,11 @@ li {
 .user-value {
   color: #ff9900;
   font-weight: 700;
+}
+
+.environment-table .user-value {
+  color: inherit;
+  font-weight: inherit;
 }
 
 .tab {
@@ -543,6 +552,23 @@ th {
 
 td {
   color: var(--text);
+}
+
+details.example-details.execution-example {
+  margin-top: -12px;
+  margin-bottom: 22px;
+}
+
+.execution-example-label {
+  color: var(--accent-strong);
+}
+
+@media (min-width: 641px) {
+  .environment-table th:first-child,
+  .environment-table td:first-child {
+    width: 180px;
+    white-space: nowrap;
+  }
 }
 
 details.example-details {
