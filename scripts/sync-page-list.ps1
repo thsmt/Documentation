@@ -31,7 +31,7 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
-            [pscustomobject]@{ File = 'ec2-rhel9-apache-https.html'; Label = 'EC2上のRHEL 9.8 Apache HTTPS終端構築' }
+            [pscustomobject]@{ File = 'apache-self-signed-https.html'; Label = 'Apache 自己署名HTTPS化' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
         )
@@ -63,6 +63,11 @@ $pages = @(
         }
     }
 )
+$hiddenAliasFiles = [System.Collections.Generic.HashSet[string]]::new(
+    [System.StringComparer]::OrdinalIgnoreCase
+)
+[void]$hiddenAliasFiles.Add('ec2-rhel9-apache-https.html')
+[void]$hiddenAliasFiles.Add('rhel9-apache-tls.html')
 
 $errors = [System.Collections.Generic.List[string]]::new()
 $pageFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
@@ -75,9 +80,17 @@ foreach ($page in $pages) {
     }
 }
 
+foreach ($aliasFile in $hiddenAliasFiles) {
+    if (-not (Test-Path -LiteralPath (Join-Path $tutorialsRoot $aliasFile))) {
+        $errors.Add("Missing hidden alias page: $aliasFile")
+    }
+}
+
 $targets = @(
     Get-Item -LiteralPath (Join-Path $root 'index.html')
-    Get-ChildItem -LiteralPath $tutorialsRoot -File -Filter '*.html' | Sort-Object Name
+    Get-ChildItem -LiteralPath $tutorialsRoot -File -Filter '*.html' |
+        Where-Object { -not $hiddenAliasFiles.Contains($_.Name) } |
+        Sort-Object Name
 )
 $pattern = '(?s)    <aside id="site-sidebar" class="sidebar" aria-label="[^"]+">.*?    </aside>'
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
