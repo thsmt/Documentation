@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AWS CLI コマンドリファレンス | Documentation</title>
-  <meta name="description" content="AWS CLIとAWS SDKの導入、VPCからELBまでの構築フロー、日常運用コマンドを掲載するリファレンス。">
+  <meta name="description" content="AWS CLIによるVPC、EC2、ELBの構築フローと、日常運用コマンドを整理するリファレンス。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -70,368 +70,217 @@
       </nav>
 
       <h1>AWS CLI コマンドリファレンス</h1>
-      <p class="lead">AWS CLIとAWS SDKの導入からVPC、EC2、ELBまでを書籍掲載順にたどり、その後にIAM、Security Group、Prefix List、SNSなどの日常運用コマンドを整理する</p>
+      <p class="lead">AWS CLIでVPCからEC2、ELBまでを構築する流れと、IAM、Security Group、Prefix List、SNSなどの日常運用コマンドを整理する</p>
 
       <div class="callout">
         <strong>📍 使い分け</strong>
-        <p>本ページは、書籍掲載順の学習用構築フローと、現行環境で使う定型操作を分けて掲載する。CLI/APIでしか変更・切り戻し・復旧できない操作は、<a href="aws-cli.html">AWS CLI 特殊対応</a> に分けている</p>
+        <p>本ページは、AWS CLIによるリソース構築フローと定型操作をまとめる</p>
+        <p>AWS CLIでしか変更・切り戻し・復旧できない操作は、<a href="aws-cli.html">AWS CLI 特殊対応</a> に分けている</p>
       </div>
 
-      <h2 id="book-build-flow">書籍p.92〜180のAWS CLI／SDK構築フロー</h2>
-      <p>『Amazon Web Services パターン別構築・運用ガイド 改訂第2版』の書籍p.92〜180を対象に、AWS CLIとAWS SDKの導入、基本操作、VPCからELBまでの構築コマンドを掲載順に整理する</p>
-
-      <div class="callout">
-        <strong>書籍掲載時点と原表記</strong>
-        <p>本節は2018年3月発行の紙面を学習用に再現したもの。掲載時点のAWS CLI v1、SDK、サービス仕様を保持し、原文上の誤記や旧構文も勝手に現行化していない。現在の環境で実行する場合は、本節の後にある現行AWS CLIの初期設定と各コマンドの現行リファレンスを確認する</p>
-        <p>紙面の行継続記号「¥」は同じ意味のバックスラッシュ「\」で表記し、紙面幅による折り返しだけを接続している。SSH、Apache、OS操作だけのコマンドは対象外</p>
-      </div>
+      <h2 id="vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ELB構築フロー</h2>
+      <p>AWS CLIでネットワークから仮想サーバー、ロードバランサーまでを順に構築する</p>
 
       <table>
-        <thead><tr><th>書籍ページ</th><th>構築順</th><th>主なAWS CLI操作</th></tr></thead>
+        <thead><tr><th>手順</th><th>対象</th><th>主なAWS CLI操作</th></tr></thead>
         <tbody>
-          <tr><td>p.92〜101</td><td>CLI導入・基本操作</td><td>インストール、configure、参照、filters、query</td></tr>
-          <tr><td>p.102〜115</td><td>SDK導入</td><td>Ruby、PHP、Java</td></tr>
-          <tr><td>p.122</td><td>VPC</td><td>create-vpc、modify-vpc-attribute</td></tr>
-          <tr><td>p.124</td><td>サブネット</td><td>create-subnet</td></tr>
-          <tr><td>p.126〜132</td><td>経路</td><td>ルートテーブル、関連付け、IGW、デフォルトルート</td></tr>
-          <tr><td>p.136〜142</td><td>接続と通信許可</td><td>キーペア、Security Group</td></tr>
-          <tr><td>p.153</td><td>EC2</td><td>run-instances、create-tags</td></tr>
-          <tr><td>p.160〜164</td><td>AMI・Elastic IP</td><td>create-image、allocate-address、associate-address</td></tr>
-          <tr><td>p.180</td><td>ELB</td><td>create-load-balancer、register-instances-with-load-balancer</td></tr>
+          <tr><td>1</td><td>VPC</td><td><code>create-vpc</code>、<code>modify-vpc-attribute</code></td></tr>
+          <tr><td>2</td><td>サブネット</td><td><code>create-subnet</code></td></tr>
+          <tr><td>3</td><td>ルートテーブル</td><td><code>create-route-table</code>、<code>associate-route-table</code></td></tr>
+          <tr><td>4</td><td>インターネットゲートウェイ</td><td><code>create-internet-gateway</code>、<code>attach-internet-gateway</code></td></tr>
+          <tr><td>5</td><td>デフォルトルート</td><td><code>create-route</code></td></tr>
+          <tr><td>6</td><td>キーペア</td><td><code>create-key-pair</code>、<code>import-key-pair</code></td></tr>
+          <tr><td>7</td><td>Security Group</td><td><code>create-security-group</code>、<code>authorize-security-group-ingress</code></td></tr>
+          <tr><td>8</td><td>EC2</td><td><code>run-instances</code>、<code>create-tags</code></td></tr>
+          <tr><td>9</td><td>AMI</td><td><code>create-image</code>、<code>describe-images</code></td></tr>
+          <tr><td>10</td><td>Elastic IP</td><td><code>allocate-address</code>、<code>associate-address</code></td></tr>
+          <tr><td>11</td><td>Classic Load Balancer</td><td><code>create-load-balancer</code>、<code>register-instances-with-load-balancer</code></td></tr>
         </tbody>
       </table>
 
-      <h3 id="book-cli-install">AWS CLIのインストール</h3>
-      <p>書籍p.92〜94の掲載順。macOSとLinuxはPython、pip、AWS CLIを順に導入し、Windowsはインストーラー導入後の確認コマンドを掲載している</p>
-
-      <div class="tab-group" data-tabs>
-        <div class="tabs" role="tablist" aria-label="Book AWS CLI install commands">
-          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="book-awscli-macos">macOS</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="book-awscli-linux">Linux</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="book-awscli-windows">Windows</button>
-        </div>
-
-        <section class="tab-panel active" id="book-awscli-macos" role="tabpanel">
-          <div class="code">
-            <div class="code-header"><span>macOS／書籍p.92〜93</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>sudo brew install python
-sudo easy_install pip
-sudo pip install awscli
-aws --verison
-pip install -U awscli</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="book-awscli-linux" role="tabpanel">
-          <div class="code">
-            <div class="code-header"><span>CentOS 7／書籍p.93</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>sudo yum install python-setuptools
-sudo easy_install pip
-sudo pip install awscli
-aws --verison
-pip install -U awscli</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="book-awscli-windows" role="tabpanel">
-          <p>書籍p.93では64ビット版と32ビット版のMSIインストーラーURLを掲載している</p>
-          <div class="code">
-            <div class="code-header"><span>Windows 64ビット／書籍p.93</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>https://s3.amazonaws.com/aws-cli/AWSCLI64.msi</code></pre>
-          </div>
-          <div class="code">
-            <div class="code-header"><span>Windows 32ビット／書籍p.93</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>https://s3.amazonaws.com/aws-cli/AWSCLI32.msi</code></pre>
-          </div>
-          <div class="code">
-            <div class="code-header"><span>Windows／書籍p.94</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>aws --version</code></pre>
-          </div>
-        </section>
-      </div>
-
       <div class="callout">
-        <strong>紙面の綴り</strong>
-        <p>macOSとLinuxのバージョン確認は、紙面どおり <code>aws --verison</code> と記載している。この綴りでは正常実行できない</p>
+        <strong>置換する値</strong>
+        <p><code>&lt;VPC_ID&gt;</code>、<code>&lt;SUBNET_ID&gt;</code>、<code>&lt;SECURITY_GROUP_ID&gt;</code>、<code>&lt;INSTANCE_ID&gt;</code>などは、直前のコマンドで取得した実際のリソースIDへ置き換える</p>
       </div>
 
-      <h3 id="book-cli-basics">AWS CLIの設定・参照・絞り込み</h3>
-      <p>書籍p.94の基本設定。入力値は各自のアクセスキー、シークレットアクセスキー、リージョン、出力形式に置き換える</p>
+      <h3 id="build-vpc">1. VPCの作成</h3>
+      <p>CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.94</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure</code></pre>
-      </div>
-
-      <p>書籍p.95のデフォルト設定と名前付きprofileの操作</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.95</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-security-groups
-aws configure --profile sample-user
-aws ec2 describe-security-groups --profile sample-user</code></pre>
-      </div>
-
-      <p>書籍p.96の基本的な参照例</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.96</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-security-groups
-aws s3 ls</code></pre>
-      </div>
-
-      <p>書籍p.97のリージョンと出力形式を指定する例</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.97</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-security-groups --region us-east-1 --output json</code></pre>
-      </div>
-
-      <p>書籍p.98〜99のfiltersによる絞り込み例</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.98〜99</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instances --filters "Name=private-ip-address,Values=10.0.0.10"
-aws ec2 describe-instances --filters "Name=instance-type,Values=t2.medium,m3.medium"
-aws ec2 describe-instances --filters "Name=tag:Project,Values=AWS Training"
-aws ec2 describe-instances --filters "Name=instance-type,Values=t2.medium,m3.medium" "Name=tag:Project,Values=AWS Training"
-aws ec2 describe-images --filters "Name=name,Values=SampleAMI2015*"</code></pre>
-      </div>
-
-      <p>書籍p.100〜101のqueryによる出力項目の選択例</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.100〜101</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'
-aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId,PrivateIpAddress]'
-aws ec2 describe-instances --query 'Reservations[].Instances[].{ID:InstanceId,IP:PrivateIpAddress}' --output json
-aws ec2 describe-instances --query 'Reservations[].Instances[?InstanceType==`t2.small`].[InstanceId,PrivateIpAddress]'
-aws ec2 describe-instances --query 'Reservations[].Instances[?InstanceType==`t2.small`].{ID:InstanceId,IP:PrivateIpAddress,NAME:Tags[?Key==`Name`].Value}' --output json</code></pre>
-      </div>
-
-      <h3 id="book-sdk-install">AWS SDKのインストール</h3>
-      <p>書籍p.102ではRuby 1.9以上、PHP 5.5以上、Java 8以上を前提バージョンとしている。すべて掲載時点の要件</p>
-
-      <div class="tab-group" data-tabs>
-        <div class="tabs" role="tablist" aria-label="Book AWS SDK install commands">
-          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="book-sdk-ruby">Ruby</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="book-sdk-php">PHP</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="book-sdk-java">Java</button>
-        </div>
-
-        <section class="tab-panel active" id="book-sdk-ruby" role="tabpanel">
-          <p>macOS、Linux（CentOS 7）、Windowsで同じコマンドを使用する</p>
-          <div class="code">
-            <div class="code-header"><span>Ruby／書籍p.103</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>gem install aws-sdk</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="book-sdk-php" role="tabpanel">
-          <p>macOS、Linux（CentOS 7）、WindowsでComposerを導入してからPHP用AWS SDKを導入する</p>
-          <div class="code">
-            <div class="code-header"><span>PHP／書籍p.103〜104</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>curl -sS https://getcomposer.org/installer | php
-php composer.phar require aws/aws-sdk-php</code></pre>
-          </div>
-        </section>
-
-        <section class="tab-panel" id="book-sdk-java" role="tabpanel">
-          <p>書籍ではJavaとApache Antをインストール済みの前提とし、コマンドではなく次の旧HTTP URLからZIPを取得する手順を掲載している</p>
-          <div class="code">
-            <div class="code-header"><span>Java／書籍p.104〜105</span><button class="copy" type="button">Copy</button></div>
-            <pre><code>http://sdk-for-java.amazonwebservices.com/latest/aws-java-sdk.zip</code></pre>
-          </div>
-        </section>
-      </div>
-
-      <h3 id="book-vpc">1. VPCの作成</h3>
-      <p>書籍p.122。CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.122</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-vpc --cidr-block 10.0.0.0/16
-aws ec2 modify-vpc-attribute --vpc-id vpc-******** --enable-dns-hostnames</code></pre>
+aws ec2 modify-vpc-attribute \
+  --vpc-id &lt;VPC_ID&gt; \
+  --enable-dns-hostnames Value=true</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>紙面のDNS属性指定</strong>
-        <p><code>--enable-dns-hostnames</code> は紙面どおり値を伴わない形で掲載している。現行CLIで実行する場合は真偽値の指定方法を確認する</p>
-      </div>
-
-      <p>専用テナンシーを指定する別例</p>
+      <p>専用テナンシーを指定してVPCを作成する場合</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.122</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-vpc --cidr-block 10.0.0.0/16 --instance-tenancy dedicated</code></pre>
       </div>
 
-      <h3 id="book-subnet">2. サブネットの作成</h3>
-      <p>書籍p.124。異なるアベイラビリティーゾーンへ2つのサブネットを作成する</p>
+      <h3 id="build-subnet">2. サブネットの作成</h3>
+      <p>異なるアベイラビリティーゾーンへ2つのサブネットを作成する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.124</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 create-subnet --vpc-id vpc-******** --availability-zone ap-northeast-1a --cidr-block 10.0.0.0/24
-aws ec2 create-subnet --vpc-id vpc-******** --availability-zone ap-northeast-1c --cidr-block 10.0.100.0/24</code></pre>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 create-subnet \
+  --vpc-id &lt;VPC_ID&gt; \
+  --availability-zone ap-northeast-1a \
+  --cidr-block 10.0.0.0/24
+aws ec2 create-subnet \
+  --vpc-id &lt;VPC_ID&gt; \
+  --availability-zone ap-northeast-1c \
+  --cidr-block 10.0.100.0/24</code></pre>
       </div>
 
-      <h3 id="book-route-table">3. ルートテーブルの作成と関連付け</h3>
-      <p>書籍p.126でルートテーブルを作成し、p.128でサブネットへ関連付ける</p>
+      <h3 id="build-route-table">3. ルートテーブルの作成と関連付け</h3>
+      <p>ルートテーブルを作成し、サブネットへ関連付ける</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.126〜128</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 create-route-table --vpc-id vpc-********
-aws ec2 associate-route-table --route-table-id rtb-******** --subnet-id subnet-********</code></pre>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 create-route-table --vpc-id &lt;VPC_ID&gt;
+aws ec2 associate-route-table \
+  --route-table-id &lt;ROUTE_TABLE_ID&gt; \
+  --subnet-id &lt;SUBNET_ID&gt;</code></pre>
       </div>
 
-      <h3 id="book-internet-gateway">4. インターネットゲートウェイの作成</h3>
-      <p>書籍p.130。インターネットゲートウェイを作成し、作成済みVPCへアタッチする</p>
+      <h3 id="build-internet-gateway">4. インターネットゲートウェイの作成</h3>
+      <p>インターネットゲートウェイを作成し、VPCへアタッチする</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.130</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-internet-gateway
-aws ec2 attach-internet-gateway --internet-gateway-id igw-******** --vpc-id vpc-********</code></pre>
+aws ec2 attach-internet-gateway \
+  --internet-gateway-id &lt;INTERNET_GATEWAY_ID&gt; \
+  --vpc-id &lt;VPC_ID&gt;</code></pre>
       </div>
 
-      <h3 id="book-default-route">5. デフォルトルートの作成</h3>
-      <p>書籍p.132。宛先 <code>0.0.0.0/0</code> をインターネットゲートウェイへ向ける</p>
+      <h3 id="build-default-route">5. デフォルトルートの作成</h3>
+      <p>宛先 <code>0.0.0.0/0</code> をインターネットゲートウェイへ向ける</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.132</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 create-route --route-table-id rtb-******** \
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 create-route \
+  --route-table-id &lt;ROUTE_TABLE_ID&gt; \
   --destination-cidr-block 0.0.0.0/0 \
-  --gateway-id igw-********</code></pre>
+  --gateway-id &lt;INTERNET_GATEWAY_ID&gt;</code></pre>
       </div>
 
-      <h3 id="book-key-pair">6. キーペアの作成と公開鍵のインポート</h3>
-      <p>書籍p.136。キーペアを作成する</p>
+      <h3 id="build-key-pair">6. キーペアの作成と公開鍵のインポート</h3>
+      <p>キーペアを作成する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.136</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-key-pair --key-name myKeyPair</code></pre>
       </div>
 
-      <p>KeyMaterialを <code>myKeyPair.pem</code> へ保存する別例</p>
+      <p>秘密鍵を <code>myKeyPair.pem</code> へ保存する場合</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.136</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-key-pair \
   --key-name myKeyPair \
   --query 'KeyMaterial' \
   --output text &gt; myKeyPair.pem</code></pre>
       </div>
 
-      <p>書籍p.137。既存の公開鍵を変数へ格納してインポートする</p>
+      <p>既存の公開鍵をインポートする場合</p>
       <div class="code">
-        <div class="code-header"><span>bash＋AWS CLI／書籍p.137</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>impkey=`cat ~/.ssh/id_rsa.pub`
-aws ec2 import-key-pair \
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 import-key-pair \
   --key-name ImportKey \
-  --public-key-material $(impkey)</code></pre>
+  --public-key-material fileb://~/.ssh/id_rsa.pub</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>紙面の変数参照</strong>
-        <p><code>$(impkey)</code> は紙面どおりの表記。一般的なシェル変数参照へ修正していない</p>
-      </div>
-
-      <h3 id="book-security-group">7. Security Groupの作成</h3>
-      <p>書籍p.142。Security Groupを作成し、接続元IPアドレスからのSSHを許可して設定を確認する</p>
+      <h3 id="build-security-group">7. Security Groupの作成</h3>
+      <p>Security Groupを作成し、接続元グローバルIPv4アドレスからのSSHを許可して設定を確認する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.142</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-security-group \
   --group-name mySecurityGroup \
   --description "my First Security Group" \
-  --vpc-id vpc-********</code></pre>
+  --vpc-id &lt;VPC_ID&gt;</code></pre>
       </div>
 
       <div class="code">
-        <div class="code-header"><span>接続元IPアドレス確認／書籍p.142</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>curl http://checkip.amazonaws.com/</code></pre>
-      </div>
-
-      <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.142</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress \
-  --group-id sg-******** \
+  --group-id &lt;SECURITY_GROUP_ID&gt; \
   --protocol tcp \
   --port 22 \
-  --cidr 192.168.0.1/32
+  --cidr &lt;GLOBAL_IPV4_ADDRESS&gt;/32
 aws ec2 describe-security-groups \
-  --group-ids sg-******** \
+  --group-ids &lt;SECURITY_GROUP_ID&gt; \
   --output json</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>接続元CIDR</strong>
-        <p><code>192.168.0.1/32</code> は紙面の値。実際の許可設定では <code>checkip.amazonaws.com</code> が返したグローバルIPv4アドレスへ置き換える</p>
-      </div>
-
-      <h3 id="book-ec2">8. EC2インスタンスの作成</h3>
-      <p>書籍p.153。AMI、インスタンスタイプ、キーペア、Security Group、サブネットを指定して起動し、Nameタグを追加する</p>
+      <h3 id="build-ec2">8. EC2インスタンスの作成</h3>
+      <p>AMI、インスタンスタイプ、キーペア、Security Group、サブネットを指定してEC2インスタンスを起動し、Nameタグを追加する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.153</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 run-instances \
-  --image-id ami-b66ed3de \
+  --image-id &lt;AMI_ID&gt; \
   --count 1 \
-  --instance-type t2.micro \
+  --instance-type t3.micro \
   --key-name myKeyPair \
-  --security-group-ids sg-7e75981a \
-  --subnet-id subnet-95e227be</code></pre>
+  --security-group-ids &lt;SECURITY_GROUP_ID&gt; \
+  --subnet-id &lt;SUBNET_ID&gt;</code></pre>
       </div>
 
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.153</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-tags \
-  --resources i-a3597849 \
+  --resources &lt;INSTANCE_ID&gt; \
   --tags Key=Name,Value=myFirstEC2</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>紙面のリソースID</strong>
-        <p><code>ami-b66ed3de</code>、<code>sg-7e75981a</code>、<code>subnet-95e227be</code>、<code>i-a3597849</code> は掲載当時の例。実行環境のAMI IDと作成済みリソースIDへ置き換える</p>
-      </div>
-
-      <h3 id="book-ami">9. AMIの作成と確認</h3>
-      <p>書籍p.160でAMIを作成し、p.161で作成結果を確認する</p>
+      <h3 id="build-ami">9. AMIの作成と確認</h3>
+      <p>EC2インスタンスからAMIを作成し、AMI IDを指定して確認する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.160</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-image \
-  --instance-id i-******** \
+  --instance-id &lt;INSTANCE_ID&gt; \
   --name "myFirstEC2" \
   --description "myFirstEC2-AMI"</code></pre>
       </div>
 
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.161</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-images \
-  --image-id ami-********</code></pre>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 describe-images --image-ids &lt;AMI_ID&gt;</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>紙面のオプション名</strong>
-        <p><code>--image-id</code> は紙面どおり単数形のまま掲載している</p>
-      </div>
-
-      <h3 id="book-elastic-ip">10. Elastic IPの取得と関連付け</h3>
-      <p>書籍p.164。Elastic IPを取得し、EC2インスタンスへ関連付けて確認する</p>
+      <h3 id="build-elastic-ip">10. Elastic IPの取得と関連付け</h3>
+      <p>VPC用のElastic IPを取得し、EC2インスタンスへ関連付けて確認する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.164</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 allocate-address
-aws ec2 associate-address --instance-id i-******** --allocation-id eipalloc-********
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 allocate-address --domain vpc
+aws ec2 associate-address \
+  --instance-id &lt;INSTANCE_ID&gt; \
+  --allocation-id &lt;ALLOCATION_ID&gt;
 aws ec2 describe-addresses</code></pre>
       </div>
 
-      <h3 id="book-elb">11. ELBの作成とEC2インスタンスの登録</h3>
-      <p>書籍p.180。<code>aws elb</code> を使用するClassic Load Balancerを作成し、2台のEC2インスタンスを登録する</p>
+      <h3 id="build-elb">11. Classic Load Balancerの作成とEC2インスタンスの登録</h3>
+      <p>Classic Load Balancerを作成し、2台のEC2インスタンスを登録する</p>
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.180</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws elb create-load-balancer \
   --load-balancer-name External-Web \
-  --listeners Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80 \
-  --tag Key=NAME,Value=Exteranl-Web \
-  --subnets subnet-******** \
-  --security-groups sg-********</code></pre>
+  --listeners "Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80" \
+  --tags Key=Name,Value=External-Web \
+  --subnets &lt;SUBNET_ID_1&gt; &lt;SUBNET_ID_2&gt; \
+  --security-groups &lt;ELB_SECURITY_GROUP_ID&gt;</code></pre>
       </div>
 
       <div class="code">
-        <div class="code-header"><span>AWS CLI／書籍p.180</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws elb register-instances-with-load-balancer --load-balancer-name External-Web
---instances i-******** i-********</code></pre>
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws elb register-instances-with-load-balancer \
+  --load-balancer-name External-Web \
+  --instances &lt;INSTANCE_ID_1&gt; &lt;INSTANCE_ID_2&gt;</code></pre>
       </div>
 
       <div class="callout">
-        <strong>紙面のELBコマンド</strong>
-        <p><code>--tag</code>、<code>Key=NAME</code>、<code>Exteranl-Web</code> は紙面どおり。インスタンス登録コマンドも1行目末に行継続記号がない状態を保持しているため、そのまま2行では実行できない</p>
+        <strong>ロードバランサーのコマンド体系</strong>
+        <p><code>aws elb</code> はClassic Load Balancerを操作する</p>
+        <p>Application Load BalancerとNetwork Load Balancerは <code>aws elbv2</code> を使用する</p>
       </div>
 
-      <h2 id="setup">現行AWS CLIの初期設定</h2>
+      <h2 id="setup">AWS CLIの初期設定</h2>
       <h3 id="install">インストール</h3>
       <p>作業端末のOSに合わせてAWS CLIをインストールする</p>
 
@@ -872,8 +721,8 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#book-build-flow">書籍p.92〜180 構築フロー</a>
-      <a href="#setup">現行AWS CLI初期設定</a>
+      <a class="active" href="#vpc-ec2-elb-build-flow">VPC／EC2／ELB 構築フロー</a>
+      <a href="#setup">AWS CLI初期設定</a>
       <a href="#iam">IAM</a>
       <a href="#security-group">Security Group</a>
       <a href="#prefix-list">Prefix List作成</a>
