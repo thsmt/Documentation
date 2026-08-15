@@ -7,7 +7,7 @@
   <meta name="description" content="Amazon EC2上のWindows Server 2025を手動構築するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-value-highlighting="off">
+<body>
   <header class="site-header">
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
     <div class="header-actions">
@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -70,6 +70,125 @@
       <h1>Windows Server 2025</h1>
       <p class="lead">Amazon EC2上でWindows Server 2025を起動し、接続、ユーザー、更新、OpenSSH、SMB、セキュリティの初期設定を確認する手順を整理する</p>
 
+      <h2 id="ami-selection">最初に確認するAMIの違い</h2>
+      <p>AMIについては、<code>Base</code>がデスクトップGUI付き、<code>Core</code>がGUIを含まないServer Core。今回の<code>compmgmt.msc</code>による手順では<code>Base</code>を選択する。<code>Core</code>はPowerShell、SConfig、Windows Admin Centerなどによる管理向け</p>
+      <table>
+        <thead><tr><th>AMI</th><th>画面と管理方法</th><th>選択基準</th></tr></thead>
+        <tbody>
+          <tr><td><code>Base</code><br><code>Windows_Server-2025-English-Full-Base</code></td><td>デスクトップエクスペリエンスを含み、通常のWindows GUI、サーバーマネージャー、MMC、リモートデスクトップを利用できる</td><td>本ページの画面操作を実施する場合に選択</td></tr>
+          <tr><td><code>Core</code><br><code>Windows_Server-2025-English-Core-Base</code></td><td>標準のデスクトップGUIを含まないServer Core。PowerShell、SConfig、Windows Admin Center、RSATなどで管理する</td><td>GUIを必要とせず、ディスク使用量と攻撃対象領域を抑えたい場合に選択</td></tr>
+        </tbody>
+      </table>
+
+      <p>確認した<code>ami-0c8c5308226f34f90</code>はBase、<code>ami-058b781e9791d335d</code>はCoreです。AMI IDはリージョンと月次リリースごとに変わるため、継続利用する構成ではAMI名またはSystems Managerの公開パラメータで最新版を取得する</p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/get-started/install-options-server-core-desktop-experience">Microsoft公式: Server Coreとデスクトップエクスペリエンスの違い</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami-parameter-store.html">AWS公式: Systems Manager公開パラメータによる最新AMIの参照</a></p>
+
+      <h2 id="command-summary">Windows操作のコマンド実行例</h2>
+      <p>本ページのWindows GUI操作を管理者権限のPowerShellで実行する場合の対応例。山括弧の値を構築値へ置き換え、ディスク番号など対象を特定する値は実行前に確認する</p>
+      <table>
+        <thead><tr><th>手順番号+見出し</th><th>実行するコマンド</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>2.1 管理用ローカルユーザー</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"
+New-LocalUser -Name "&lt;ADMIN_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"
+Add-LocalGroupMember -Group "Administrators" -Member "&lt;ADMIN_USER&gt;"</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>2.2 利用者用ローカルユーザー</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"
+New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"
+Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.1 ファイル名拡張子の表示</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
+New-ItemProperty -Path $path -Name HideFileExt -PropertyType DWord -Value 0 -Force
+Stop-Process -Name explorer -Force</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.2 タイムゾーン設定</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Set-TimeZone -Id "Tokyo Standard Time"</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.3 Windows Updateの自動ダウンロードとインストール通知</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU'
+New-Item -Path $path -Force | Out-Null
+New-ItemProperty -Path $path -Name NoAutoUpdate -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path $path -Name AUOptions -PropertyType DWord -Value 3 -Force
+gpupdate /force</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.4.1 RDPセッション制限</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
+New-Item -Path $path -Force | Out-Null
+Remove-ItemProperty -Path $path -Name MaxInstanceCount -ErrorAction SilentlyContinue
+New-ItemProperty -Path $path -Name fSingleSessionPerUser -PropertyType DWord -Value 0 -Force
+gpupdate /force</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.4.2 RDP暗号化レベル</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
+New-Item -Path $path -Force | Out-Null
+New-ItemProperty -Path $path -Name MinEncryptionLevel -PropertyType DWord -Value 3 -Force
+gpupdate /force</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.5 Windows Defender Firewallの無効化</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled False</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>3.6 追加ボリュームの初期化</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Get-Disk
+$driveLetter = "&lt;VOLUME_DRIVE_LETTER&gt;".TrimEnd(':')
+Initialize-Disk -Number &lt;DISK_NUMBER&gt; -PartitionStyle GPT -PassThru |
+  New-Partition -UseMaximumSize -DriveLetter $driveLetter |
+  Format-Volume -FileSystem NTFS -NewFileSystemLabel "&lt;VOLUME_LABEL&gt;" -Confirm:$false</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>5.1 コンピューター名設定</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Rename-Computer -NewName "&lt;HOSTNAME&gt;"</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>5.2 Windows Update</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$session = New-Object -ComObject Microsoft.Update.Session
+$searcher = $session.CreateUpdateSearcher()
+$result = $searcher.Search("IsInstalled=0 and IsHidden=0 and Type='Software'")
+$updates = New-Object -ComObject Microsoft.Update.UpdateColl
+foreach ($update in $result.Updates) {
+  if (-not $update.EulaAccepted) { $update.AcceptEula() }
+  [void]$updates.Add($update)
+}
+if ($updates.Count -gt 0) {
+  $downloader = $session.CreateUpdateDownloader()
+  $downloader.Updates = $updates
+  [void]$downloader.Download()
+  $installer = $session.CreateUpdateInstaller()
+  $installer.Updates = $updates
+  $installResult = $installer.Install()
+  $installResult | Select-Object ResultCode, RebootRequired
+}</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>5.3 最終再起動</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Restart-Computer -Force</code></pre></div></td>
+          </tr>
+          <tr>
+            <td>5.4 AMI横展開時のみ: EC2Launch v2とSysprep</td>
+            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>&amp; "$Env:ProgramFiles\Amazon\EC2Launch\EC2Launch.exe" sysprep --shutdown=true</code></pre></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        ディスク初期化は対象番号を誤るとデータを失います。<code>Get-Disk</code>で容量、状態、番号を照合し、対象が未初期化の追加ディスクであることを確認してから実行する。再起動は手順5.3まで保留する
+      </div>
+
+      <p>Windows Updateのコマンド例は、ローカル管理者としてWindows Update Agent APIを呼び出す。更新元、承認、適用時刻を一元管理する環境では、Patch Manager、WSUS、SCCMなど組織の管理方式を優先する</p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows/win32/wua_sdk/windows-update-agent-object-model">Microsoft公式: Windows Update Agent Object Model</a></p>
+
       <h2 id="launch">0. 起動時の確認</h2>
 
       <h3 id="launch-ami">0.1 AMIとキーペア</h3>
@@ -92,7 +211,10 @@
           <tr><td><code>&lt;HOSTNAME&gt;</code></td><td>Windows Serverへ設定するコンピューター名</td></tr>
           <tr><td><code>&lt;ADMIN_USER&gt;</code></td><td>管理用ローカルユーザー名</td></tr>
           <tr><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>利用者用ローカルユーザー名</td></tr>
+          <tr><td><code>&lt;DESCRIPTION&gt;</code></td><td>ローカルユーザーの用途を示す説明</td></tr>
+          <tr><td><code>&lt;DISK_NUMBER&gt;</code></td><td>初期化する追加ディスクの番号</td></tr>
           <tr><td><code>&lt;VOLUME_DRIVE_LETTER&gt;</code></td><td>追加ボリュームへ割り当てるドライブ文字。例: <code>D:</code></td></tr>
+          <tr><td><code>&lt;VOLUME_LABEL&gt;</code></td><td>追加ボリュームへ設定するラベル</td></tr>
         </tbody>
       </table>
 
@@ -100,7 +222,8 @@
       <table>
         <thead><tr><th>機能</th><th>Windows Server 2025での確認点</th></tr></thead>
         <tbody>
-          <tr><td>Credential Guard</td><td>要件を満たすデバイスでは既定で有効。仮想化ベースのセキュリティと認証情報保護への影響を確認</td></tr>
+          <tr><td>TLS 1.0 / 1.1</td><td>Windows Server 2025では既定で無効。新規AMIではレジストリを追加変更せず、アップグレード環境や明示的な上書きがある場合だけ確認</td></tr>
+          <tr><td>Credential Guard</td><td>要件を満たすドメイン参加済みの非ドメインコントローラーでは既定で有効。ワークグループ環境や要件を満たさない環境では状態を個別確認</td></tr>
           <tr><td>OpenSSH Server</td><td>コンポーネントが既定でインストール済み。使用する場合だけサービス起動と通信許可を設定</td></tr>
           <tr><td>SMB署名</td><td>送信SMB接続で署名が既定必須。旧NASや古いSMB実装との互換性を確認</td></tr>
           <tr><td>SMB認証レート制限</td><td>SMBサーバーで既定有効。不正な認証試行の間隔を設け、総当たり攻撃を抑制</td></tr>
@@ -111,6 +234,7 @@
       </table>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/get-started/whats-new-windows-server-2025">Microsoft公式: Windows Server 2025の新機能</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/get-started/removed-deprecated-features-windows-server">Microsoft公式: Windows Serverで削除または非推奨となった機能</a></p>
 
       <h2 id="connect">1. Windowsインスタンス接続</h2>
 
@@ -122,6 +246,21 @@
         <li>「パスワードを復号化」を選択</li>
         <li>表示されたAdministratorパスワードを認証情報管理ルールに従って保管</li>
       </ol>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/01-ec2-get-windows-password-redacted.png" alt="EC2インスタンスのアクションメニューからセキュリティ、Windowsパスワードを取得の順に選択する画面" width="1718" height="469" loading="lazy">
+        <figcaption>対象インスタンスを選択し、「アクション」から「セキュリティ」、「Windowsパスワードを取得」の順に選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/02-decrypt-windows-password-redacted.png" alt="Windowsパスワード取得画面でRSA秘密鍵をアップロードして復号する画面" width="1718" height="681" loading="lazy">
+        <figcaption>起動時に指定したRSAキーペアの秘密鍵をアップロードし、「パスワードを復号化」を選択。公開用画像では秘密鍵本文と識別子をマスク済み</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/03-windows-password-result-redacted.png" alt="復号されたAdministratorパスワードと接続先情報を確認する画面" width="542" height="426" loading="lazy">
+        <figcaption>復号結果で接続先とAdministratorパスワードを確認。公開用画像では接続先情報、パスワード、識別子をマスク済み</figcaption>
+      </figure>
 
       <h3 id="connect-bastion">1.2 踏み台経由のRDP接続</h3>
       <ol>
@@ -153,30 +292,52 @@
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>compmgmt.msc</code>を実行</li>
         <li>「ローカル ユーザーとグループ」から「ユーザー」を開く</li>
-        <li>「新しいユーザー」を選択</li>
+        <li>メニューバーの「操作(A)」から「新しいユーザー(N)」を選択</li>
         <li>ユーザー名へ<code>&lt;ADMIN_USER&gt;</code>を入力</li>
         <li>パスワード運用要件に合わせて初回変更と有効期限を設定</li>
-        <li>対象ユーザーを<code>Administrators</code>グループへ追加</li>
+        <li>「作成(E)」を選択</li>
+        <li>ユーザー一覧で作成したユーザーをダブルクリック</li>
+        <li>「所属するグループ」タブを選択し、「追加(D)」を選択</li>
+        <li>「選択するオブジェクト名を入力してください」へ<code>Administrators</code>を入力</li>
+        <li>「名前の確認(C)」を選択し、名前が解決されたことを確認して「OK」を選択</li>
+        <li>所属するグループに<code>Administrators</code>が追加されたことを確認</li>
       </ol>
 
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/07-computer-management-user-list.png" alt="コンピューターの管理でローカルユーザーとグループのユーザーを開いた画面" width="985" height="709" loading="lazy">
+        <figcaption>「コンピューターの管理」で「ローカル ユーザーとグループ」から「ユーザー」を開き、メニューバーの「操作(A)」から「新しいユーザー(N)」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/08-new-user-redacted.png" alt="新しいユーザー画面で管理用ローカルユーザーの情報とパスワード設定を入力した状態" width="443" height="441" loading="lazy">
+        <figcaption>管理用ローカルユーザーの情報とパスワード運用要件を設定し、「作成(E)」を選択。公開用画像ではユーザー名をマスク済み</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/09-user-group-membership-redacted.png" alt="ローカルユーザーのプロパティで所属するグループを開いた画面" width="478" height="591" loading="lazy">
+        <figcaption>作成したユーザーをダブルクリックし、「所属するグループ」タブから「追加(D)」を選択。公開用画像ではユーザー名をマスク済み</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/10-select-administrators-redacted.png" alt="グループの選択画面へAdministratorsを入力して名前を確認する画面" width="546" height="286" loading="lazy">
+        <figcaption><code>Administrators</code>を入力して「名前の確認(C)」を選択し、名前が解決されたことを確認。公開用画像ではコンピューター名をマスク済み</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/11-administrators-membership-redacted.png" alt="ローカルユーザーの所属するグループにAdministratorsが追加された画面" width="479" height="593" loading="lazy">
+        <figcaption>所属するグループに<code>Administrators</code>と<code>Users</code>が表示されることを確認。公開用画像ではユーザー名をマスク済み</figcaption>
+      </figure>
+
       <h3 id="customer-user">2.2 利用者用ローカルユーザー</h3>
-      <p>管理者権限でPowerShellを起動し、パスワードを対話入力で受け取る</p>
+      <p>管理者権限でPowerShellを起動し、パスワードを対話入力で受け取り、パスワードとアカウントの有効期限を無期限にしたローカルユーザーを作成して<code>Administrators</code>グループへ追加する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString
-New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
+        <pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"
+New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"
+Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
       </div>
 
-      <p>業務上必要な最小権限のローカルグループへ追加する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Add-LocalGroupMember -Group "Users" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
-      </div>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        <code>Administrators</code>グループへの追加とパスワード無期限化は、対象ユーザーに管理権限が必要で、社内標準で許可されている場合に限ります。Active Directoryへ参加する環境では、ローカルアカウントを増やさず、ドメインアカウントとグループポリシーによる管理を優先する
-      </div>
+      <p>出典：<a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/new-localuser?view=powershell-5.1">Microsoft公式: New-LocalUser</a></p>
 
       <h2 id="os-settings">3. Windows OS初期設定</h2>
 
@@ -188,62 +349,70 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       </ol>
       <p>実行ファイルや設定ファイルの種類を誤認しないよう、拡張子を常に表示する</p>
 
-      <h3 id="hostname">3.2 コンピューター名設定</h3>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「コンピューター名」タブから「変更」を選択</li>
-        <li>コンピューター名へ<code>&lt;HOSTNAME&gt;</code>を入力</li>
-        <li>ドメイン参加が必要な場合は、名前解決と接続先Directory Serviceを確認して設定</li>
-        <li>再起動要求を保留し、他の再起動を伴う設定とまとめて実施</li>
-      </ol>
-
-      <h3 id="timezone">3.3 タイムゾーン設定</h3>
+      <h3 id="timezone">3.2 タイムゾーン設定</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>timedate.cpl</code>を実行</li>
         <li>「タイムゾーンの変更」を選択</li>
         <li><code>(UTC+09:00) 大阪、札幌、東京</code>を選択</li>
       </ol>
 
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        2018年8月以降のAWS提供Windows AMIは、Amazon Time Sync Serviceを既定で使用します。Windows Server 2025の標準AMIでは追加のNTP設定は不要です。ドメイン参加後は、Active Directoryの時刻階層を含む設計に従う
-      </div>
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/15-date-and-time.png" alt="日付と時刻画面で現在のタイムゾーンを確認する画面" width="449" height="484" loading="lazy">
+        <figcaption>「日付と時刻」で現在のタイムゾーンを確認し、「タイムゾーンの変更(Z)」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/16-time-zone.png" alt="タイムゾーンの設定画面でUTCプラス9時間の大阪、札幌、東京を選択した状態" width="430" height="244" loading="lazy">
+        <figcaption>タイムゾーンへ<code>(UTC+09:00) 大阪、札幌、東京</code>を指定</figcaption>
+      </figure>
 
 
-      <h3 id="windows-update-policy">3.4 Windows Update自動更新の無効化</h3>
-      <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、自動更新を無効化する</p>
+      <h3 id="windows-update-policy">3.3 Windows Updateの自動ダウンロードとインストール通知</h3>
+      <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、更新プログラムを自動ダウンロードし、インストールの前に通知する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li>「コンピューターの構成」、「管理用テンプレート」、「Windowsコンポーネント」、「Windows Update」の順に開く</li>
+        <li>「コンピューターの構成」、「管理用テンプレート」、「Windowsコンポーネント」、「Windows Update」、「エンド ユーザー エクスペリエンスの管理」の順に開く</li>
         <li>「自動更新を構成する」を開く</li>
-        <li>「無効」を選択して保存</li>
+        <li>「有効」を選択</li>
+        <li>「自動更新の構成」へ「3 - 自動ダウンロードしインストールを通知」を指定して保存</li>
       </ol>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/17-windows-update-policy.png" alt="ローカルグループポリシーエディターで自動更新を構成するポリシーを選択した画面" width="1368" height="768" loading="lazy">
+        <figcaption>「エンド ユーザー エクスペリエンスの管理」で「自動更新を構成する」を開く</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/18-configure-automatic-updates.png" alt="自動更新を構成するポリシーを有効にして自動ダウンロード後にインストールを通知する設定画面" width="792" height="720" loading="lazy">
+        <figcaption>ポリシーを「有効」にし、「3 - 自動ダウンロードしインストールを通知」を指定</figcaption>
+      </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        自動更新を無効化する場合は、AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意します。更新経路がない状態で無効化すると、既知の脆弱性が残る
+        この設定では更新プログラムが自動適用されません。AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意し、既知の脆弱性を残さないようにする
       </div>
 
-      <h3 id="rdp-security">3.5 RDPセキュリティ設定</h3>
+      <h3 id="rdp-security">3.4 RDPセキュリティ設定</h3>
 
-      <h4 id="rdp-nla">3.5.1 ネットワークレベル認証</h4>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「リモート」タブを開く</li>
-        <li>「ネットワーク レベル認証でリモート デスクトップを実行しているコンピューターからのみ接続を許可する」を有効化</li>
-      </ol>
-      <p>ネットワークレベル認証は、RDPセッションを確立する前に利用者を認証し、未認証接続によるリソース消費と攻撃対象領域を抑える</p>
-      <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/remotepc/remote-desktop-allow-access">Microsoft公式: Remote Desktopとネットワークレベル認証</a></p>
-
-      <h4 id="rdp-limit">3.5.2 RDPセッション制限</h4>
+      <h4 id="rdp-limit">3.4.1 RDPセッション制限</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
         <li>「管理用テンプレート」、「Windowsコンポーネント」、「リモート デスクトップ サービス」、「リモート デスクトップ セッション ホスト」、「接続」の順に開く</li>
-        <li>「接続数を制限する」を開き、運用要件に合わせて設定</li>
+        <li>「接続数を制限する」を開き、接続数の上限を設けない場合は「無効」を選択</li>
         <li>複数セッションが必要な場合のみ、「リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する」を無効化</li>
       </ol>
 
-      <h4 id="rdp-encryption">3.5.3 RDP暗号化レベル</h4>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/19-rdp-connection-limit-policy.png" alt="ローカルグループポリシーエディターでリモートデスクトップ接続数を制限するポリシーを選択した画面" width="1365" height="772" loading="lazy">
+        <figcaption>「リモート デスクトップ セッション ホスト」の「接続」で「接続数を制限する」を開く</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/20-disable-rdp-connection-limit.png" alt="接続数を制限するポリシーを無効にした画面" width="786" height="720" loading="lazy">
+        <figcaption>接続数の上限を設けない場合は「無効」を選択</figcaption>
+      </figure>
+
+      <h4 id="rdp-encryption">3.4.2 RDP暗号化レベル</h4>
       <p>RDPのネイティブ暗号化を利用する接続に対して、クライアントとサーバー間の暗号化レベルを<code>高</code>へ固定する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
@@ -254,6 +423,16 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         <li><code>gpupdate /force</code>を実行</li>
       </ol>
 
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/21-rdp-encryption-policy.png" alt="ローカルグループポリシーエディターでクライアント接続の暗号化レベルを設定するポリシーを選択した画面" width="1368" height="767" loading="lazy">
+        <figcaption>「リモート デスクトップ セッション ホスト」の「セキュリティ」で「クライアント接続の暗号化レベルを設定する」を開く</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/22-rdp-high-encryption-level.png" alt="クライアント接続の暗号化レベルを設定するポリシーを有効にして高レベルを選択した画面" width="787" height="722" loading="lazy">
+        <figcaption>ポリシーを「有効」にし、暗号化レベルへ「高レベル」を指定</figcaption>
+      </figure>
+
       <div class="callout">
         <strong>ℹ️ 情報</strong>
         「高」はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
@@ -261,7 +440,7 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
 
-      <h3 id="windows-firewall">3.6 Windows Defender Firewallの無効化</h3>
+      <h3 id="windows-firewall">3.5 Windows Defender Firewallの無効化</h3>
       <p>本手順の対象環境では、通信制御をSecurity Groupなどの上位レイヤーへ集約し、OS側との二重管理による設定差分や疎通障害を避ける社内標準に基づいてWindows Defender Firewallを無効化する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>wf.msc</code>を実行</li>
@@ -270,13 +449,28 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         <li>設定を保存</li>
       </ol>
 
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/23-windows-defender-firewall-enabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが有効な状態" width="1044" height="713" loading="lazy">
+        <figcaption>「Windows Defender ファイアウォールのプロパティ」を開く前に、ドメイン、プライベート、パブリックの各プロファイルが有効であることを確認</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/24-disable-windows-defender-firewall-profile.png" alt="Windows Defenderファイアウォールのプロパティでファイアウォールの状態を無効にした画面" width="403" height="459" loading="lazy">
+        <figcaption>ドメイン、プライベート、パブリックの各タブで「ファイアウォールの状態」を「無効」に変更</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/25-windows-defender-firewall-disabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが無効になった状態" width="1046" height="714" loading="lazy">
+        <figcaption>設定後、ドメイン、プライベート、パブリックの各プロファイルが無効になったことを確認</figcaption>
+      </figure>
+
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
         Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用する
       </div>
 
 
-      <h3 id="additional-volume">3.7 追加ボリュームの初期化</h3>
+      <h3 id="additional-volume">3.6 追加ボリュームの初期化</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>diskmgmt.msc</code>を実行</li>
         <li>未初期化ディスクの容量とディスク番号を確認</li>
@@ -287,14 +481,50 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         <li>クイックフォーマットを実行</li>
       </ol>
 
-      <h3 id="windows-update">3.8 Windows Update</h3>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>ms-settings:windowsupdate</code>を実行</li>
-        <li>「更新プログラムのチェック」を選択</li>
-        <li>検出された更新プログラムをインストール</li>
-        <li>再起動要求がある場合は、作業影響を確認して再起動</li>
-        <li>更新プログラムが検出されなくなるまで繰り返し実行</li>
-      </ol>
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/26-file-explorer-before-additional-volume.png" alt="エクスプローラーのPC画面で追加ボリュームがまだ表示されていない状態" width="661" height="525" loading="lazy">
+        <figcaption>初期化前は、エクスプローラーに追加ボリュームが表示されていないことを確認</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/27-initialize-disk-gpt.png" alt="ディスクの初期化画面でパーティションスタイルにGPTを選択した状態" width="422" height="327" loading="lazy">
+        <figcaption>対象ディスクを確認し、パーティションスタイルへ「GPT」を指定</figcaption>
+      </figure>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/28-create-new-simple-volume.png" alt="ディスクの管理で未割り当て領域から新しいシンプルボリュームを選択する画面" width="679" height="537" loading="lazy">
+        <figcaption>対象ディスクの未割り当て領域を右クリックし、「新しいシンプル ボリューム」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/29-new-simple-volume-wizard.png" alt="新しいシンプルボリュームウィザードの開始画面" width="524" height="404" loading="lazy">
+        <figcaption>「新しいシンプル ボリューム ウィザード」で「次へ」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/30-simple-volume-size.png" alt="新しいシンプルボリュームウィザードでボリュームサイズを指定する画面" width="524" height="404" loading="lazy">
+        <figcaption>使用するシンプルボリュームのサイズを指定</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/31-assign-drive-letter.png" alt="新しいシンプルボリュームウィザードでドライブ文字を割り当てる画面" width="524" height="404" loading="lazy">
+        <figcaption>ドライブ文字へ<code>&lt;VOLUME_DRIVE_LETTER&gt;</code>を割り当て</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/32-format-volume-ntfs.png" alt="新しいシンプルボリュームウィザードでNTFSとクイックフォーマットを指定する画面" width="524" height="404" loading="lazy">
+        <figcaption>ファイルシステムへ「NTFS」を指定し、ボリュームラベルとクイックフォーマットを設定</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/33-simple-volume-wizard-complete.png" alt="新しいシンプルボリュームウィザードの設定確認と完了画面" width="524" height="404" loading="lazy">
+        <figcaption>設定内容を確認して「完了」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/34-file-explorer-additional-volume.png" alt="エクスプローラーでローカルディスクと追加ボリュームが表示された状態" width="659" height="525" loading="lazy">
+        <figcaption>エクスプローラーで追加ボリュームと割り当てたドライブ文字を確認</figcaption>
+      </figure>
 
       <h2 id="aws-management">4. AWS管理機能の設定</h2>
 
@@ -390,10 +620,58 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       </div>
 
 
-      <h3 id="ec2launch-sysprep">4.4 EC2Launch v2とAMI横展開</h3>
-      <p>AWS提供のWindows Server 2025 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化する</p>
+      <h2 id="restart-final">5. 再起動を伴う最終作業</h2>
+      <p>ここまでの再起動を伴わない設定と動作確認を完了してから、コンピューター名とWindows Updateを設定し、最後に再起動をまとめて実施する</p>
+
+      <h3 id="hostname">5.1 コンピューター名設定</h3>
       <ol>
-        <li>構築作業とWindows Updateを完了</li>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
+        <li>「コンピューター名」タブから「変更」を選択</li>
+        <li>コンピューター名へ<code>&lt;HOSTNAME&gt;</code>を入力</li>
+        <li>ドメイン参加が必要な場合は、名前解決と接続先Directory Serviceを確認して設定</li>
+        <li>再起動要求を確認し、この時点では再起動せず手順5.3まで保留</li>
+      </ol>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/12-system-properties-hostname-redacted.png" alt="システムのプロパティで現在のコンピューター名を確認する画面" width="471" height="534" loading="lazy">
+        <figcaption>「コンピューター名」タブで現在の名前を確認し、「変更(C)」を選択。公開用画像では現在のコンピューター名をマスク済み</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/13-change-computer-name.png" alt="コンピューター名またはドメイン名の変更画面で新しいコンピューター名を入力した状態" width="378" height="446" loading="lazy">
+        <figcaption>コンピューター名へ<code>&lt;HOSTNAME&gt;</code>を入力し、「OK」を選択</figcaption>
+      </figure>
+
+      <figure class="screenshot-compact">
+        <img src="../assets/img/windows-server-2025/14-hostname-restart-required.png" alt="コンピューター名の変更を適用するには再起動が必要であることを示す画面" width="350" height="184" loading="lazy">
+        <figcaption>コンピューター名の変更を適用するには再起動が必要であることを確認し、再起動は保留</figcaption>
+      </figure>
+
+      <h3 id="windows-update">5.2 Windows Update</h3>
+      <ol>
+        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>ms-settings:windowsupdate</code>を実行</li>
+        <li>「更新プログラムのチェック」を選択</li>
+        <li>検出された更新プログラムをダウンロードしてインストール</li>
+        <li>再起動要求を確認し、手順5.3へ進む</li>
+      </ol>
+
+      <figure class="screenshot-wide">
+        <img src="../assets/img/windows-server-2025/35-windows-update-download-install.png" alt="Windows Updateでセキュリティ更新プログラムをダウンロードしてインストールする画面" width="785" height="582" loading="lazy">
+        <figcaption>「すべてダウンロードしてインストール」を選択し、検出された更新プログラムを適用</figcaption>
+      </figure>
+
+      <h3 id="final-restart">5.3 最終再起動と確認</h3>
+      <ol>
+        <li>業務影響、接続中の利用者、実行中ジョブがないことを確認</li>
+        <li>管理者権限のPowerShellで<code>Restart-Computer -Force</code>を実行</li>
+        <li>再接続後、コンピューター名、RDP接続、監視、業務通信を確認</li>
+        <li>Windows Updateを再確認し、更新プログラムが残っている場合はインストールと再起動を繰り返す</li>
+        <li>更新プログラムが検出されず、各動作確認が完了したことを記録</li>
+      </ol>
+
+      <h3 id="ec2launch-sysprep">5.4 AMI横展開時のみ: EC2Launch v2とSysprep</h3>
+      <p>AWS提供のWindows Server 2025 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合だけ、すべての設定、更新、最終再起動後の動作確認を完了してからSysprepを実行する</p>
+      <ol>
         <li>一時ファイル、個別の認証情報、作業用アカウント、固定IP設定などを除去</li>
         <li>スタートメニューから「EC2Launch settings」を開く</li>
         <li>AMI起動後に必要なタスクとSSM Agentの起動設定を確認</li>
@@ -401,202 +679,29 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
         <li>インスタンス停止後にAmazon EC2コンソールからAMIを作成</li>
       </ol>
 
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しない
-      </div>
-
-
-      <h2 id="security-options">5. 要件に応じた追加設定</h2>
-
-      <h3 id="tls-policy">5.1 TLS 1.0 / 1.1の無効化</h3>
-      <p>組織の暗号化基準でTLS 1.2以上を必須とする場合は、IIS、.NET Framework、データベースクライアント、監視エージェントなどの互換性を検証してからTLS 1.0 / 1.1を無効化する</p>
-
-      <h4 id="tls-precheck">5.1.1 事前確認</h4>
-      <ol>
-        <li>対象サーバーで稼働するIIS、データベースクライアント、監視・バックアップ・セキュリティエージェントを一覧化</li>
-        <li>接続先と接続元がTLS 1.2以上に対応していることを確認</li>
-        <li>設定変更後に確認するWeb、API、SMTP、データベース接続を決定</li>
-        <li>再起動可能な作業時間と切り戻し手順を確認</li>
-      </ol>
-
-      <h4 id="tls-backup">5.1.2 Schannel設定のバックアップ</h4>
-      <p>管理者権限のPowerShellで、変更前のSchannel設定をエクスポートする</p>
+      <p>コマンドで実行する場合は、管理者権限のPowerShellから次を実行する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>New-Item -ItemType Directory -Path C:\Work\tls-backup -Force
-reg export "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL" `
-  "C:\Work\tls-backup\schannel-before.reg" /y</code></pre>
-      </div>
-
-      <h4 id="tls-disable">5.1.3 TLS 1.0 / 1.1の無効化</h4>
-      <p>TLS 1.0とTLS 1.1のClient、Serverへ<code>Enabled=0</code>と<code>DisabledByDefault=1</code>を設定する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>$protocols = @('TLS 1.0', 'TLS 1.1')
-$roles = @('Client', 'Server')
-
-foreach ($protocol in $protocols) {
-  foreach ($role in $roles) {
-    $path = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$protocol\$role"
-    New-Item -Path $path -Force | Out-Null
-    New-ItemProperty -Path $path -Name Enabled -PropertyType DWord -Value 0 -Force | Out-Null
-    New-ItemProperty -Path $path -Name DisabledByDefault -PropertyType DWord -Value 1 -Force | Out-Null
-  }
-}</code></pre>
-      </div>
-
-      <p>設定値を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols" |
-  Where-Object PSChildName -in @('TLS 1.0', 'TLS 1.1') |
-  ForEach-Object {
-    Get-ItemProperty "$($_.PSPath)\Client"
-    Get-ItemProperty "$($_.PSPath)\Server"
-  } | Select-Object PSPath, Enabled, DisabledByDefault</code></pre>
-      </div>
-
-      <ol>
-        <li>サーバーを再起動</li>
-        <li>IIS、API、SMTP、データベース、監視エージェントの通信を確認</li>
-        <li>Windowsイベントログと対象アプリケーションログでTLSエラーの有無を確認</li>
-      </ol>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        Schannel設定はOS全体へ影響します。互換性問題が発生した場合は<code>schannel-before.reg</code>を<code>reg import</code>で復元し、再起動して切り戻します。Microsoftはレジストリの直接変更より、グループポリシーや管理された構成方式の利用を推奨している
-      </div>
-
-
-      <h3 id="event-logs">5.2 イベントログとクラッシュダンプ</h3>
-      <p>監視要件と障害解析要件に合わせて、Windowsイベントログの最大サイズと上書き方式、ページファイル、クラッシュダンプの保存方式を設計します。ローカルログだけに依存せず、CloudWatch Logsなどの集中管理先へ転送する</p>
-
-      <h4 id="event-log-settings">5.2.1 Windowsイベントログ</h4>
-      <p>現在の最大サイズと保持方式を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>wevtutil gl Application
-wevtutil gl System
-wevtutil gl Security</code></pre>
-      </div>
-
-      <p>次の例では、各ログの最大サイズを256MBへ設定し、上限到達時は古いイベントから上書きする</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>wevtutil sl Application /ms:268435456 /rt:false
-wevtutil sl System /ms:268435456 /rt:false
-wevtutil sl Security /ms:268435456 /rt:false</code></pre>
-      </div>
-
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        <code>/rt:false</code>は上限到達時に古いイベントを上書きします。<code>/rt:true</code>は既存イベントを保持し、上限到達後の新規イベントを保存しません。監査要件がある場合はログ転送と保管先を先に設計する
-      </div>
-
-
-      <h4 id="pagefile-settings">5.2.2 ページファイル</h4>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「詳細設定」タブの「パフォーマンス」から「設定」を選択</li>
-        <li>「詳細設定」タブの「仮想メモリ」から「変更」を選択</li>
-        <li>原則として「すべてのドライブのページング ファイルのサイズを自動的に管理する」を有効化</li>
-        <li>完全メモリダンプを取得する場合は、OSボリューム上にメモリ容量とダンプ方式に応じたページファイルを確保</li>
-      </ol>
-
-      <h4 id="crash-dump-settings">5.2.3 クラッシュダンプ</h4>
-      <ol>
-        <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「詳細設定」タブの「起動と回復」から「設定」を選択</li>
-        <li>「デバッグ情報の書き込み」へ「自動メモリ ダンプ」を選択</li>
-        <li>ダンプファイルへ<code>%SystemRoot%\MEMORY.DMP</code>を指定</li>
-        <li>「既存のファイルに上書きする」を有効化</li>
-      </ol>
-
-      <p>レジストリ上のダンプ方式と保存先を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" |
-  Select-Object CrashDumpEnabled, DumpFile, MinidumpDir, AlwaysKeepMemoryDump</code></pre>
-      </div>
-
-      <table>
-        <thead><tr><th><code>CrashDumpEnabled</code></th><th>ダンプ方式</th></tr></thead>
-        <tbody>
-          <tr><td><code>1</code></td><td>完全メモリダンプ</td></tr>
-          <tr><td><code>2</code></td><td>カーネルメモリダンプ</td></tr>
-          <tr><td><code>3</code></td><td>最小メモリダンプ</td></tr>
-          <tr><td><code>7</code></td><td>自動メモリダンプ</td></tr>
-        </tbody>
-      </table>
-
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        Microsoftはメモリ32GB以下では完全メモリダンプ、32GB超ではシステム管理のページファイルと自動メモリダンプを基本構成として案内しています。完全メモリダンプにはOSボリューム上へ十分なページファイル容量が必要
-      </div>
-
-      <p>出典：<a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/troubleshoot-stop-errors-best-practices-dump-configuration-recommendations">Microsoft公式: クラッシュダンプ設定の推奨事項</a></p>
-
-      <h3 id="windows-2025-security">5.3 Windows Server 2025固有設定の確認</h3>
-
-      <h4 id="credential-guard">5.3.1 Credential Guard</h4>
-      <p>Credential Guardの構成状態を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-CimInstance -ClassName Win32_DeviceGuard `
-  -Namespace root\Microsoft\Windows\DeviceGuard |
-  Select-Object SecurityServicesConfigured, SecurityServicesRunning, VirtualizationBasedSecurityStatus</code></pre>
-      </div>
-
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        Credential GuardはNTLMハッシュやKerberos TGTなどの資格情報を仮想化ベースのセキュリティで分離します。認証方式やセキュリティ製品との互換性を確認し、理由なく無効化しない
-      </div>
-
-      <p>出典：<a href="https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/">Microsoft公式: Credential Guard</a></p>
-
-      <h4 id="openssh-server">5.3.2 OpenSSH Server</h4>
-      <p>インストール状態とサービス状態を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
-Get-Service sshd -ErrorAction SilentlyContinue</code></pre>
-      </div>
-
-      <p>SSH接続を利用する場合だけ、サービスを自動起動へ変更する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Set-Service -Name sshd -StartupType Automatic
-Start-Service sshd</code></pre>
+        <pre><code>&amp; "$Env:ProgramFiles\Amazon\EC2Launch\EC2Launch.exe" sysprep --shutdown=true</code></pre>
       </div>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        OpenSSH Serverを使用しない場合はサービスを起動せず、Security GroupでTCP/22を許可しません。使用する場合は公開鍵認証、接続元制限、ログ収集を設計する
+        Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化し、実行後はインスタンスが停止します。稼働中インスタンスの復旧用AMIを取得する目的では使用しない
       </div>
 
-      <h4 id="smb-security">5.3.3 SMBセキュリティ</h4>
-      <p>SMBクライアントとサーバーの署名、暗号化、認証関連設定を確認する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>Get-SmbClientConfiguration | Format-List
-Get-SmbServerConfiguration | Format-List</code></pre>
-      </div>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        署名必須を解除すると中間者攻撃への耐性が低下します。接続できない機器がある場合は、Windows Server側の既定値を緩和する前にNAS、ファイルサーバー、クライアント側のSMB対応状況を確認する
-      </div>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sysprep-using-ec2launchv2.html">AWS公式: EC2Launch v2によるSysprepとAMI作成</a></p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
+      <a href="#command-summary">コマンド一覧</a>
       <a class="active" href="#launch">0. 起動時</a>
       <a href="#connect">1. 接続</a>
       <a href="#local-users">2. ローカルユーザー</a>
       <a href="#os-settings">3. OS初期設定</a>
       <a href="#aws-management">4. AWS管理機能</a>
-      <a href="#security-options">5. 追加設定</a>
+      <a href="#restart-final">5. 最終作業</a>
     </aside>
   </div>
 
