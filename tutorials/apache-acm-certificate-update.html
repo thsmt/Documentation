@@ -73,7 +73,7 @@
       <h1>Apache ACM証明書更新</h1>
       <p class="lead"></p>
 
-      <h2 id="before">更新前の証明書確認</h2>
+      <h2 id="before">1. 更新前の証明書確認</h2>
       <p>Apacheが参照している証明書と秘密鍵のパス確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -nE '^[[:space:]]*SSLCertificate(File|KeyFile|ChainFile|CACertificateFile)' /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <details class="example-details execution-example">
@@ -113,13 +113,13 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
         <figcaption>更新前の自己署名証明書。発行先と発行元が同一で、有効期限は2026年8月31日18時17分17秒JST</figcaption>
       </figure>
 
-      <h2 id="backup">更新前ファイルのバックアップ</h2>
+      <h2 id="backup">2. 更新前ファイルのバックアップ</h2>
       <p>VirtualHost設定、サーバー証明書、秘密鍵のバックアップ</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/httpd/conf.d/www.zexample.com.conf /etc/httpd/conf.d/www.zexample.com.conf.$(date +%Y%m%d)</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt.$(date +%Y%m%d)</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/private/www.zexample.com.key /etc/pki/tls/private/www.zexample.com.key.$(date +%Y%m%d)</code></pre></div>
 
-      <h2 id="request">ACMパブリック証明書のリクエスト</h2>
+      <h2 id="request">3. ACMパブリック証明書のリクエスト</h2>
       <p>ACMの証明書リクエスト画面で選択した設定</p>
       <table>
         <thead><tr><th>項目</th><th>設定値</th></tr></thead>
@@ -141,8 +141,21 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
         <figcaption><code>www.zexample.com</code>の証明書が発行済みとなり、更新の適格性が対象であることを確認</figcaption>
       </figure>
 
-      <h2 id="placement">ACMエクスポートファイルの配置</h2>
-      <p>ACMから取得した証明書本文、証明書チェーン、暗号化秘密鍵の保存</p>
+      <h2 id="placement">4. ACM証明書のエクスポートとファイル配置</h2>
+      <p>ACMの証明書エクスポート画面で、ユーザーが任意のパスフレーズを入力し、確認欄へ同じ値を入力</p>
+      <p>パスフレーズはエクスポートされる秘密鍵の暗号化と後の復号で使用するため、安全な方法で保管</p>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/apache-acm-certificate-update/acm-export-passphrase-redacted.png" alt="ACM証明書エクスポート時のパスフレーズ入力画面" width="1919" height="820" loading="lazy">
+        <figcaption>任意のパスフレーズと確認用の同じ値を入力。公開用画像では識別子、シリアル番号、入力値をマスク</figcaption>
+      </figure>
+
+      <p><code>PEMエンコーディングを生成</code>を選択後、証明書本文、証明書チェーン、暗号化された秘密鍵を個別にダウンロード、または<code>すべてダウンロード</code>を選択</p>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/apache-acm-certificate-update/acm-export-download-redacted.png" alt="ACMから証明書本文、証明書チェーン、暗号化秘密鍵をダウンロードする画面" width="1750" height="899" loading="lazy">
+        <figcaption>証明書本文、証明書チェーン、暗号化された秘密鍵のダウンロード。公開用画像では識別子、シリアル番号、PEM本文をマスク</figcaption>
+      </figure>
+
+      <p>ダウンロードした証明書本文、証明書チェーン、暗号化秘密鍵の保存</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com-chain.pem</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/private/www.zexample.com.key.enc</code></pre></div>
@@ -155,7 +168,7 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
         </tbody>
       </table>
 
-      <h2 id="certificate-check">秘密鍵と証明書の確認</h2>
+      <h2 id="certificate-check">5. 秘密鍵と証明書の確認</h2>
       <p>ACMエクスポート時に指定したパスフレーズによる秘密鍵の復号</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key.enc -out /etc/pki/tls/private/www.zexample.com.key</code></pre></div>
       <details class="example-details execution-example">
@@ -191,7 +204,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
     DNS:www.zexample.com</code></pre></div>
       </details>
 
-      <h2 id="hash-check">ハッシュ値の整合性確認</h2>
+      <h2 id="hash-check">6. ハッシュ値の整合性確認</h2>
       <p>RSA秘密鍵のmodulusにおけるSHA-256確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key -noout -modulus | openssl dgst -sha256</code></pre></div>
       <details class="example-details execution-example">
@@ -222,7 +235,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       </details>
       <p>サーバー証明書のIssuer DNと証明書チェーン先頭のSubject DNで同じハッシュ値を確認</p>
 
-      <h2 id="fullchain">fullchainの作成</h2>
+      <h2 id="fullchain">7. fullchainの作成</h2>
       <p>サーバー証明書と証明書チェーンの存在確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com.crt &amp;&amp; echo "サーバー証明書: OK"</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com-chain.pem &amp;&amp; echo "証明書チェーン: OK"</code></pre></div>
@@ -237,7 +250,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>3</code></pre></div>
       </details>
 
-      <h2 id="apache">Apache設定の更新</h2>
+      <h2 id="apache">8. Apache設定の更新</h2>
       <p>VirtualHost設定の証明書参照先をfullchainへ変更</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <div class="code"><div class="code-header"><span>/etc/httpd/conf.d/www.zexample.com.conf</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;VirtualHost *:80&gt;
@@ -271,7 +284,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       <p>Apache設定の再読み込み</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl reload httpd</code></pre></div>
 
-      <h2 id="verification">TLS通信確認</h2>
+      <h2 id="verification">9. TLS通信確認</h2>
       <p>ホスト名、信頼チェーン、TLS通信の確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com -verify_hostname www.zexample.com -verify_return_error -CAfile /etc/pki/tls/certs/ca-bundle.crt &lt;/dev/null</code></pre></div>
       <details class="example-details execution-example">
@@ -298,7 +311,9 @@ New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
 Verify return code: 0 (ok)</code></pre></div>
       </details>
 
-      <h2 id="browser">ブラウザでの証明書確認</h2>
+      <h2 id="browser">10. ブラウザでの証明書確認</h2>
+      <p>ブラウザで次のURLへアクセス</p>
+      <div class="code"><div class="code-header"><span>URL</span><button class="copy" type="button">Copy</button></div><pre><code>https://www.zexample.com/</code></pre></div>
       <figure class="screenshot-wide">
         <img src="../assets/img/apache-acm-certificate-update/browser-acm-certificate-after.png" alt="更新後のwww.zexample.com ACM証明書の詳細" width="1720" height="1392" loading="lazy">
         <figcaption>更新後のACM証明書。発行者は<code>Amazon RSA 2048 M01</code>、有効期間は2026年8月15日9時00分00秒から2027年3月1日8時59分59秒まで</figcaption>
@@ -307,16 +322,16 @@ Verify return code: 0 (ok)</code></pre></div>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#before">更新前の証明書確認</a>
-      <a href="#backup">更新前バックアップ</a>
-      <a href="#request">ACM証明書のリクエスト</a>
-      <a href="#placement">エクスポートファイルの配置</a>
-      <a href="#certificate-check">秘密鍵と証明書の確認</a>
-      <a href="#hash-check">ハッシュ値の整合性確認</a>
-      <a href="#fullchain">fullchainの作成</a>
-      <a href="#apache">Apache設定の更新</a>
-      <a href="#verification">TLS通信確認</a>
-      <a href="#browser">ブラウザ確認</a>
+      <a class="active" href="#before">1. 更新前の証明書確認</a>
+      <a href="#backup">2. 更新前ファイルのバックアップ</a>
+      <a href="#request">3. ACMパブリック証明書のリクエスト</a>
+      <a href="#placement">4. ACM証明書のエクスポートとファイル配置</a>
+      <a href="#certificate-check">5. 秘密鍵と証明書の確認</a>
+      <a href="#hash-check">6. ハッシュ値の整合性確認</a>
+      <a href="#fullchain">7. fullchainの作成</a>
+      <a href="#apache">8. Apache設定の更新</a>
+      <a href="#verification">9. TLS通信確認</a>
+      <a href="#browser">10. ブラウザでの証明書確認</a>
     </aside>
   </div>
 
