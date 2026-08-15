@@ -38,6 +38,7 @@
       <a href="tutorials/amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="tutorials/amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="tutorials/aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <a href="tutorials/apache-acm-certificate-update.html">ACM 証明書・更新</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="tutorials/rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="tutorials/rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -46,8 +47,7 @@
       <a href="tutorials/windows-server-2025.html">Windows Server 2025</a>
       <a href="tutorials/windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
       <a href="tutorials/apache.html">Apache</a>
-      <a href="tutorials/apache-self-signed-https.html">Apache 自己署名HTTPS化</a>
-      <a href="tutorials/apache-acm-certificate-update.html">Apache ACM証明書更新</a>
+      <a href="tutorials/apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="tutorials/mariadb.html">MariaDB</a>
       <a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
@@ -110,6 +110,10 @@
           <strong><a href="tutorials/aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a></strong>
           <p>ACM証明書の有効期間、更新方式、EC2への配置、ACMEとエクスポート証明書の自動更新を整理する</p>
         </article>
+        <article class="card">
+          <strong><a href="tutorials/apache-acm-certificate-update.html">ACM 証明書・更新</a></strong>
+          <p>ACMで発行したエクスポート可能な証明書をRHEL 9.8上のApacheへ配置し、証明書更新とTLS通信を確認する</p>
+        </article>
       </section>
 
       <h2 id="os-server">OS／ミドルウェア</h2>
@@ -143,12 +147,8 @@
           <p>Apacheの構築・運用で必要なTLS、SELinux、認証、リバースプロキシ、ログ調査を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/apache-self-signed-https.html">Apache 自己署名HTTPS化</a></strong>
-          <p>RHEL 9.8上のApacheへEC P-256秘密鍵と自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとTLS通信を確認する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/apache-acm-certificate-update.html">Apache ACM証明書更新</a></strong>
-          <p>ACMで発行したエクスポート可能な証明書をRHEL 9.8上のApacheへ配置し、証明書更新とTLS通信を確認する</p>
+          <strong><a href="tutorials/apache-self-signed-https.html">EC2 SSLターミネーション</a></strong>
+          <p>EC2上のRHEL 9.8でApacheへ自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとSSLターミネーションを確認する</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/mariadb.html">MariaDB</a></strong>

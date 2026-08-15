@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apache ACM証明書更新 | Documentation</title>
+  <title>ACM 証明書・更新 | Documentation</title>
   <meta name="description" content="ACMで発行したエクスポート可能なパブリック証明書をRHEL 9.8上のApacheへ配置し、証明書更新とTLS通信を確認した実行記録。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -39,6 +39,7 @@
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <a class="active" href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,8 +48,7 @@
       <a href="windows-server-2025.html">Windows Server 2025</a>
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
       <a href="apache.html">Apache</a>
-      <a href="apache-self-signed-https.html">Apache 自己署名HTTPS化</a>
-      <a class="active" href="apache-acm-certificate-update.html">Apache ACM証明書更新</a>
+      <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
@@ -70,8 +70,16 @@
         <span>トピック</span>
       </nav>
 
-      <h1>Apache ACM証明書更新</h1>
+      <h1>ACM 証明書・更新</h1>
       <p class="lead"></p>
+
+      <div class="callout callout-warning">
+        <strong>証明書の有効期間とサーバーへの反映</strong>
+        <p>ACMのエクスポート可能なパブリック証明書の有効期間は198日</p>
+        <p>今回配置した証明書は2026年8月15日9時00分00秒JSTから2027年3月1日8時59分59秒JSTまで有効</p>
+        <p>ACMは有効期限の45日前から更新を試行するが、ACM側の更新とEC2上のApacheに配置した証明書ファイルの更新は別処理</p>
+        <p>証明書、証明書チェーン、秘密鍵は自動で置き換わらないため、更新後の証明書を再エクスポートしてサーバーへ配置し、Apacheへ反映</p>
+      </div>
 
       <h2 id="before">1. 更新前の証明書確認</h2>
       <p>Apacheが参照している証明書と秘密鍵のパス確認</p>
@@ -140,6 +148,12 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
         <img src="../assets/img/apache-acm-certificate-update/acm-certificate-issued-redacted.png" alt="www.zexample.comのACM証明書発行完了画面" width="2201" height="714" loading="lazy">
         <figcaption><code>www.zexample.com</code>の証明書が発行済みとなり、更新の適格性が対象であることを確認</figcaption>
       </figure>
+
+      <div class="callout">
+        <strong>「使用中ですか？：いいえ」の表示</strong>
+        <p>ACMコンソールの「使用中ですか？」は、証明書がACMと統合されたAWSサービスに関連付けられているかを示す項目</p>
+        <p>エクスポートした証明書をEC2上のApacheへ手動配置してもACMでは「いいえ」と表示されるため、Apacheで提示される証明書は後半のTLS通信確認で確認</p>
+      </div>
 
       <h2 id="placement">4. ACM証明書のエクスポートとファイル配置</h2>
       <p>ACMの証明書エクスポート画面で、ユーザーが任意のパスフレーズを入力し、確認欄へ同じ値を入力</p>

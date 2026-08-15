@@ -19,6 +19,7 @@ $groups = @(
             [pscustomobject]@{ File = 'amazon-ses-monitoring.html'; Label = 'Amazon SES 配信監視' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
             [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'AWS Certificate Manager (ACM)' }
+            [pscustomobject]@{ File = 'apache-acm-certificate-update.html'; Label = 'ACM 証明書・更新' }
         )
     }
     [pscustomobject]@{
@@ -31,8 +32,7 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
  [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
-            [pscustomobject]@{ File = 'apache-self-signed-https.html'; Label = 'Apache 自己署名HTTPS化' }
-            [pscustomobject]@{ File = 'apache-acm-certificate-update.html'; Label = 'Apache ACM証明書更新' }
+            [pscustomobject]@{ File = 'apache-self-signed-https.html'; Label = 'EC2 SSLターミネーション' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
         )

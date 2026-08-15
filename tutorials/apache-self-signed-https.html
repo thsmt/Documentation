@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apache 自己署名HTTPS化 | Documentation</title>
-  <meta name="description" content="RHEL 9.8上のApacheへEC P-256秘密鍵と自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとTLS通信を確認する手順。">
+  <title>EC2 SSLターミネーション | Documentation</title>
+  <meta name="description" content="EC2上のRHEL 9.8でApacheへEC P-256秘密鍵と自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとSSLターミネーションを確認する手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body data-user-values="www.zexample.com,zexample.com,ap-northeast-1,JP,Tokyo,Example Publishing Ltd,System Dept.,2026年8月31日18時17分17秒JST">
@@ -39,6 +39,7 @@
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
       <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,8 +48,7 @@
       <a href="windows-server-2025.html">Windows Server 2025</a>
       <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
       <a href="apache.html">Apache</a>
-      <a class="active" href="apache-self-signed-https.html">Apache 自己署名HTTPS化</a>
-      <a href="apache-acm-certificate-update.html">Apache ACM証明書更新</a>
+      <a class="active" href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
@@ -70,7 +70,7 @@
         <span>トピック</span>
       </nav>
 
-      <h1>Apache 自己署名HTTPS化</h1>
+      <h1>EC2 SSLターミネーション</h1>
       <p class="lead"></p>
 
       <h2 id="environment">環境情報</h2>
