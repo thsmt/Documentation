@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a class="active" href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -198,7 +198,7 @@
         <tbody>
           <tr><td>対象エンジン</td><td>RDS for MySQL 5.7以降、MariaDB 10.2以降、PostgreSQL 11.1以降が対象。Db2、SQL Server、Oracleは対象外</td><td>正確な対応マイナーバージョンとメジャー更新可否を公式一覧で確認</td></tr>
           <tr><td>バックアップ</td><td>MySQL/MariaDBおよびPostgreSQLの物理レプリケーションでは自動バックアップが必須。PostgreSQLの論理レプリケーションではAWSの準備要件に自動バックアップの明示的な必須記載はない</td><td>方式を問わず保持期間を1日以上にし、切替前の手動スナップショット、PITR、復旧担当を作業計画へ記載することを推奨</td></tr>
-          <tr><td>削除保護</td><td>Blue/Green Deploymentの作成と切替に削除保護は必須ではない</td><td>検証環境は削除計画を優先して無効でもよい。本番は切替後の新本番で有効化を検討。切替前に「Greenを含めて削除」する場合はGreenの削除保護を無効化</td></tr>
+          <tr><td>削除保護</td><td>Blue/Green Deploymentの作成と切替に削除保護は必須ではない</td><td>検証環境は削除計画を優先して無効でもよい。本番は切替後の新本番で有効化を検討。切替前に<code class="ui-value">Greenを含めて削除</code>する場合はGreenの削除保護を無効化</td></tr>
           <tr><td>トポロジー</td><td>Multi-AZ DBインスタンスは対象。Multi-AZ DBクラスター、カスケード読み取りレプリカ、クロスリージョン読み取りレプリカは対象外</td><td>対象外の構成は別移行方式または構成変更を検討</td></tr>
           <tr><td>暗号化</td><td>暗号化あり/なしを切替途中で変更不可</td><td>暗号化方式の変更はスナップショット復元など別計画</td></tr>
           <tr><td>Secrets Manager</td><td>マスターユーザーパスワードのSecrets Manager管理は非対応</td><td>事前に認証情報管理方式を確認し、必要な再設定を手順化</td></tr>
@@ -278,7 +278,7 @@ ORDER BY 1, 2;</code></pre>
       </div>
 
       <h3>4. Blue/Green Deploymentを作成</h3>
-      <p>RDSコンソールの「Databases」でBlueのプライマリを選択し、Actionsから「Create blue/green deployment」を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
+      <p>RDSコンソールの<code class="ui-value">Databases</code>でBlueのプライマリを選択し、<code class="ui-value">Actions</code>から<code class="ui-value">Create blue/green deployment</code>を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
       <table>
         <thead><tr><th>コンソール項目</th><th>今回の指定値</th></tr></thead>
         <tbody>
@@ -302,7 +302,7 @@ ORDER BY 1, 2;</code></pre>
 
       <h3>5. Greenの作成完了と同期状態を確認</h3>
       <p>作成直後は、スナップショットから復元したGreenのストレージで遅延ロードが進む。十分なI/O性能が必要な試験では、ストレージ初期化の進捗も確認してから測定を開始</p>
-      <p>今回の作成完了後は、Blueの<code>poc-pg-db</code>がPostgreSQL 13.23のまま本番として稼働し、別DBインスタンス<code>poc-pg-db-green-&lt;RANDOM&gt;</code>がPostgreSQL 18.4として「Available」になった。この時点でエンジン更新済みのGreenが存在し、切替時に旧Blueを更新する構成ではない</p>
+      <p>今回の作成完了後は、Blueの<code>poc-pg-db</code>がPostgreSQL 13.23のまま本番として稼働し、別DBインスタンス<code>poc-pg-db-green-&lt;RANDOM&gt;</code>がPostgreSQL 18.4として<code class="ui-value">Available</code>になった。この時点でエンジン更新済みのGreenが存在し、切替時に旧Blueを更新する構成ではない</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-blue-green-deployments \
@@ -317,7 +317,7 @@ ORDER BY 1, 2;</code></pre>
   --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" \
   --output json</code></pre>
       </div>
-      <p><em>＊画像挿入：Deployment配下にBlueとGreenが「Available」で表示された一覧（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
+      <p><em>＊画像挿入：Deployment配下にBlueとGreenが<code class="ui-value">Available</code>で表示された一覧（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
 
       <h3>6. Greenで受入試験を実施</h3>
       <p>Green固有のエンドポイントを用い、アプリケーションの起動、読み取り画面、バッチのドライラン、主要SQL、実行計画、接続数、CPU、メモリ、待機イベント、エラー率を確認。データ変更を伴う試験はレプリケーション競合を起こすため、実施範囲と後始末をDBAと合意してから実施</p>
@@ -416,8 +416,8 @@ SET default_transaction_read_only = on;</code></pre>
       </div>
 
       <h3>9. スイッチオーバーを実行</h3>
-      <p>RDSコンソールでBlue/Green Deploymentを選択し、Actionsから「Switch over」を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
-      <p>今回の画面では、BlueのPostgreSQL 13.23とGreenの18.4、DBパラメータグループ<code>poc-pg13</code>と<code>poc-pg18</code>が並んで表示される。ここで「Switch over」を押しても旧Blueのエンジン更新は始まらず、ガードレール、書き込み停止、接続切断、最終同期、識別子とエンドポイント名の付け替えが開始される</p>
+      <p>RDSコンソールでBlue/Green Deploymentを選択し、<code class="ui-value">Actions</code>から<code class="ui-value">Switch over</code>を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
+      <p>今回の画面では、BlueのPostgreSQL 13.23とGreenの18.4、DBパラメータグループ<code>poc-pg13</code>と<code>poc-pg18</code>が並んで表示される。ここで<code class="ui-value">Switch over</code>を押しても旧Blueのエンジン更新は始まらず、ガードレール、書き込み停止、接続切断、最終同期、識別子とエンドポイント名の付け替えが開始される</p>
       <p><em>＊画像挿入：スイッチオーバー概要とタイムアウト設定（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>

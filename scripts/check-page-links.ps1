@@ -18,6 +18,11 @@ $codeBlockPattern = [regex]::new(
     '<pre><code(?:\s[^>]*)?>',
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
+$codeElementPattern = [regex]::new(
+    '<pre><code(?:\s[^>]*)?>.*?</code></pre>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline -bor
+    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+)
 $copyButtonPattern = [regex]::new(
     '<button\s+class="copy"\s+type="button">',
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
@@ -37,14 +42,15 @@ $prohibitedLinkPatterns = [string[]]@(
 
 foreach ($file in $files) {
     $content = Get-Content -LiteralPath $file.FullName -Raw -Encoding utf8
+    $linkContent = $codeElementPattern.Replace($content, '')
     $relativePath = $file.FullName.Substring($root.Length).TrimStart('\', '/')
     $ids = @{}
 
-    foreach ($match in [regex]::Matches($content, 'id="([^"]+)"')) {
+    foreach ($match in [regex]::Matches($linkContent, 'id="([^"]+)"')) {
         $ids[$match.Groups[1].Value] = $true
     }
 
-    foreach ($match in [regex]::Matches($content, 'href="#([^"]+)"')) {
+    foreach ($match in [regex]::Matches($linkContent, 'href="#([^"]+)"')) {
         $target = $match.Groups[1].Value
         if (-not $ids.ContainsKey($target)) {
             $errors.Add("$relativePath`: missing #$target")

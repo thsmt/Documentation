@@ -1,270 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AWS Certificate Manager (ACM) と証明書運用 | Documentation</title>
-  <meta name="description" content="AWS Certificate Managerの証明書発行、更新、有効期間、EC2への配置、ACME、エクスポート証明書の自動更新を整理します。">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Certificate Manager (ACM) | Documentation</title>
+  <meta name="description" content="AWS Certificate Manager (ACM)の統合先ページへ転送する互換ページ。">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://thsmt.github.io/Documentation/tutorials/apache-acm-certificate-update.html">
+  <meta http-equiv="refresh" content="0; url=apache-acm-certificate-update.html">
   <link rel="stylesheet" href="../assets/styles.css">
+  <script>
+    const anchorMap = {
+      '#overview': '#lifetime',
+      '#lifetime': '#lifetime',
+      '#selection': '#request',
+      '#managed': '#request',
+      '#export': '#placement',
+      '#automation': '#lifetime',
+      '#acme': '#lifetime',
+      '#monitoring': '#verification',
+      '#troubleshooting': '#verification'
+    };
+    const targetHash = anchorMap[window.location.hash] || window.location.hash;
+    window.location.replace('apache-acm-certificate-update.html' + window.location.search + targetHash);
+  </script>
 </head>
-<body data-user-values="example.com,www.example.com">
-  <header class="site-header">
-    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
-    <div class="header-actions">
-      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
-      <nav class="nav" aria-label="Global navigation">
-        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
-        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
-      </nav>
-    </div>
-  </header>
-
-  <div class="layout">
-    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
-      <div class="sidebar-heading">
-        <h2>ページ一覧</h2>
-        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
-      </div>
-      <p class="sidebar-group">AWS</p>
-      <a href="cloudformation.html">CloudFormation 運用手順集</a>
-      <a href="aws-cli.html">AWS CLI 特殊対応</a>
-      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
-      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
-      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
-      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
-      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
-      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a class="active" href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
-      <p class="sidebar-group">OS／ミドルウェア</p>
-      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
-      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
-      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
-      <a href="windows-server-2022.html">Windows Server 2022</a>
-      <a href="windows-server-2025.html">Windows Server 2025</a>
-      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
-      <a href="apache.html">Apache</a>
-      <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
-      <a href="mariadb.html">MariaDB</a>
-      <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
-      <p class="sidebar-group">開発／自動化</p>
-      <a href="git-github-basics.html">Git / GitHub 基本編</a>
-      <a href="git-github-practical.html">Git / GitHub 実践編</a>
-      <a href="terraform.html">Terraform</a>
-      <a href="awx-ansible.html">AWX / Ansible</a>
-      <a href="container.html">コンテナ</a>
-      <a href="github-actions.html">GitHub Actions</a>
-      <p class="sidebar-group">リファレンス</p>
-      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
-      <a href="eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="glossary.html">用語集</a>
-    </aside>
-
-    <main class="content">
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <span>トピック</span>
-      </nav>
-
-      <h1>AWS Certificate Manager (ACM) と証明書運用</h1>
-      <p class="lead">AWS Certificate Managerで扱うパブリック証明書、エクスポート可能な証明書、ACME証明書、インポート証明書の違いを整理します。証明書の発行だけでなく、更新、サーバーへの再配置、監視、失効時の対応までを運用対象とする</p>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 2026年7月時点の重要な変更</strong>
-        <p>ACMパブリック証明書の有効期間は、2026年2月18日以降、従来の395日から198日へ短縮されています。ACMが更新を開始する時期も期限60日前から45日前へ変わりました。2025年の記事にある395日の有効期間は現在の仕様と異なる</p>
-      </div>
-
-      <div class="callout">
-        <strong>ℹ️ サーバーに配置した証明書は自動更新の対象外</strong>
-        <p>ACMがエクスポート可能な証明書を更新しても、EC2上のApacheやNGINXに置いた証明書ファイルは更新されません。更新後の証明書を再エクスポートし、対象サーバーへ配置して、構文確認とサービス再読み込みを行う仕組みが必要</p>
-      </div>
-
-      <h2 id="overview">ACMで扱う証明書</h2>
-      <table>
-        <thead><tr><th>種類</th><th>主な用途</th><th>更新と配置</th></tr></thead>
-        <tbody>
-          <tr><td>ACMパブリック証明書</td><td>ALB、CloudFront、API GatewayなどのACM統合サービス</td><td>ACMが更新し、統合サービスへ自動配置する</td></tr>
-          <tr><td>エクスポート可能なパブリック証明書</td><td>EC2、コンテナ、オンプレミスなど、利用者がTLSを終端する環境</td><td>ACMは更新しますが、再エクスポートと再配置は利用者が行う</td></tr>
-          <tr><td>ACME証明書</td><td>Certbot、cert-manager、acme.shを使う利用者管理環境</td><td>ACMEクライアントが発行、更新、サーバー配置を管理する</td></tr>
-          <tr><td>インポート証明書</td><td>外部認証局が発行した証明書をAWSサービスで利用する場合</td><td>ACMは更新しません。期限監視、再発行、再インポートが必要</td></tr>
-          <tr><td>AWS Private CAの証明書</td><td>社内システム、相互TLS、内部サービス</td><td>発行経路と利用先により更新方法が異なります。クライアント側へのCA証明書配布も必要</td></tr>
-        </tbody>
-      </table>
-      <p>同じドメイン名でも、証明書はリージョンごとのリソースです。CloudFrontで使用する証明書はバージニア北部リージョン（<code>us-east-1</code>）で管理する</p>
-
-      <h2 id="lifetime">有効期間と今後の短縮</h2>
-      <table>
-        <thead><tr><th>時期</th><th>公開TLS証明書の最大有効期間</th><th>運用への影響</th></tr></thead>
-        <tbody>
-          <tr><td>2026年2月18日以降</td><td>ACMパブリック証明書は198日</td><td>ACMは期限45日前から更新を試行する</td></tr>
-          <tr><td>2027年3月15日以降</td><td>100日未満</td><td>手動更新では作業頻度と失効リスクが大きくなる</td></tr>
-          <tr><td>2029年3月15日以降</td><td>47日未満</td><td>発行、配置、確認、失敗通知までの自動化が前提になる</td></tr>
-        </tbody>
-      </table>
-      <p>既存の395日または398日証明書は、更新または失効まで引き続き利用できます。更新後は198日証明書へ切り替わる</p>
-      <p>ACM ACMEで発行する証明書は、将来の短期化を見据えて既に45日間です。短期証明書では、更新ジョブの成功だけでなく、外部接続時に返される証明書の有効期限も監視する</p>
-
-      <h2 id="selection">方式の選び方</h2>
-      <table>
-        <thead><tr><th>構成</th><th>第一候補</th><th>理由</th></tr></thead>
-        <tbody>
-          <tr><td>ALB、CloudFront、API Gateway</td><td>通常のACMパブリック証明書</td><td>秘密鍵を取り出さず、更新と配置をAWSへ任せられる</td></tr>
-          <tr><td>EC2上のApache / NGINX</td><td>ACM ACME</td><td>ACMEクライアントがサーバー上で発行と更新を自動化できる</td></tr>
-          <tr><td>既存のACM管理方式をサーバーへ拡張</td><td>エクスポート可能な証明書とAWS Workload Credentials Provider</td><td>定期的な再エクスポート、ファイル更新、サービス再読み込みを自動化できる</td></tr>
-          <tr><td>複数サーバーへ独自の配布制御が必要</td><td>EventBridge、Lambda、Systems Manager</td><td>更新イベントを起点に、タグや台帳を使って配布先を制御できる</td></tr>
-          <tr><td>第三者認証局の証明書</td><td>インポートと独自更新手順</td><td>ACMのマネージド更新対象ではない</td></tr>
-        </tbody>
-      </table>
-      <p>EC2でTLSを直接終端する必要がなければ、ALBでTLSを終端して通常のACM証明書を関連付ける構成が最も管理項目を減らせる</p>
-
-      <h2 id="managed">AWS統合サービスでの自動更新</h2>
-      <p>ACM統合サービスに関連付けたAmazon発行証明書は、更新条件を満たす場合、ACMが更新し、統合サービスへ新しい証明書を配置します。DNS検証を使用する場合は、検証用CNAMEレコードを削除しない</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm describe-certificate \
-  --certificate-arn &lt;CERTIFICATE_ARN&gt; \
-  --region ap-northeast-1 \
-  --query 'Certificate.{Status:Status,InUseBy:InUseBy,NotAfter:NotAfter,RenewalStatus:RenewalSummary.RenewalStatus}'</code></pre></div>
-      <p>ACMが更新可能でも、削除されたDNS検証レコード、CAAレコード、利用状況、メール検証の未承認などにより更新できない場合があります。<code>RenewalStatus</code> とEventBridgeの更新失敗イベントを監視する</p>
-
-      <h2 id="export">エクスポート可能な証明書</h2>
-      <p>エクスポート可能なパブリック証明書は、2025年6月17日以降に、エクスポートを有効にして新規発行した証明書が対象です。発行後にエクスポート可否を変更できないため、既存の非エクスポート証明書は新しくリクエストする</p>
-      <div class="callout">
-        <strong>ℹ️ エクスポート可能な証明書の料金</strong>
-        <p>2026年7月時点では、発行時と更新時にFQDNごとに7 USD、ワイルドカード名ごとに79 USDです。証明書エクスポートAPIは、アカウントごとに月10,000回まで無料です。料金は変更される可能性があるため、導入時にAWS公式料金ページを確認する</p>
-      </div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm request-certificate \
-  --domain-name example.com \
-  --subject-alternative-names www.example.com \
-  --validation-method DNS \
-  --key-algorithm RSA_2048 \
-  --options Export=ENABLED \
-  --region ap-northeast-1</code></pre></div>
-      <p>発行後はDNS検証を完了させます。ワイルドカードの <code>*.example.com</code> は <code>example.com</code> 自体を含まないため、両方を利用する場合はSANへそれぞれ指定する</p>
-
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws acm export-certificate \
-  --certificate-arn &lt;CERTIFICATE_ARN&gt; \
-  --passphrase fileb:///secure/path/passphrase.txt \
-  --region ap-northeast-1 \
-  &gt; /secure/path/acm-export.json</code></pre></div>
-      <ul>
-        <li>パスフレーズファイルの末尾に改行を入れない</li>
-        <li>証明書、証明書チェーン、暗号化された秘密鍵を分離して安全な場所へ配置</li>
-        <li>秘密鍵はrootなど必要な実行主体だけが読める権限へ制限</li>
-        <li>設定変更後はApacheの<code>configtest</code>または<code>nginx -t</code>を通してから再読み込む</li>
-        <li>更新後も証明書ARNは変わりません。ファイルのシリアル番号と有効期限で更新を確認</li>
-      </ul>
-      <p>Apacheへの配置例とTLS設定は、<a href="apache.html#tls">Apache - TLSと証明書</a></p>
-
-      <h2 id="automation">エクスポート証明書の自動再配置</h2>
-      <h3>AWS Workload Credentials Provider</h3>
-      <p>AWS Workload Credentials Providerは、24時間ごととサービス起動時にACMから証明書を取得し、内容が変わった場合だけファイルを書き換えて<code>refresh_command</code>を実行します。EC2ではインスタンスプロファイルを基点に、証明書ごとのエクスポートロールを引き受ける構成にする</p>
-      <div class="code"><div class="code-header"><span>config.toml example</span><button class="copy" type="button">Copy</button></div><pre><code>[logging]
-log_level = "info"
-log_to_file = true
-
-[capabilities.acm]
-enabled = true
-
-[[capabilities.acm.certificates]]
-certificate_arn = "&lt;CERTIFICATE_ARN&gt;"
-role_arn = "&lt;ACM_EXPORT_ROLE_ARN&gt;"
-certificate_path = "/etc/pki/tls/certs/www.example.com.crt"
-private_key_path = "/etc/pki/tls/private/www.example.com.key"
-chain_path = "/etc/pki/tls/certs/www.example.com-chain.pem"
-refresh_command = "/bin/systemctl reload httpd"</code></pre></div>
-      <p>エクスポートロールには対象証明書の<code>acm:ExportCertificate</code>だけを許可し、インスタンスロールには対象ロールの<code>sts:AssumeRole</code>だけを許可します。導入後はサービス状態、プロバイダーログ、ファイル権限、証明書の有効期限、Webサーバーの再読み込み結果を確認する</p>
-
-      <h3>EventBridge、Lambda、Systems Manager</h3>
-      <p>独自配布が必要な場合は、ACMの<code>ACM Certificate Available</code>イベントをEventBridgeで受け、更新時にLambdaから証明書をエクスポートし、Systems Managerで対象サーバーへ配布できる</p>
-      <ol>
-        <li>EventBridgeで<code>source: aws.acm</code>、<code>detail-type: ACM Certificate Available</code>を受信</li>
-        <li>Lambdaでイベントの<code>Action</code>が<code>RENEWAL</code>であることと、対象の証明書ARNを確認</li>
-        <li>Secrets Managerからエクスポート用パスフレーズを取得</li>
-        <li><code>ExportCertificate</code>で証明書、チェーン、暗号化された秘密鍵を取得</li>
-        <li>Systems Managerで一時ファイルへ配置し、所有者と権限を設定</li>
-        <li><code>apachectl configtest</code>または<code>nginx -t</code>成功後に本番ファイルへ切り替え</li>
-        <li>サービスを再読み込みし、外部から証明書のシリアル番号と有効期限を確認</li>
-        <li>失敗時は旧ファイルへ戻し、SNSなどへ通知</li>
-      </ol>
-      <div class="callout callout-warning">
-        <strong>⚠️ パスフレーズと秘密鍵をログへ残さない</strong>
-        <p>パスフレーズをRun Commandのコマンド文字列へ直接埋め込むと、コマンド履歴や実行記録に残る可能性があります。Secrets Managerから対象ホストが必要時に取得する方式、Workload Credentials Provider、ACMEなど、秘密情報を平文で受け渡さない構成を優先する</p>
-      </div>
-      <p>EventBridgeのイベント配信はベストエフォートです。イベント処理を冪等にし、CloudWatchアラームと定期確認を併用する</p>
-
-      <h2 id="acme">ACM ACMEによるサーバー側自動更新</h2>
-      <p>2026年7月から、ACMはACMEv2互換のマネージドACMEエンドポイントを提供しています。証明書は45日間有効で、Certbot、cert-manager、acme.shなどのACMEクライアントが発行と更新を行う</p>
-      <p>2026年7月時点では、月内の最初の1,000 FQDNは発行または更新1回につき1 USD、最初の500ワイルドカード名は5 USDです。数量に応じた段階料金があり、ACME API呼び出しは月30,000回まで無料</p>
-      <ol>
-        <li>PKI管理者がACMでACMEエンドポイントを作成</li>
-        <li>発行を許可するドメインと、完全一致・サブドメイン・ワイルドカードの範囲を指定</li>
-        <li>DNS検証用CNAMEを登録</li>
-        <li>External Account Binding（EAB）認証情報を作成し、ACMEクライアントを登録</li>
-        <li>Certbotなどで証明書を取得し、ApacheまたはNGINXへ設定</li>
-        <li>更新後のdeploy hookで構文確認とサービス再読み込みを行う</li>
-        <li>ACMEクライアントのタイマー、ログ、期限、CloudWatchメトリクスを監視</li>
-      </ol>
-      <div class="code"><div class="code-header"><span>Certbot command skeleton</span><button class="copy" type="button">Copy</button></div><pre><code>certbot certonly \
-  --server &lt;ACM_ACME_ENDPOINT_URL&gt; \
-  --eab-kid &lt;EAB_KEY_ID&gt; \
-  --eab-hmac-key &lt;EAB_HMAC_KEY&gt; \
-  --email &lt;ADMIN_EMAIL&gt; \
-  --agree-tos \
-  -d www.example.com</code></pre></div>
-      <p>ACME証明書の秘密鍵はACMEクライアント側で生成・保持され、ACMは秘密鍵を保持しません。ACMのマネージド更新や<code>ExportCertificate</code>は使用せず、クライアント側の更新処理が証明書ライフサイクルを担当します。ACME証明書はALB、CloudFront、API GatewayなどのACM統合サービスへ関連付けられない</p>
-
-      <h2 id="monitoring">期限監視と更新確認</h2>
-      <table>
-        <thead><tr><th>監視対象</th><th>確認内容</th></tr></thead>
-        <tbody>
-          <tr><td>ACM</td><td><code>DaysToExpiry</code>、証明書ステータス、更新ステータス、DNS検証、利用先</td></tr>
-          <tr><td>EventBridge</td><td>期限接近、証明書利用可能、更新操作要求、失効イベント</td></tr>
-          <tr><td>配布処理</td><td>Lambda、Step Functions、Systems Manager、Workload Credentials Provider、ACMEクライアントの成否</td></tr>
-          <tr><td>サーバーファイル</td><td>有効期限、シリアル番号、SAN、証明書と秘密鍵の対応、ファイル権限</td></tr>
-          <tr><td>外部エンドポイント</td><td>実際に返される証明書、証明書チェーン、SNI、TLSハンドシェイク</td></tr>
-        </tbody>
-      </table>
-      <div class="code"><div class="code-header"><span>server and endpoint verification</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 \
-  -in /etc/pki/tls/certs/www.example.com.crt \
-  -noout -subject -issuer -serial -dates -ext subjectAltName
-
-openssl s_client \
-  -connect www.example.com:443 \
-  -servername www.example.com \
-  -showcerts &lt; /dev/null 2&gt;/dev/null |
-  openssl x509 -noout -subject -issuer -serial -dates</code></pre></div>
-      <p>ACM上の証明書が更新済みでも、外部エンドポイントが古い証明書を返す場合があります。ACMと外部エンドポイントは別の監視対象として扱います。CloudWatchの<code>AWS/CertificateManager</code>名前空間では、<code>DaysToExpiry</code>が1日2回発行される</p>
-
-      <h2 id="troubleshooting">トラブルシューティング</h2>
-      <table>
-        <thead><tr><th>事象</th><th>主な確認点</th></tr></thead>
-        <tbody>
-          <tr><td>ACMは更新済みだがサーバーは古い</td><td>再エクスポート、配布ジョブ、対象ARN、配布先、構文確認、reload結果を確認する</td></tr>
-          <tr><td>ACMの更新が保留になる</td><td>DNS検証CNAME、CAA、ドメインの名前解決、証明書の更新対象条件を確認する</td></tr>
-          <tr><td>エクスポートできない</td><td>発行日、<code>Export=ENABLED</code>、IAM権限、リージョン、パスフレーズファイルの改行を確認する</td></tr>
-          <tr><td>再読み込みに失敗する</td><td>証明書と秘密鍵の対応、チェーン、ファイル権限、SELinux、Apache / NGINXの構文を確認する</td></tr>
-          <tr><td>一部の接続先だけ古い証明書を返す</td><td>複数サーバー、ロードバランサー、CDN、DNS、SNI、配布漏れを確認する</td></tr>
-          <tr><td>ACME更新に失敗する</td><td>ACMEエンドポイント、ドメイン許可範囲、EAB登録、クライアントタイマー、外向き通信、クライアントログを確認する</td></tr>
-          <tr><td>インポート証明書が期限切れになる</td><td>外部認証局での再発行、同じARNへの再インポート、関連サービスの状態を確認する</td></tr>
-        </tbody>
-      </table>
-
-    </main>
-
-    <aside class="toc" aria-label="Table of contents">
-      <h2>ページ内</h2>
-      <a class="active" href="#overview">ACMで扱う証明書</a>
-      <a href="#lifetime">有効期間と今後の短縮</a>
-      <a href="#selection">方式の選び方</a>
-      <a href="#managed">AWS統合サービス</a>
-      <a href="#export">エクスポート可能な証明書</a>
-      <a href="#automation">自動再配置</a>
-      <a href="#acme">ACM ACME</a>
-      <a href="#monitoring">期限監視と更新確認</a>
-      <a href="#troubleshooting">トラブルシューティング</a>
-    </aside>
-  </div>
-
+<body>
+  <main class="content">
+    <h1>AWS Certificate Manager (ACM)</h1>
+    <p class="lead">統合先ページへの移動案内</p>
+    <p><a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)へ移動</a></p>
+  </main>
   <script src="../assets/app.js"></script>
 </body>
 </html>

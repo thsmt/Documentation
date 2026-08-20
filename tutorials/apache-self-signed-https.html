@@ -7,7 +7,7 @@
   <meta name="description" content="EC2上のRHEL 9.8でApacheへEC P-256秘密鍵と自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとSSLターミネーションを確認する手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="www.zexample.com,zexample.com,ap-northeast-1,JP,Tokyo,Example Publishing Ltd,System Dept.,2026年8月31日18時17分17秒JST">
+<body>
   <header class="site-header">
     <a class="brand" href="../">
       <img src="../assets/icon.jpg" alt="Documentation icon">
@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a class="active" href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -224,7 +224,7 @@ Email Address []:
 challenge password []:
 optional company name []:</code></pre></div>
       </details>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>入力欄</th><th>説明</th><th>パラメータ</th></tr></thead>
         <tbody>
           <tr><td>Country Name</td><td>2文字の国コード</td><td><code>JP</code></td></tr>
@@ -283,7 +283,7 @@ drwxr-xr-x. 6 root root 143 Jul 15 09:44 ..
           <tr><td>公開CA</td><td>CA側でFQDNを指定し、必要に応じてCSRを提出</td><td>サーバー証明書と中間証明書</td><td>一般ブラウザから信頼される公開サービス</td></tr>
         </tbody>
       </table>
-      <p>CAへのCSR提出方法に共通コマンドはない。利用する認証局の管理画面で「サーバー証明書」「CSR貼り付け」などを選び、<code>-----BEGIN CERTIFICATE REQUEST-----</code>から<code>-----END CERTIFICATE REQUEST-----</code>までを提出する。秘密鍵ファイルは送信しない</p>
+      <p>CAへのCSR提出方法に共通コマンドはない。利用する認証局の管理画面で<code class="ui-value">サーバー証明書</code> <code class="ui-value">CSR貼り付け</code>などを選び、<code>-----BEGIN CERTIFICATE REQUEST-----</code>から<code>-----END CERTIFICATE REQUEST-----</code>までを提出する。秘密鍵ファイルは送信しない</p>
       <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/securing_networks/creating-and-managing-tls-keys-and-certificates_securing-networks">Red Hat - Creating and managing TLS keys and certificates</a></p>
 
       <h2 id="self-signed">自己署名証明書の発行</h2>
@@ -457,7 +457,7 @@ Content-Type: text/html; charset=UTF-8
 restorecon -v /var/www/www.zexample.com/public_html/index.html</code></pre></div>
       <figure class="screenshot-wide">
         <img src="../assets/img/ec2-rhel9-apache-https/browser-self-signed-demo-site.png" alt="自己署名証明書を設定したZexample TechnologiesのHTTPSデモサイト" width="1720" height="1392" loading="lazy">
-        <figcaption>自己署名証明書を設定した<code>www.zexample.com</code>のHTTPS表示。検証用証明書のため、アドレスバーには「保護されていない通信」と表示される</figcaption>
+        <figcaption>自己署名証明書を設定した<code>www.zexample.com</code>のHTTPS表示。検証用証明書のため、アドレスバーには<code class="ui-value">保護されていない通信</code>と表示される</figcaption>
       </figure>
       <figure class="screenshot-wide">
         <img src="../assets/img/ec2-rhel9-apache-https/browser-self-signed-certificate-details.png" alt="www.zexample.comの自己署名証明書の詳細" width="1720" height="1392" loading="lazy">

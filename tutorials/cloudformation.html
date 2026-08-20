@@ -7,7 +7,7 @@
   <meta name="description" content="CloudFormationの作成、更新、ロールバック、ドリフト検出、削除を整理した運用手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="sample-stack,update-20260712">
+<body>
   <header class="site-header">
     <a class="brand" href="../">
       <img src="../assets/icon.jpg" alt="Documentation icon">
@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -199,9 +199,9 @@
 
       <h2 id="upload-file">テンプレートファイルのアップロード</h2>
       <ol>
-        <li>CloudFormationコンソールで <strong>スタックの作成</strong> を選択</li>
-        <li><strong>新しいリソースを使用（標準）</strong> を選択</li>
-        <li><strong>既存のテンプレートを選択</strong> を選び、テンプレートソースで <strong>テンプレートファイルのアップロード</strong> を選択</li>
+        <li>CloudFormationコンソールで <code class="ui-value">スタックの作成</code> を選択</li>
+        <li><code class="ui-value">新しいリソースを使用（標準）</code> を選択</li>
+        <li><code class="ui-value">既存のテンプレートを選択</code> を選び、テンプレートソースで <code class="ui-value">テンプレートファイルのアップロード</code> を選択</li>
         <li>ローカルのYAMLまたはJSONファイルを選択</li>
         <li>CloudFormationがテンプレートをS3へアップロードし、スタック作成画面に進む</li>
       </ol>
@@ -226,7 +226,7 @@
   s3://&lt;BUCKET_NAME&gt;/cloudformation/templates/example.yml</code></pre>
       </div>
 
-      <p>コンソールの <strong>Amazon S3 URL</strong> に、以下のようなURLを指定する</p>
+      <p>コンソールの <code class="ui-value">Amazon S3 URL</code> に、以下のようなURLを指定する</p>
       <div class="code">
         <div class="code-header">
           <span>text</span>

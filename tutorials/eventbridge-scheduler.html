@@ -7,7 +7,7 @@
   <meta name="description" content="EventBridge SchedulerのUniversal targetで、EC2、RDS、WorkSpacesなどをスケジュールで停止・起動する設計と手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="EventBridgeSchedulerEC2Stop,EventBridgeSchedulerEC2Start,EC2InstanceStopPolicy,EC2InstanceStartPolicy,RDSInstanceStopPolicy,RDSInstanceStartPolicy,LightsailInstanceStopPolicy,LightsailInstanceStartPolicy,WorkSpacesStopPolicy,WorkSpacesStartPolicy,ec2-schedule-group,ec2-stop-daily-schedule,ec2-start-daily-schedule,target-ec2-stop.json,target-ec2-start.json">
+<body>
   <header class="site-header">
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
     <div class="header-actions">
@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -87,7 +87,7 @@
         </tbody>
       </table>
       <h2 id="iam-policy">カスタムIAMポリシーの作成</h2>
-      <p>IAMコンソールで「ポリシーを作成」を開き、JSONタブへ対象Scheduleに対応する許可ポリシーを貼り付けて作成する。停止用と起動用は別ポリシーとして管理する</p>
+      <p>IAMコンソールで<code class="ui-value">ポリシーを作成</code>を開き、JSONタブへ対象Scheduleに対応する許可ポリシーを貼り付けて作成する。停止用と起動用は別ポリシーとして管理する</p>
       <div class="tab-group" data-tabs>
         <div class="tabs" role="tablist" aria-label="EventBridge Scheduler IAM policies">
           <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="scheduler-policy-ec2-stop">EC2停止</button>
@@ -207,9 +207,9 @@
       <div class="callout callout-warning"><strong>⚠️ Resourceの範囲</strong><p>上記はコンソール検証を進めやすくするため<code>Resource</code>を<code>*</code>としている。実運用では、停止を許可するEC2インスタンスARNだけへ制限する。RDSやWorkSpacesは同じポリシーへ混在させず、サービスと操作単位で権限を分離する</p></div>
 
       <h2 id="iam-role">IAMロールの作成</h2>
-      <p>次に、Schedulerが引き受ける実行ロール<code>EventBridgeSchedulerEC2Stop</code>を作成する。IAMコンソールで「ロールを作成」を開き、「カスタム信頼ポリシー」を選択してScheduler用の信頼ポリシーを登録する</p>
+      <p>次に、Schedulerが引き受ける実行ロール<code>EventBridgeSchedulerEC2Stop</code>を作成する。IAMコンソールで<code class="ui-value">ロールを作成</code>を開き、<code class="ui-value">カスタム信頼ポリシー</code>を選択してScheduler用の信頼ポリシーを登録する</p>
       <ol>
-        <li>IAMの「ロールを作成」を開き、「カスタム信頼ポリシー」を選択</li>
+        <li>IAMの<code class="ui-value">ロールを作成</code>を開き、<code class="ui-value">カスタム信頼ポリシー</code>を選択</li>
         <li>次の信頼ポリシーを登録</li>
         <li>許可ポリシーとして<code>EC2InstanceStopPolicy</code>をアタッチし、ロール名を<code>EventBridgeSchedulerEC2Stop</code>として作成</li>
       </ol>
@@ -252,16 +252,16 @@
         <figcaption>東京リージョンで毎日18:00 JSTに実行するScheduleを設定</figcaption>
       </figure>
       <h4>3. Amazon EC2サービスを選択</h4>
-      <p>Target APIで「すべてのAPI」を選択する。サービス検索欄に<code>Amazon EC2</code>を入力し、表示されたAmazon EC2を選択する</p>
+      <p>Target APIで<code class="ui-value">すべてのAPI</code>を選択する。サービス検索欄に<code class="ui-value">Amazon EC2</code>を入力し、表示された<code class="ui-value">Amazon EC2</code>を選択する</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-service-redacted.png" alt="EventBridge SchedulerのTarget APIでAmazon EC2を検索して選択する画面" width="1717" height="555" loading="lazy">
-        <figcaption>「すべてのAPI」を選択し、Amazon EC2を検索して選択</figcaption>
+        <figcaption><code class="ui-value">すべてのAPI</code>を選択し、<code class="ui-value">Amazon EC2</code>を検索して選択</figcaption>
       </figure>
       <h4>4. StopInstances APIを選択</h4>
-      <p>Amazon EC2のAPI一覧で<code>stopInstances</code>を検索し、<code>StopInstances</code>を選択する。停止処理用のScheduleでは、起動用の<code>StartInstances</code>を選択しない</p>
+      <p>Amazon EC2のAPI一覧で<code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">StopInstances</code>を選択する。停止処理用のScheduleでは、起動用の<code class="ui-value">StartInstances</code>を選択しない</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-api-redacted.png" alt="Amazon EC2のAPI一覧でStopInstancesを検索して選択する画面" width="1717" height="555" loading="lazy">
-        <figcaption><code>stopInstances</code>を検索し、Amazon EC2の<code>StopInstances</code>を選択</figcaption>
+        <figcaption><code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">Amazon EC2</code>の<code class="ui-value">StopInstances</code>を選択</figcaption>
       </figure>
       <h4>5. 停止対象のインスタンスIDを入力</h4>
       <p>Targetの入力欄に、停止対象の<code>InstanceIds</code>配列を指定する。IDはEC2コンソールからコピーし、停止対象以外のインスタンスを含めない</p>
@@ -276,7 +276,7 @@
         <figcaption>Universal targetとしてAmazon EC2のStopInstancesを選択し、対象2台を指定</figcaption>
       </figure>
       <h4>6. 実行ロールを選択</h4>
-      <p>Scheduleを有効化し、完了後のアクションは<code>NONE</code>、再試行はOFF、DLQは「なし」、暗号化はデフォルトのままとする。「既存のロールを使用」を選択し、<code>EventBridgeSchedulerEC2Stop</code>を指定する</p>
+      <p><code class="ui-value">Schedule</code>を有効化し、完了後のアクションは<code class="ui-value">NONE</code>、再試行は<code class="ui-value">OFF</code>、DLQは<code class="ui-value">なし</code>、暗号化は<code class="ui-value">デフォルト</code>とする。<code class="ui-value">既存のロールを使用</code>を選択し、<code>EventBridgeSchedulerEC2Stop</code>を指定する</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/eventbridge-scheduler/ec2-stop-settings.png" alt="Schedulerの設定で停止用IAMロールを選択する画面" width="1718" height="1304" loading="lazy">
         <figcaption>停止専用の実行ロールEventBridgeSchedulerEC2Stopを選択</figcaption>
@@ -286,7 +286,7 @@
       <h3 id="ec2-stop-cli">EC2停止ScheduleをAWS CLIで作成</h3>
       <p>コンソールと同じ設定をAWS CLIで作成する場合は、Target定義とScheduleを次のように指定する</p>
       <div class="code"><div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div><pre><code>{
-  "RoleArn": "arn:aws:iam::<span class="user-value">&lt;ACCOUNT_ID&gt;</span>:role/<span class="user-value">EventBridgeSchedulerEC2Stop</span>",
+  "RoleArn": "arn:aws:iam::<span class="user-value">&lt;ACCOUNT_ID&gt;</span>:role/EventBridgeSchedulerEC2Stop",
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:stopInstances",
   "Input": "{\"InstanceIds\":[\"<span class="user-value">&lt;EC2_INSTANCE_ID_1&gt;</span>\",\"<span class="user-value">&lt;EC2_INSTANCE_ID_2&gt;</span>\"]}"
 }</code></pre></div>
@@ -343,19 +343,19 @@
 
       <h3 id="operations-console">Schedulerコンソールで設定を確認</h3>
       <ol>
-        <li>AWSマネジメントコンソールでAmazon EventBridgeを開き、ナビゲーションから「Scheduler」「スケジュール」を選択</li>
+        <li>AWSマネジメントコンソールでAmazon EventBridgeを開き、ナビゲーションから<code class="ui-value">Scheduler</code> <code class="ui-value">スケジュール</code>を選択</li>
         <li>Scheduleを作成したリージョンへ切り替え、ScheduleグループとSchedule名で対象を検索</li>
         <li>Scheduleの状態、スケジュール式、タイムゾーン、Flexible time window、Target ARN、Input、実行ロール、再試行、DLQ、暗号化設定を確認</li>
-        <li>時刻を変更する場合は「編集」を開き、今後10回の実行日時プレビューが意図した業務時刻になることを確認して保存</li>
+        <li>時刻を変更する場合は<code class="ui-value">編集</code>を開き、今後10回の実行日時プレビューが意図した業務時刻になることを確認して保存</li>
       </ol>
       <div class="callout callout-info"><strong>ℹ️ Schedulerコンソールだけでは完結しない</strong><p>Schedulerコンソールは設定内容の確認に使用する。個々の呼び出しが成功したかを判断する完全な実行履歴画面ではないため、CloudWatchメトリクスとTargetサービスの状態を合わせて確認する</p></div>
 
       <h3 id="operations-metrics">CloudWatchで実行状況をモニタリング</h3>
       <ol>
-        <li>CloudWatchコンソールで「メトリクス」「すべてのメトリクス」「Scheduler」を開く</li>
-        <li>Scheduleごとの運用では「Schedule Group Metrics」、リージョン全体の傾向では「Account Metrics」を選択</li>
+        <li>CloudWatchコンソールで<code class="ui-value">メトリクス</code> <code class="ui-value">すべてのメトリクス</code> <code class="ui-value">Scheduler</code>を開く</li>
+        <li>Scheduleごとの運用では<code class="ui-value">Schedule Group Metrics</code>、リージョン全体の傾向では<code class="ui-value">Account Metrics</code>を選択</li>
         <li>Scheduleと同じリージョンを選択し、対象のSchedule Groupとメトリクスを選択</li>
-        <li>「グラフ化したメトリクス」で統計を<code>Sum</code>、期間をScheduleの実行間隔に合わせ、実行予定時刻の前後を表示</li>
+        <li><code class="ui-value">グラフ化したメトリクス</code>で統計を<code>Sum</code>、期間をScheduleの実行間隔に合わせ、実行予定時刻の前後を表示</li>
       </ol>
       <table>
         <thead><tr><th>メトリクス</th><th>確認できること</th><th>増加時の初動</th></tr></thead>
@@ -375,9 +375,9 @@
       <h3 id="operations-notification">CloudWatchアラームとSNSで失敗を通知</h3>
       <p>失敗を人へ通知する場合は、SchedulerのエラーメトリクスをCloudWatchアラームで評価し、Amazon SNSトピックからメール、SMS、HTTPS、Lambdaなどの購読先へ配信する</p>
       <ol>
-        <li>CloudWatchの「すべてのメトリクス」「Scheduler」「Schedule Group Metrics」で対象グループの<code>TargetErrorCount</code>を選択</li>
-        <li>「アクション」「アラームの作成」を開き、統計を<code>Sum</code>、しきい値を<code>1以上</code>に設定</li>
-        <li>欠落データは「適正（しきい値を超えていない）」として扱い、通常時にデータがないことによる誤通知を防止</li>
+        <li>CloudWatchの<code class="ui-value">すべてのメトリクス</code> <code class="ui-value">Scheduler</code> <code class="ui-value">Schedule Group Metrics</code>で対象グループの<code>TargetErrorCount</code>を選択</li>
+        <li><code class="ui-value">アクション</code> <code class="ui-value">アラームの作成</code>を開き、統計を<code>Sum</code>、しきい値を<code>1以上</code>に設定</li>
+        <li>欠落データは<code class="ui-value">適正（しきい値を超えていない）</code>として扱い、通常時にデータがないことによる誤通知を防止</li>
         <li>通知先としてSNSトピックを選択または新規作成し、メール購読では受信した確認メールから購読を確定</li>
         <li><code>InvocationDroppedCount</code>と<code>InvocationsFailedToBeSentToDeadLetterCount</code>にも同じ流れでアラームを作成</li>
         <li>検証用の単発Scheduleで意図的に安全な失敗を発生させ、アラーム、SNS通知、DLQ格納までを確認</li>
@@ -396,7 +396,7 @@
       <h3 id="operations-dlq">SQS DLQで失敗理由を確認</h3>
       <ol>
         <li><code>TargetErrorCount</code>または<code>InvocationDroppedCount</code>が増加したら、Amazon SQSコンソールでScheduleに設定したDLQを開く</li>
-        <li>「メッセージを送受信」「メッセージをポーリング」を選択し、受信したメッセージの「メッセージ属性」を開く</li>
+        <li><code class="ui-value">メッセージを送受信</code> <code class="ui-value">メッセージをポーリング</code>を選択し、受信したメッセージの<code class="ui-value">メッセージ属性</code>を開く</li>
         <li><code>SCHEDULE_ARN</code>または<code>TARGET_ARN</code>で対象を特定し、<code>ERROR_CODE</code>、<code>ERROR_MESSAGE</code>、<code>EXHAUSTED_RETRY_CONDITION</code>を確認</li>
         <li>EC2、RDS、WorkSpacesなどTargetサービスのコンソールを開き、対象リソースの状態遷移とイベントを確認</li>
         <li>失敗メトリクスが増えてもDLQが空の場合は、SchedulerからSQSへの送信権限、DLQ ARN、KMSキーポリシーを確認</li>
@@ -424,11 +424,11 @@
 
       <h3 id="operations-cloudtrail">CloudTrailで変更履歴をフィルター</h3>
       <ol>
-        <li>CloudTrailコンソールの「イベント履歴」を開き、Scheduleと同じリージョンと調査対象の時間範囲を選択</li>
-        <li>属性「イベントソース」、値<code>scheduler.amazonaws.com</code>でSchedulerの操作へ絞り込む</li>
-        <li>属性を「イベント名」へ切り替え、<code>CreateSchedule</code>、<code>UpdateSchedule</code>、<code>DeleteSchedule</code>を1つずつ検索</li>
+        <li>CloudTrailコンソールの<code class="ui-value">イベント履歴</code>を開き、Scheduleと同じリージョンと調査対象の時間範囲を選択</li>
+        <li>属性<code class="ui-value">イベントソース</code>、値<code>scheduler.amazonaws.com</code>でSchedulerの操作へ絞り込む</li>
+        <li>属性を<code class="ui-value">イベント名</code>へ切り替え、<code>CreateSchedule</code>、<code>UpdateSchedule</code>、<code>DeleteSchedule</code>を1つずつ検索</li>
         <li>対象イベントを開き、ユーザー名、イベント時刻、送信元IP、<code>requestParameters</code>、<code>responseElements</code>を確認</li>
-        <li>Target APIは属性「イベントソース」に<code>ec2.amazonaws.com</code>などを指定するか、属性「イベント名」で<code>StopInstances</code>や<code>StartInstances</code>を検索</li>
+        <li>Target APIは属性<code class="ui-value">イベントソース</code>に<code>ec2.amazonaws.com</code>などを指定するか、属性<code class="ui-value">イベント名</code>で<code>StopInstances</code>や<code>StartInstances</code>を検索</li>
       </ol>
       <table>
         <thead><tr><th>確認目的</th><th>属性</th><th>完全一致で入力する値</th></tr></thead>

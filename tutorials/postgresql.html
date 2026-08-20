@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PostgreSQL | Documentation</title>
+  <meta name="description" content="RHEL 8 / 9におけるPostgreSQLのバージョン選択、インストール、認証設定、ロール管理、クライアント更新、バックアップの運用手順。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <h2>ページ一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>
+      </div>
+      <p class="sidebar-group">AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <p class="sidebar-group">OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a class="active" href="postgresql.html">PostgreSQL</a>
+      <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
+      <p class="sidebar-group">開発／自動化</p>
+      <a href="git-github-basics.html">Git / GitHub 基本編</a>
+      <a href="git-github-practical.html">Git / GitHub 実践編</a>
+      <a href="terraform.html">Terraform</a>
+      <a href="awx-ansible.html">AWX / Ansible</a>
+      <a href="container.html">コンテナ</a>
+      <a href="github-actions.html">GitHub Actions</a>
+      <p class="sidebar-group">リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+      <a href="glossary.html">用語集</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <h1>PostgreSQL</h1>
+      <p class="lead">RHEL 8 / 9でPostgreSQLのバージョン選択、インストール、認証設定、ロール管理、クライアント更新、バックアップを行う手順</p>
+
+      <div class="callout callout-warning">
+        <strong>メジャーバージョンの選択</strong>
+        <p>PostgreSQLモジュールは同一システムで同時に1ストリームだけを選択できる</p>
+        <p>バージョン無指定で導入される版がサポート中の推奨版とは限らないため、導入前に利用可能なストリームとApplication Streamsのライフサイクルを確認</p>
+      </div>
+
+      <h2 id="versions">1. RHEL別の提供バージョン確認</h2>
+      <table>
+        <thead>
+          <tr><th>OS</th><th>バージョン無指定時</th><th>AppStreamで提供されるバージョン</th><th>提供形態</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RHEL 8</td>
+            <td>PostgreSQL 10の既定ストリーム</td>
+            <td>9.6、10、12（RHEL 8.1.1以降）、13（RHEL 8.4以降）、15（RHEL 8.8以降）、16（RHEL 8.10以降）</td>
+            <td>すべてモジュールストリーム</td>
+          </tr>
+          <tr>
+            <td>RHEL 9</td>
+            <td>PostgreSQL 13の非モジュールRPM</td>
+            <td>15（RHEL 9.2以降）、16（RHEL 9.4以降）、18（RHEL 9.8以降）</td>
+            <td>13はRPM、15・16・18はモジュールストリーム</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>RHEL 8のバージョン無指定時に選択されるPostgreSQL 10はApplication Streamのサポートが終了しているため、新規構築ではサポート期間とアプリケーション互換性を確認してストリームを明示</p>
+      <p>2026年8月時点でRHEL 8のPostgreSQL 9.6、10、13はサポート終了、12はRHEL 8のライフサイクルに追従、15は2028年5月、16は2029年5月までの提供予定</p>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/deploying_different_types_of_servers/using-databases">Red Hat Enterprise Linux 8 - Database servers</a></p>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_using_database_servers/using-postgresql_configuring-and-using-database-servers">Red Hat Enterprise Linux 9 - Using PostgreSQL</a></p>
+      <p>出典：<a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">Red Hat Enterprise Linux Application Streams Life Cycle</a></p>
+
+      <h2 id="install">2. インストールと初期化</h2>
+      <p class="procedure-step"><strong>2.1 OSとモジュールの確認</strong></p>
+      <p>RHELリリースの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/redhat-release</code></pre></div>
+      <p>PostgreSQLモジュールストリームの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list postgresql</code></pre></div>
+      <p>PostgreSQL関連の既存パッケージ確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>rpm -qa | grep -E '^(postgresql|libpq)'</code></pre></div>
+
+      <p class="procedure-step"><strong>2.2 バージョン無指定でのサーバーインストール</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="PostgreSQL既定版のインストール">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="postgresql-default-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="postgresql-default-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="postgresql-default-rhel8" role="tabpanel">
+          <p>RHEL 8の既定ストリームとserverプロファイルのインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install postgresql/server</code></pre></div>
+        </section>
+        <section class="tab-panel" id="postgresql-default-rhel9" role="tabpanel" hidden>
+          <p>RHEL 9の非モジュールRPM版のインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install postgresql-server</code></pre></div>
+        </section>
+      </div>
+
+      <p class="procedure-step"><strong>2.3 バージョン指定でのサーバーインストール</strong></p>
+      <p>RHEL 8またはRHEL 9で利用可能なストリームとserverプロファイルの指定</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install postgresql:&lt;STREAM&gt;/server</code></pre></div>
+
+      <p class="procedure-step"><strong>2.4 データベースクラスタの初期化</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo postgresql-setup --initdb</code></pre></div>
+
+      <p class="procedure-step"><strong>2.5 サービスの有効化と起動</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now postgresql.service</code></pre></div>
+      <p>PostgreSQLサービス状態の確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl status postgresql.service --no-pager</code></pre></div>
+      <p>PostgreSQLの接続受付状態の確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>pg_isready</code></pre></div>
+      <p>サーバーバージョンの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres psql -c 'SELECT version();'</code></pre></div>
+
+      <h2 id="configuration">3. 設定ファイルと反映方法</h2>
+      <table>
+        <thead><tr><th>パス</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><code>/var/lib/pgsql/data/postgresql.conf</code></td><td>待受、メモリー、ログ、パスワード暗号化などのクラスタ設定</td></tr>
+          <tr><td><code>/var/lib/pgsql/data/postgresql.auto.conf</code></td><td><code>ALTER SYSTEM</code>が管理する設定であり、手動編集しない</td></tr>
+          <tr><td><code>/var/lib/pgsql/data/pg_hba.conf</code></td><td>接続元、データベース、ロール、認証方式を上から順に評価</td></tr>
+          <tr><td><code>/var/lib/pgsql/data/pg_ident.conf</code></td><td>OSユーザーなどの外部IDとPostgreSQLロールの対応付け</td></tr>
+        </tbody>
+      </table>
+
+      <p class="procedure-step"><strong>3.1 実際の設定ファイルパスの確認</strong></p>
+      <p>PostgreSQL管理者として<code>psql</code>へ接続し、次のSQLを個別に実行</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres psql</code></pre></div>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW data_directory;</code></pre></div>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW config_file;</code></pre></div>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW hba_file;</code></pre></div>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW ident_file;</code></pre></div>
+
+      <p class="procedure-step"><strong>3.2 設定ファイルのバックアップ</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo cp -p /var/lib/pgsql/data/postgresql.conf /var/lib/pgsql/data/postgresql.conf.bak</code></pre></div>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo cp -p /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak</code></pre></div>
+
+      <p class="procedure-step"><strong>3.3 サーバー設定の編集</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /var/lib/pgsql/data/postgresql.conf</code></pre></div>
+      <div class="code"><div class="code-header"><span>postgresql.conf</span><button class="copy" type="button">Copy</button></div><pre><code>listen_addresses = '&lt;DB_SERVER_PRIVATE_IP&gt;'
+port = &lt;DB_PORT&gt;
+max_connections = &lt;MAX_CONNECTIONS&gt;
+password_encryption = 'scram-sha-256'
+log_connections = on</code></pre></div>
+      <p>既定ポートを使用する場合は<code>&lt;DB_PORT&gt;</code>を5432へ置換し、後述するSELinux、firewalld、接続コマンドにも同じ値を使用</p>
+
+      <p class="procedure-step"><strong>3.4 クライアント認証設定の編集</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /var/lib/pgsql/data/pg_hba.conf</code></pre></div>
+      <div class="code"><div class="code-header"><span>pg_hba.conf</span><button class="copy" type="button">Copy</button></div><pre><code>host    &lt;APP_DATABASE&gt;    &lt;APP_ROLE&gt;    &lt;APP_SERVER_CIDR&gt;    scram-sha-256</code></pre></div>
+      <p>TLSを構成した接続だけを許可する場合は<code>host</code>を<code>hostssl</code>へ変更し、サーバー証明書と秘密鍵を別途設定</p>
+      <p>書籍で使用される<code>md5</code>は新規設定へ採用せず、パスワード保存とHBA認証を<code>scram-sha-256</code>へ統一</p>
+
+      <p class="procedure-step"><strong>3.5 設定ファイルの解析エラー確認</strong></p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SELECT sourcefile, sourceline, error FROM pg_file_settings WHERE error IS NOT NULL;</code></pre></div>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SELECT line_number, type, database, user_name, address, auth_method, error FROM pg_hba_file_rules WHERE error IS NOT NULL;</code></pre></div>
+
+      <p class="procedure-step"><strong>3.6 設定の反映</strong></p>
+      <p><code>pg_hba.conf</code>やSIGHUPで反映できる設定の再読み込み</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SELECT pg_reload_conf();</code></pre></div>
+      <p><code>listen_addresses</code>や<code>max_connections</code>など再起動が必要な設定の反映</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl restart postgresql.service</code></pre></div>
+      <p>設定ごとの反映状態と再起動要否の確認</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SELECT name,setting,context,source,sourcefile,pending_restart FROM pg_settings WHERE name IN ('listen_addresses','port','max_connections','password_encryption');</code></pre></div>
+
+      <h2 id="network">4. ポートとリモート接続設定</h2>
+      <p>既定ポート5432を使用する場合、SELinuxのポート登録変更は不要</p>
+      <p class="procedure-step"><strong>4.1 カスタムポート使用時のSELinuxツール導入</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install policycoreutils-python-utils</code></pre></div>
+      <p class="procedure-step"><strong>4.2 カスタムポートのSELinux登録</strong></p>
+      <p>現在のPostgreSQL用ポート登録の確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage port -l | grep postgresql_port_t</code></pre></div>
+      <p>未登録のカスタムポート追加</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage port -a -t postgresql_port_t -p tcp &lt;DB_PORT&gt;</code></pre></div>
+      <p>同じポートに別のSELinuxタイプが登録済みの場合は、追加ではなく<code>-m</code>による変更可否を確認</p>
+      <p class="procedure-step"><strong>4.3 接続元を限定したfirewalld設定</strong></p>
+      <p>有効ゾーンの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --get-active-zones</code></pre></div>
+      <p>有効ゾーンにおける接続元CIDRとDBポートの許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;APP_SERVER_CIDR&gt;" port protocol="tcp" port="&lt;DB_PORT&gt;" accept'</code></pre></div>
+      <p>firewalld設定の再読み込み</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --reload</code></pre></div>
+      <p>PostgreSQLの待受確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo ss -lntp | grep ':&lt;DB_PORT&gt;'</code></pre></div>
+
+      <h2 id="roles">5. データベースとロールの作成</h2>
+      <p>PostgreSQL管理コンソールへの接続</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres psql</code></pre></div>
+      <p>ログイン可能なアプリケーションロールの作成</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE ROLE &lt;APP_ROLE&gt; LOGIN;</code></pre></div>
+      <p>パスワードを平文のSQLやシェル履歴へ残さない対話設定</p>
+      <div class="code"><div class="code-header"><span>psql</span><button class="copy" type="button">Copy</button></div><pre><code>\password &lt;APP_ROLE&gt;</code></pre></div>
+      <p>アプリケーションロールを所有者とするデータベースの作成</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE DATABASE &lt;APP_DATABASE&gt; OWNER &lt;APP_ROLE&gt;;</code></pre></div>
+      <p>既定でPUBLICへ付与されるデータベース接続権限の削除</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>REVOKE CONNECT ON DATABASE &lt;APP_DATABASE&gt; FROM PUBLIC;</code></pre></div>
+      <div class="callout">
+        <strong>権限の範囲</strong>
+        <p>データベース所有者の<code>&lt;APP_ROLE&gt;</code>は接続とオブジェクト管理を行える。所有者とログインロールを分離する場合は、ログインロールへ<code>CONNECT</code>を明示的に付与</p>
+        <p>データベースへの<code>CONNECT</code>権限は、スキーマ、テーブル、シーケンスの操作権限を自動付与しないため、オブジェクト所有者とアプリケーション要件に合わせて最小権限を追加</p>
+      </div>
+
+      <h2 id="role-check">6. psql版別のロール確認</h2>
+      <p>メタコマンドの仕様は接続先サーバーではなく、操作に使用する<code>psql</code>クライアントの版に依存</p>
+      <p>psqlクライアントバージョンの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>psql --version</code></pre></div>
+      <table>
+        <thead><tr><th>psql版</th><th>ロール一覧と属性</th><th>ロール所属・付与関係</th></tr></thead>
+        <tbody>
+          <tr><td>15以前</td><td><code>\du</code>または<code>\dg</code></td><td><code>\du</code>のMember of列</td></tr>
+          <tr><td>16以降</td><td><code>\du</code>または<code>\dg</code></td><td><code>\drg</code></td></tr>
+        </tbody>
+      </table>
+      <p>ロールと属性の一覧確認</p>
+      <div class="code"><div class="code-header"><span>psql</span><button class="copy" type="button">Copy</button></div><pre><code>\du</code></pre></div>
+      <p>psql 16以降におけるロール所属関係の確認</p>
+      <div class="code"><div class="code-header"><span>psql 16+</span><button class="copy" type="button">Copy</button></div><pre><code>\drg</code></pre></div>
+      <p>psql 16以降でシステムロールを含めた確認</p>
+      <div class="code"><div class="code-header"><span>psql 16+</span><button class="copy" type="button">Copy</button></div><pre><code>\drgS</code></pre></div>
+      <div class="callout">
+        <strong>\drgの構文</strong>
+        <p>変更点はPostgreSQL 15ではなくpsql 16で導入され、<code>\du</code>自体は16以降もロール一覧用として継続</p>
+        <p><code>\drg*</code>や<code>\drg+</code>は正式な修飾形ではない。全件は<code>\drg</code>、システムロール込みは<code>\drgS</code>を使用し、<code>*</code>を使う場合は空白に続くロールパターンとして指定</p>
+      </div>
+      <p>出典：<a href="https://www.postgresql.org/docs/16/release-16.html">PostgreSQL 16 Release Notes</a></p>
+      <p>出典：<a href="https://www.postgresql.org/docs/16/app-psql.html#APP-PSQL-META-COMMAND-DRG">PostgreSQL 16 - psql \drg</a></p>
+
+      <h2 id="client">7. クライアントのインストールと更新</h2>
+      <p class="procedure-step"><strong>7.1 バージョン無指定でのクライアントインストール</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="PostgreSQLクライアントのインストール">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="postgresql-client-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="postgresql-client-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="postgresql-client-rhel8" role="tabpanel">
+          <p>RHEL 8の既定ストリームからclientプロファイルをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install postgresql/client</code></pre></div>
+        </section>
+        <section class="tab-panel" id="postgresql-client-rhel9" role="tabpanel" hidden>
+          <p>RHEL 9の非モジュールRPM版クライアントをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install postgresql</code></pre></div>
+        </section>
+      </div>
+
+      <p class="procedure-step"><strong>7.2 バージョン指定でのクライアントインストール</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install postgresql:&lt;STREAM&gt;/client</code></pre></div>
+      <p class="procedure-step"><strong>7.3 現在のストリーム内でのクライアント更新</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf upgrade postgresql libpq</code></pre></div>
+      <p>更新後のクライアントバージョン確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>psql --version</code></pre></div>
+      <p>リモートPostgreSQLへの接続確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>psql --host=&lt;DB_HOST&gt; --port=&lt;DB_PORT&gt; --username=&lt;APP_ROLE&gt; --dbname=&lt;APP_DATABASE&gt;</code></pre></div>
+      <div class="callout callout-warning">
+        <strong>クライアントのメジャー版変更</strong>
+        <p>通常の<code>dnf upgrade</code>は別のPostgreSQLストリームへ自動移行しない</p>
+        <p>クライアント専用ホストでは対象ストリームのclientプロファイルへ切り替えられるが、同一ホストにサーバーパッケージやPGDATAがある場合はDB本体のメジャーアップグレード手順を適用</p>
+      </div>
+
+      <h2 id="backup">8. バックアップと復元</h2>
+      <p class="procedure-step"><strong>8.1 バックアップ用ディレクトリの作成</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -o postgres -g postgres -m 0700 /var/lib/pgsql/backups</code></pre></div>
+      <p class="procedure-step"><strong>8.2 グローバルオブジェクトのバックアップ</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres pg_dumpall --globals-only --file=/var/lib/pgsql/backups/globals.sql</code></pre></div>
+      <p class="procedure-step"><strong>8.3 カスタム形式でのデータベースバックアップ</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres pg_dump --format=custom --file=/var/lib/pgsql/backups/&lt;APP_DATABASE&gt;.dump &lt;APP_DATABASE&gt;</code></pre></div>
+      <p class="procedure-step"><strong>8.4 グローバルオブジェクトの復元</strong></p>
+      <p>ロールと表領域をデータベース本体より先に復元</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres psql --file=/var/lib/pgsql/backups/globals.sql postgres</code></pre></div>
+      <p class="procedure-step"><strong>8.5 復元先データベースの作成</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres createdb --owner=&lt;APP_ROLE&gt; &lt;RESTORE_DATABASE&gt;</code></pre></div>
+      <p class="procedure-step"><strong>8.6 カスタム形式バックアップの復元</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres pg_restore --dbname=&lt;RESTORE_DATABASE&gt; /var/lib/pgsql/backups/&lt;APP_DATABASE&gt;.dump</code></pre></div>
+      <div class="callout callout-warning">
+        <strong>バックアップの範囲</strong>
+        <p>単一DBの<code>pg_dump</code>にはロールや表領域などのグローバルオブジェクトが含まれないため、<code>pg_dumpall --globals-only</code>と設定ファイルも別途保全</p>
+        <p>復元先でデータ件数、所有者、権限、拡張、アプリケーション接続を確認</p>
+      </div>
+
+      <h2 id="operations">9. 更新と日常確認</h2>
+      <p>現在選択中のストリーム内におけるPostgreSQLパッケージ更新</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf upgrade 'postgresql*' libpq</code></pre></div>
+      <table>
+        <thead><tr><th>確認対象</th><th>確認方法</th></tr></thead>
+        <tbody>
+          <tr><td>サービス</td><td><code>systemctl status postgresql.service --no-pager</code></td></tr>
+          <tr><td>接続受付</td><td><code>pg_isready</code>と設定したDBポートの待受を確認</td></tr>
+          <tr><td>設定</td><td><code>pg_settings</code>、<code>pg_file_settings</code>、<code>pg_hba_file_rules</code>を確認</td></tr>
+          <tr><td>接続</td><td>アプリケーションロールと許可済み接続元から接続</td></tr>
+          <tr><td>ログ</td><td><code>journalctl -u postgresql.service -b</code>とPostgreSQLログを確認</td></tr>
+          <tr><td>容量</td><td><code>/var/lib/pgsql/data</code>のファイルシステム容量とinodeを確認</td></tr>
+          <tr><td>復元性</td><td>別環境への復元とアプリケーション疎通を確認</td></tr>
+        </tbody>
+      </table>
+      <p>メジャーストリーム変更ではパッケージ切り替えだけでなく、バックアップと復元または<code>pg_upgrade</code>によるデータ移行が必要</p>
+      <p>旧バージョンの設定ファイルを丸ごと上書きせず、新バージョンの既定値と廃止パラメータを確認して必要な設定だけを移植</p>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a class="active" href="#versions">1. 提供バージョン</a>
+      <a href="#install">2. インストール</a>
+      <a href="#configuration">3. 設定ファイル</a>
+      <a href="#network">4. ポートと接続</a>
+      <a href="#roles">5. DBとロール</a>
+      <a href="#role-check">6. ロール確認</a>
+      <a href="#client">7. クライアント更新</a>
+      <a href="#backup">8. バックアップ</a>
+      <a href="#operations">9. 更新と日常確認</a>
+    </aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

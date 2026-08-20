@@ -18,8 +18,7 @@ $groups = @(
             [pscustomobject]@{ File = 'amazon-ses.html'; Label = 'Amazon SES SMTPリレー' }
             [pscustomobject]@{ File = 'amazon-ses-monitoring.html'; Label = 'Amazon SES 配信監視' }
             [pscustomobject]@{ File = 'amazon-rds-blue-green.html'; Label = 'Amazon RDS Blue/Green Deployments' }
-            [pscustomobject]@{ File = 'aws-certificate-manager.html'; Label = 'AWS Certificate Manager (ACM)' }
-            [pscustomobject]@{ File = 'apache-acm-certificate-update.html'; Label = 'ACM 証明書・更新' }
+            [pscustomobject]@{ File = 'apache-acm-certificate-update.html'; Label = 'AWS Certificate Manager (ACM)' }
         )
     }
     [pscustomobject]@{
@@ -34,6 +33,7 @@ $groups = @(
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
             [pscustomobject]@{ File = 'apache-self-signed-https.html'; Label = 'EC2 SSLターミネーション' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
+            [pscustomobject]@{ File = 'postgresql.html'; Label = 'PostgreSQL' }
             [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
         )
     }
@@ -69,6 +69,7 @@ $hiddenAliasFiles = [System.Collections.Generic.HashSet[string]]::new(
 )
 [void]$hiddenAliasFiles.Add('ec2-rhel9-apache-https.html')
 [void]$hiddenAliasFiles.Add('rhel9-apache-tls.html')
+[void]$hiddenAliasFiles.Add('aws-certificate-manager.html')
 
 $errors = [System.Collections.Generic.List[string]]::new()
 $pageFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)

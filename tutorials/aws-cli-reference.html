@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -347,7 +347,7 @@ aws --version</code></pre>
 
       <h2 id="iam">AWS Identity and Access Management (IAM)</h2>
       <p>人のログイン用途はAWS IAM Identity Centerの利用を優先します。ここでは、個別要件でIAMユーザー、IAMグループ、IAMポリシー、アクセスキー、コンソールログインプロファイルをCLIで扱う場合の基本操作を整理します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-group.html">create-group</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/attach-group-policy.html">attach-group-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-policy.html">create-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-login-profile.html">create-login-profile</a></p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;USER_NAME&gt;</code></td><td>作成または確認するIAMユーザー名</td></tr>
@@ -450,7 +450,7 @@ aws --version</code></pre>
       <h2 id="security-group">Security Group ルール追加・削除</h2>
       <p>Security Group変更は影響範囲が広いため、対象SG、方向、プロトコル、ポート、送信元/宛先、説明欄を事前に確定する</p>
       <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用する</p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>変更対象のSecurity Group ID</td></tr>
@@ -507,7 +507,7 @@ aws --version</code></pre>
         <strong>⚠️ 注意</strong>
         Security Groupの画面上は1つのPrefix List参照として整理できます。ただし、Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われます。最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計する
       </div>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;PREFIX_LIST_NAME&gt;</code></td><td>作成または更新するPrefix List名</td></tr>
@@ -557,7 +557,7 @@ aws --version</code></pre>
 
       <h2 id="sns">SNS Topic・Subscription作成</h2>
       <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テスト、設定確認、不要時の解除までを一連の手順として扱います。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/sns/subscribe.html">subscribe</a></p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;TOPIC_NAME&gt;</code></td><td>作成するSNS Topic名</td></tr>
@@ -617,7 +617,7 @@ aws --version</code></pre>
 
       <h2 id="ebs-expand">EC2 / EBS ボリューム拡張</h2>
       <p>ファイルシステムの空き容量が不足した場合に、EBSボリュームの容量をオンラインで拡張します。EBSは縮小できないため、作業前にスナップショットを取得し、必要なサイズを確定します。OS側のパーティション・ファイルシステム拡張は <a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a></p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;VOLUME_ID&gt;</code></td><td>拡張するEBSボリュームID</td></tr>
@@ -657,7 +657,7 @@ aws --version</code></pre>
 
       <h2 id="waf-ip-set">AWS WAF IPセットの更新</h2>
       <p>接続元IPアドレスの追加・削除が発生する場合は、Web ACLに関連付けたIPセットを更新します。変更前に現在のアドレスとロックトークンを取得し、全アドレスを含む一覧を指定して更新します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a></p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;IP_SET_NAME&gt;</code></td><td>更新対象のAWS WAF IPセット名</td></tr>
@@ -696,7 +696,7 @@ aws --version</code></pre>
 
       <h2 id="iam-offboarding">IAMユーザーの利用停止・削除</h2>
       <p>異動・退職・アカウント整理では、いきなりユーザーを削除せず、アクセスキーとコンソールログインを無効化して影響を確認します。人のログイン用途はAWS IAM Identity Centerを優先し、IAMユーザーはサービス要件がある場合に限定する</p>
-      <table>
+      <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;USER_NAME&gt;</code></td><td>利用停止または削除するIAMユーザー名</td></tr>

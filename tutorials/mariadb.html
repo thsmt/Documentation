@@ -1,21 +1,24 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MariaDB | Documentation</title>
-  <meta name="description" content="Red Hat Enterprise Linux 8 / 9でMariaDBをインストール、設定、バックアップ、Galera Clusterを運用するための手順。">
+  <meta name="description" content="RHEL 8 / 9におけるMariaDBのバージョン選択、インストール、設定、クライアント更新、バックアップ、Galera Clusterの運用手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
     <div class="header-actions">
-      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替える" aria-label="テーマを切り替える">☀</button>
       <nav class="nav" aria-label="Global navigation">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
-        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">◈</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">↗</span>GitHub</a>
       </nav>
     </div>
   </header>
@@ -35,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a class="active" href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -68,191 +71,474 @@
       </nav>
 
       <h1>MariaDB</h1>
-      <p class="lead">Red Hat Enterprise Linux 8 / 9でMariaDBを導入し、初期設定、アプリケーション用ユーザー、バックアップ、Galera Clusterの基本運用を行う手順</p>
+      <p class="lead">RHEL 8 / 9でMariaDBのバージョン選択、インストール、サーバー設定、クライアント更新、バックアップを行う手順</p>
 
       <div class="callout callout-warning">
-        <strong>⚠️ 本番適用前の確認</strong>
-        <p>MariaDBとMySQLのRPMパッケージは同一ホストへ並行導入できません。既存DB、利用中のモジュールストリーム、バックアップと復元手順を確認してから作業します。Galeraのブートストラップは、全停止からの復旧時に選定した1ノードだけで実行する</p>
+        <strong>MariaDBとMySQLの同居不可</strong>
+        <p>RHELのMariaDBとMySQLは競合するRPMパッケージが同じ実行ファイル、ライブラリ、設定領域を提供するため、同一システムへ同時にインストールできない</p>
+        <p>複数バージョンやMariaDBとMySQLを同一ホストで使用する場合は、ポートとコンテナ名を分けたコンテナ構成を選択</p>
       </div>
 
-      <h2 id="overview">対象と基本方針</h2>
+      <h2 id="versions">1. RHEL別の提供バージョン確認</h2>
       <table>
-        <thead><tr><th>項目</th><th>内容</th></tr></thead>
+        <thead>
+          <tr><th>OS</th><th>バージョン無指定時</th><th>AppStreamで提供されるバージョン</th><th>提供形態</th></tr>
+        </thead>
         <tbody>
-          <tr><td>対象OS</td><td>Red Hat Enterprise Linux 8 / 9</td></tr>
-          <tr><td>サービス</td><td><code>mariadb.service</code></td></tr>
-          <tr><td>設定ファイル</td><td><code>/etc/my.cnf</code> と <code>/etc/my.cnf.d/*.cnf</code></td></tr>
-          <tr><td>データディレクトリ</td><td>標準では <code>/var/lib/mysql</code></td></tr>
-          <tr><td>アプリケーション用ユーザー例</td><td><code>t_hashimoto</code>。rootアカウントをアプリケーションから使用しない</td></tr>
+          <tr>
+            <td>RHEL 8</td>
+            <td>MariaDB 10.3の既定ストリーム</td>
+            <td>10.3、10.5（RHEL 8.4以降）、10.11（RHEL 8.10以降）</td>
+            <td>すべてモジュールストリーム</td>
+          </tr>
+          <tr>
+            <td>RHEL 9</td>
+            <td>MariaDB 10.5の非モジュールRPM</td>
+            <td>10.11（RHEL 9.4以降）、11.8（RHEL 9.8以降）</td>
+            <td>10.5はRPM、10.11と11.8はモジュールストリーム</td>
+          </tr>
         </tbody>
       </table>
-      <p>RHEL 8ではMariaDBをモジュールストリームとして導入します。RHEL 9では標準の<code>mariadb-server</code>に加え、OSのマイナーバージョンによって追加ストリームを選択できます。導入前に利用可能なストリームを必ず確認する</p>
+      <p>バージョン無指定時の版は推奨版を意味しないため、導入前に対象RHELのマイナーバージョン、利用可能なストリーム、Application Streamsのライフサイクルを確認</p>
+      <p>2026年8月時点でRHEL 8のMariaDB 10.5はサポート終了。提供済みストリームがサポート中とは限らないため、新規構築ではライフサイクルを確認して版を選択</p>
+      <p>RHEL 9.8で追加されたMariaDB 11.8は、既定の文字セットが<code>utf8mb4</code>へ変更され、<code>mysql</code>などの旧コマンド名は互換シンボリックリンクとして扱われるため、新規手順では<code>mariadb</code>系コマンドを使用</p>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/deploying_different_types_of_servers/using-databases">Red Hat Enterprise Linux 8 - Database servers</a></p>
+      <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_and_using_database_servers/using-mariadb_configuring-and-using-database-servers">Red Hat Enterprise Linux 9 - Using MariaDB</a></p>
+      <p>出典：<a href="https://access.redhat.com/support/policy/updates/rhel-app-streams-life-cycle">Red Hat Enterprise Linux Application Streams Life Cycle</a></p>
 
-      <h2 id="install">インストールと初期設定</h2>
-      <p class="procedure-step"><strong>1. OSと既存パッケージを確認</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/redhat-release
-rpm -qa | grep -Ei '^(mariadb|mysql)'</code></pre></div>
+      <h2 id="install">2. インストールと起動</h2>
+      <p class="procedure-step"><strong>2.1 OSと既存パッケージの確認</strong></p>
+      <p>RHELリリースの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/redhat-release</code></pre></div>
+      <p>MariaDBモジュールストリームの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list mariadb</code></pre></div>
+      <p>MariaDBまたはMySQLの既存パッケージ確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>rpm -qa | grep -Ei '^(mariadb|mysql)'</code></pre></div>
 
-      <p class="procedure-step"><strong>2. MariaDB Serverを導入</strong></p>
+      <p class="procedure-step"><strong>2.2 バージョン無指定でのサーバーインストール</strong></p>
       <div class="tab-group" data-tabs>
-        <div class="tabs" role="tablist" aria-label="MariaDBのOS別インストール手順">
-          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-rhel8">RHEL 8</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-rhel9">RHEL 9</button>
+        <div class="tabs" role="tablist" aria-label="MariaDB既定版のインストール">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-default-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-default-rhel9">RHEL 9</button>
         </div>
-        <section class="tab-panel active" id="mariadb-rhel8" role="tabpanel">
-          <p>利用可能なモジュールストリームを確認し、要件に合うストリームを指定して導入する</p>
-          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list mariadb
-sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
+        <section class="tab-panel active" id="mariadb-default-rhel8" role="tabpanel">
+          <p>RHEL 8の既定ストリームとserverプロファイルのインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb/server</code></pre></div>
         </section>
-        <section class="tab-panel" id="mariadb-rhel9" role="tabpanel" hidden>
-          <p>標準パッケージを利用する場合は<code>mariadb-server</code>を導入します。追加ストリームを利用する場合は、利用可能なストリームを確認してから指定する</p>
-          <div class="code"><div class="code-header"><span>RHEL 9 標準パッケージ</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server</code></pre></div>
-          <div class="code"><div class="code-header"><span>RHEL 9 追加ストリーム</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module list mariadb
-sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
+        <section class="tab-panel" id="mariadb-default-rhel9" role="tabpanel" hidden>
+          <p>RHEL 9の非モジュールRPM版のインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server</code></pre></div>
         </section>
       </div>
-      <p>既存環境では運用中のストリームを安易に切り替えず、サポート期限とアプリケーション互換性を確認する</p>
 
-      <p class="procedure-step"><strong>3. サービスを有効化して状態を確認</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now mariadb.service
-sudo systemctl status mariadb.service --no-pager
-mariadb --version
-sudo ss -lntp | grep ':3306'</code></pre></div>
+      <p class="procedure-step"><strong>2.3 バージョン指定でのサーバーインストール</strong></p>
+      <p>RHEL 8またはRHEL 9で利用可能なストリームとserverプロファイルの指定</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb:&lt;STREAM&gt;/server</code></pre></div>
 
-      <p class="procedure-step"><strong>4. 初期セキュリティ設定を確認</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb-secure-installation
-sudo mariadb</code></pre></div>
+      <p class="procedure-step"><strong>2.4 サービスの有効化と起動</strong></p>
+      <p>MariaDBサービスの有効化と起動</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now mariadb.service</code></pre></div>
+      <p>MariaDBサービス状態の確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl status mariadb.service --no-pager</code></pre></div>
+      <p>MariaDBバージョンの確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBバージョンの確認">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-version-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-version-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-version-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>mysql --version</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-version-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>mariadb --version</code></pre></div>
+        </section>
+      </div>
+      <p>管理者としてのローカル接続確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDB管理者接続">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-admin-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-admin-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-admin-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-admin-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb</code></pre></div>
+        </section>
+      </div>
       <div class="callout">
-        <strong>ℹ️ root認証</strong>
-        <p>MariaDB 10.4以降では、Unix socket認証が標準となる構成があります。rootのパスワードを機械的に設定するのではなく、<code>sudo mariadb</code>でのローカル管理可否と、匿名ユーザー・リモートrootログインの設定を確認する</p>
+        <strong>初期セキュリティ確認</strong>
+        <p>RHEL 8のMariaDB 10.3では<code>mysql_secure_installation</code>を実行。MariaDB 10.5以降はrootのUNIXソケット認証などが既定で設定されるため、このスクリプトを前提にせず各項目を個別に確認</p>
+      </div>
+      <p>MariaDB 10.3における対話式の初期セキュリティ設定</p>
+      <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql_secure_installation</code></pre></div>
+      <p>ユーザー、接続元、認証プラグインの確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBユーザーの確認">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-users-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-users-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-users-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql -e "SELECT User,Host,plugin FROM mysql.user ORDER BY User,Host;"</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-users-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb -e "SELECT User,Host,plugin FROM mysql.user ORDER BY User,Host;"</code></pre></div>
+        </section>
       </div>
 
-      <h2 id="configuration">基本設定とネットワーク</h2>
-      <p>個別設定は既存ファイルを直接書き換えるのではなく、用途が分かる追加ファイルへ保存します。外部接続が不要なDBは、ローカル待受を維持する</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo cp -p /etc/my.cnf.d/mariadb-server.cnf \
-  /etc/my.cnf.d/mariadb-server.cnf.bak.$(date +%Y%m%d)
-sudo vi /etc/my.cnf.d/99-local.cnf</code></pre></div>
-      <div class="code"><div class="code-header"><span>/etc/my.cnf.d/99-local.cnf</span><button class="copy" type="button">Copy</button></div><pre><code>[mariadb]
-bind-address = 127.0.0.1
+      <h2 id="configuration">3. 設定ファイルと基本設定</h2>
+      <table>
+        <thead><tr><th>パス</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><code>/etc/my.cnf</code></td><td>MariaDBとMySQL互換クライアントが読み込む主設定ファイル</td></tr>
+          <tr><td><code>/etc/my.cnf.d/mariadb-server.cnf</code></td><td>RHELが提供するMariaDBサーバー設定</td></tr>
+          <tr><td><code>/etc/my.cnf.d/99-local.cnf</code></td><td>サイト固有設定を分離する追加ファイル</td></tr>
+          <tr><td><code>/etc/my.cnf.d/client.cnf</code></td><td>クライアントの共通設定</td></tr>
+          <tr><td><code>/var/lib/mysql</code></td><td>標準データディレクトリ</td></tr>
+        </tbody>
+      </table>
+
+      <p class="procedure-step"><strong>3.1 配布設定ファイルのバックアップ</strong></p>
+      <p>MariaDBサーバー設定のバックアップ</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo cp -p /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf.bak</code></pre></div>
+
+      <p class="procedure-step"><strong>3.2 サイト固有設定の作成</strong></p>
+      <p>サイト固有設定ファイルの編集</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /etc/my.cnf.d/99-local.cnf</code></pre></div>
+      <div class="code"><div class="code-header"><span>/etc/my.cnf.d/99-local.cnf</span><button class="copy" type="button">Copy</button></div><pre><code>[mysqld]
+bind-address = &lt;DB_SERVER_PRIVATE_IP&gt;
+port = 3306
 character-set-server = utf8mb4
 collation-server = utf8mb4_unicode_ci</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl restart mariadb.service
-sudo journalctl -u mariadb.service -b --no-pager
-sudo mariadb -e "SHOW VARIABLES WHERE Variable_name IN ('bind_address','character_set_server','collation_server');"</code></pre></div>
-      <p>アプリケーションサーバーから接続する場合だけ、<code>bind-address</code>を対象インターフェースのIPアドレスへ変更します。ファイアウォールは接続元CIDRを限定し、TCP 3306を全公開しない</p>
-      <div class="code"><div class="code-header"><span>firewalld</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent \
-  --add-rich-rule='rule family="ipv4" source address="&lt;APP_SERVER_CIDR&gt;" port protocol="tcp" port="3306" accept'
-sudo firewall-cmd --reload
-sudo firewall-cmd --list-rich-rules</code></pre></div>
+      <p>カスタムポートを使用する場合は、この<code>port</code>と後述するSELinux、firewalld、接続コマンドのポート番号を同じ値へ変更</p>
 
-      <h2 id="users">データベースとユーザー管理</h2>
-      <p>rootではなく、用途と接続元を限定したアカウントを作成します。以下ではアプリケーション用ユーザー名を<code>t_hashimoto</code>とします。パスワードはコマンド履歴に残さず、シークレット管理サービスまたは保護した設定ファイルから渡す</p>
-      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE DATABASE appdb
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
+      <p class="procedure-step"><strong>3.3 クライアント文字セット設定の作成</strong></p>
+      <p>クライアント設定ファイルの編集</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /etc/my.cnf.d/99-client-local.cnf</code></pre></div>
+      <div class="code"><div class="code-header"><span>/etc/my.cnf.d/99-client-local.cnf</span><button class="copy" type="button">Copy</button></div><pre><code>[client]
+default-character-set = utf8mb4</code></pre></div>
 
-CREATE USER 't_hashimoto'@'localhost'
-  IDENTIFIED BY '&lt;STRONG_PASSWORD&gt;';
+      <p class="procedure-step"><strong>3.4 TLS証明書と秘密鍵の権限設定</strong></p>
+      <p>PEM形式のサーバー証明書、CA証明書、秘密鍵を配置した後の公開証明書権限設定</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo chmod 0644 /etc/pki/tls/certs/&lt;DB_FQDN&gt;.crt.pem /etc/pki/tls/certs/ca.crt.pem</code></pre></div>
+      <p>秘密鍵をMariaDBだけが読み取れる権限とグループへ変更</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo chmod 0640 /etc/pki/tls/private/&lt;DB_FQDN&gt;.key.pem</code></pre></div>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo chgrp mysql /etc/pki/tls/private/&lt;DB_FQDN&gt;.key.pem</code></pre></div>
+      <p>証明書ディレクトリのSELinuxコンテキスト復元</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo restorecon -Rv /etc/pki/tls</code></pre></div>
 
-GRANT SELECT, INSERT, UPDATE, DELETE
-  ON appdb.* TO 't_hashimoto'@'localhost';
-
-SHOW GRANTS FOR 't_hashimoto'@'localhost';</code></pre></div>
-      <div class="code"><div class="code-header"><span>connection test</span><button class="copy" type="button">Copy</button></div><pre><code>mariadb -u t_hashimoto -p -D appdb \
-  -e 'SELECT CURRENT_USER(), DATABASE();'</code></pre></div>
-      <p>別ホストから接続する場合は<code>'t_hashimoto'@'&lt;APP_SERVER_IP&gt;'</code>のように接続元を固定します。<code>'%'</code>による任意の接続元許可は使用しません。権限変更後の<code>FLUSH PRIVILEGES</code>は、<code>CREATE USER</code>や<code>GRANT</code>で管理した場合は不要</p>
-
-      <h2 id="backup">バックアップと復元</h2>
-      <table>
-        <thead><tr><th>方式</th><th>用途</th><th>重要な確認</th></tr></thead>
-        <tbody>
-          <tr><td>論理バックアップ</td><td><code>mariadb-dump</code>でSQLファイルを取得。単一DBの退避や検証環境への復元に向く</td><td>DBデータだけではユーザーやサーバー設定を復元できません。必要に応じて<code>mysql</code>データベース、<code>/etc/my.cnf*</code>も別途保管する</td></tr>
-          <tr><td>物理オンラインバックアップ</td><td><code>mariadb-backup</code>で稼働中のInnoDB、Aria、MyISAMを退避する</td><td>復元前に<code>--prepare</code>が必要です。バックアップツールとサーバーのバージョン整合性を確認する</td></tr>
-          <tr><td>停止中のファイルコピー</td><td>保守時間を確保できる小規模環境の完全退避に使用する</td><td>サービス停止、データと設定の同時取得、同一アーキテクチャと互換バージョンでの復元が前提</td></tr>
-        </tbody>
-      </table>
-
-      <p class="procedure-step"><strong>論理バックアップと復元確認</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0700 /var/backups/mariadb
-sudo mariadb-dump --single-transaction --routines --events --triggers \
-  --databases appdb \
-  &gt; /var/backups/mariadb/appdb-$(date +%F).sql
-
-sudo mariadb &lt; /var/backups/mariadb/appdb-$(date +%F).sql
-mariadb -u t_hashimoto -p -D appdb -e 'SHOW TABLES;'</code></pre></div>
-      <p><code>--single-transaction</code>はInnoDBの論理バックアップでテーブルロックを抑えるための代表的な指定です。MyISAMなど非トランザクションテーブルを含む場合は、一貫性の取り方と業務影響を別途設計する</p>
-
-      <p class="procedure-step"><strong>物理オンラインバックアップ</strong></p>
-      <p>本番では、アプリケーション用の<code>t_hashimoto</code>とは分離したバックアップ専用アカウントを使用する</p>
-      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE USER 'mariadb_backup'@'localhost'
-  IDENTIFIED BY '&lt;STRONG_PASSWORD&gt;';
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT
-  ON *.* TO 'mariadb_backup'@'localhost';</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-backup
-sudo install -d -m 0700 /var/backups/mariadb/full
-sudo mariadb-backup --backup \
-  --target-dir=/var/backups/mariadb/full \
-  --user=mariadb_backup --password
-sudo mariadb-backup --prepare \
-  --target-dir=/var/backups/mariadb/full</code></pre></div>
+      <p class="procedure-step"><strong>3.5 TLSサーバー設定とクライアント設定の作成</strong></p>
+      <p>MariaDBサーバーのTLS設定ファイル編集</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /etc/my.cnf.d/mariadb-server-tls.cnf</code></pre></div>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDB TLSサーバー設定">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-tls-server-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-tls-server-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-tls-server-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>[mariadb]
+ssl_key = /etc/pki/tls/private/&lt;DB_FQDN&gt;.key.pem
+ssl_cert = /etc/pki/tls/certs/&lt;DB_FQDN&gt;.crt.pem
+ssl_ca = /etc/pki/tls/certs/ca.crt.pem</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-tls-server-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>[mariadb]
+ssl_key = /etc/pki/tls/private/&lt;DB_FQDN&gt;.key.pem
+ssl_cert = /etc/pki/tls/certs/&lt;DB_FQDN&gt;.crt.pem
+ssl_ca = /etc/pki/tls/certs/ca.crt.pem
+require_secure_transport = on
+tls_version = TLSv1.2,TLSv1.3</code></pre></div>
+        </section>
+      </div>
+      <p>MariaDBクライアントのTLS検証設定ファイル編集</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /etc/my.cnf.d/mariadb-client-tls.cnf</code></pre></div>
+      <div class="code"><div class="code-header"><span>/etc/my.cnf.d/mariadb-client-tls.cnf</span><button class="copy" type="button">Copy</button></div><pre><code>[client]
+ssl
+ssl-ca = /etc/pki/tls/certs/ca.crt.pem
+ssl-verify-server-cert</code></pre></div>
       <div class="callout callout-warning">
-        <strong>⚠️ 復元は別環境で先に試験する</strong>
-        <p>物理復元ではMariaDBを停止し、空のデータディレクトリへ<code>--copy-back</code>または<code>--move-back</code>を実行します。復元後は所有者を<code>mysql:mysql</code>へ戻し、SELinuxコンテキストも確認します。本番データディレクトリを直接上書きする前に、隔離環境で復元とアプリケーション接続を検証する</p>
+        <strong>TLS証明書のホスト名</strong>
+        <p>サーバー証明書のSANと接続時の<code>&lt;DB_FQDN&gt;</code>を一致させ、クライアント側にも検証に使用するCA証明書を安全に配置</p>
       </div>
 
-      <h2 id="galera">MariaDB Galera Cluster</h2>
-      <p>Galeraは複数ノードへ同期レプリケーションを行い、各ノードを読み書き可能にする構成です。レプリケーションはバックアップの代替ではありません。誤更新や論理削除も同期されるため、復元可能なバックアップを別に保持する</p>
-      <p class="procedure-step"><strong>1. 各ノードへGaleraパッケージを導入</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server-galera</code></pre></div>
-      <p class="procedure-step"><strong>2. 各ノードの<code>/etc/my.cnf.d/galera.cnf</code>を設定</strong></p>
-      <div class="code"><div class="code-header"><span>conf</span><button class="copy" type="button">Copy</button></div><pre><code>[galera]
-wsrep_on=ON
-wsrep_provider=/usr/lib64/galera/libgalera_smm.so
-wsrep_cluster_name="mariadb_cluster"
-wsrep_cluster_address="gcomm://&lt;NODE1_PRIVATE_IP&gt;,&lt;NODE2_PRIVATE_IP&gt;,&lt;NODE3_PRIVATE_IP&gt;"
-wsrep_node_name="&lt;NODE_NAME&gt;"
-wsrep_node_address="&lt;NODE_PRIVATE_IP&gt;"
-binlog_format=ROW
-default_storage_engine=InnoDB
-innodb_autoinc_lock_mode=2
-wsrep_sst_method=rsync</code></pre></div>
-      <p>全ノード間でTCP 3306、TCP/UDP 4567、TCP 4568、TCP 4444を必要な範囲だけ許可します。ノードアドレス、SST方式、TLS、ロードバランサー、クォーラム喪失時の手順は構成設計として確定させる</p>
+      <p class="procedure-step"><strong>3.6 設定反映と確認</strong></p>
+      <div class="callout callout-warning">
+        <strong>MariaDB 10.3のTLS制約</strong>
+        <p><code>require_secure_transport</code>と<code>tls_version</code>はMariaDB 10.3で使用できないため、10.3ではリモートユーザーへ<code>REQUIRE SSL</code>を指定して暗号化接続を必須化</p>
+      </div>
+      <p>MariaDBサービスの再起動</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl restart mariadb.service</code></pre></div>
+      <p>設定値の確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDB設定値の確認">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-config-check-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-config-check-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-config-check-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql -e "SHOW VARIABLES WHERE Variable_name IN ('bind_address','port','character_set_server','collation_server','have_ssl');"</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-config-check-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb -e "SHOW VARIABLES WHERE Variable_name IN ('bind_address','port','character_set_server','collation_server','have_ssl','require_secure_transport','tls_version');"</code></pre></div>
+        </section>
+      </div>
 
-      <p class="procedure-step"><strong>3. 初回ノードのブートストラップと他ノードの参加</strong></p>
+      <h2 id="network">4. ポートとリモート接続設定</h2>
+      <p>既定ポート3306を使用する場合、SELinuxのポート登録変更は不要</p>
+      <p class="procedure-step"><strong>4.1 カスタムポート使用時のSELinuxツール導入</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install policycoreutils-python-utils</code></pre></div>
+      <p class="procedure-step"><strong>4.2 カスタムポートのSELinux登録</strong></p>
+      <p>現在のMariaDB用ポート登録の確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage port -l | grep mysqld_port_t</code></pre></div>
+      <p>未登録のカスタムポート追加</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage port -a -t mysqld_port_t -p tcp &lt;DB_PORT&gt;</code></pre></div>
+      <p>同じポートに別のSELinuxタイプが登録済みの場合は、追加ではなく<code>-m</code>による変更可否を確認</p>
+      <p class="procedure-step"><strong>4.3 接続元を限定したfirewalld設定</strong></p>
+      <p>NICが属するアクティブゾーンの確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --get-active-zones</code></pre></div>
+      <p>確認したゾーンへ接続元を限定した許可を追加</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;APP_SERVER_CIDR&gt;" port protocol="tcp" port="&lt;DB_PORT&gt;" accept'</code></pre></div>
+      <p>firewalld設定の再読み込み</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --reload</code></pre></div>
+      <p>MariaDBの待受確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo ss -lntp | grep ':&lt;DB_PORT&gt;'</code></pre></div>
+      <div class="callout callout-warning">
+        <strong>公開範囲の制限</strong>
+        <p><code>bind-address = 0.0.0.0</code>や全インターネット向けの3306番公開を避け、DBサーバーのプライベートIP、アプリケーションサーバーのCIDR、Security Group、firewalldを一致</p>
+      </div>
+
+      <h2 id="users">5. データベースとユーザーの作成</h2>
+      <p>アプリケーション用データベースの作成</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE DATABASE &lt;APP_DATABASE&gt; CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</code></pre></div>
+      <p>接続元を限定したアプリケーション用ユーザーの作成</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE USER '&lt;APP_USER&gt;'@'&lt;APP_SERVER_HOST&gt;' IDENTIFIED BY '&lt;STRONG_PASSWORD&gt;' REQUIRE SSL;</code></pre></div>
+      <p>必要なデータ操作権限の付与</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>GRANT SELECT, INSERT, UPDATE, DELETE ON &lt;APP_DATABASE&gt;.* TO '&lt;APP_USER&gt;'@'&lt;APP_SERVER_HOST&gt;';</code></pre></div>
+      <p>付与済み権限の確認</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW GRANTS FOR '&lt;APP_USER&gt;'@'&lt;APP_SERVER_HOST&gt;';</code></pre></div>
+      <p>アプリケーション用ユーザーによる接続確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBリモート接続">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-connect-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-connect-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-connect-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>mysql --host=&lt;DB_FQDN&gt; --port=&lt;DB_PORT&gt; --user=&lt;APP_USER&gt; --password &lt;APP_DATABASE&gt;</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-connect-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>mariadb --host=&lt;DB_FQDN&gt; --port=&lt;DB_PORT&gt; --user=&lt;APP_USER&gt; --password &lt;APP_DATABASE&gt;</code></pre></div>
+        </section>
+      </div>
+      <p>TLSで使用中の暗号スイート確認</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>SHOW SESSION STATUS LIKE 'Ssl_cipher';</code></pre></div>
+
+      <h2 id="client">6. クライアントのインストールと更新</h2>
+      <p class="procedure-step"><strong>6.1 バージョン無指定でのクライアントインストール</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBクライアントのインストール">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-client-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-client-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-client-rhel8" role="tabpanel">
+          <p>RHEL 8の既定ストリームからclientプロファイルをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb/client</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-client-rhel9" role="tabpanel" hidden>
+          <p>RHEL 9の非モジュールRPM版クライアントをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb</code></pre></div>
+        </section>
+      </div>
+
+      <p class="procedure-step"><strong>6.2 バージョン指定でのクライアントインストール</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb:&lt;STREAM&gt;/client</code></pre></div>
+      <p class="procedure-step"><strong>6.3 現在のストリーム内でのクライアント更新</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf upgrade mariadb mariadb-connector-c</code></pre></div>
+      <p>更新後のクライアントバージョン確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDBクライアントバージョンの確認">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-client-version-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-client-version-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-client-version-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>mysql --version</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-client-version-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>mariadb --version</code></pre></div>
+        </section>
+      </div>
+      <div class="callout callout-warning">
+        <strong>メジャーストリーム変更</strong>
+        <p>通常の<code>dnf upgrade</code>は別のMariaDBストリームへ自動移行しない</p>
+        <p>サーバーパッケージが同居するホストでモジュールを切り替えるとDB本体も変更対象になるため、クライアント更新として実行せず、バックアップ、互換性確認、MariaDBの移行手順を適用</p>
+      </div>
+
+      <h2 id="backup">7. バックアップと復元</h2>
+      <p class="procedure-step"><strong>7.1 論理バックアップ用ディレクトリの作成</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0700 /var/backups/mariadb</code></pre></div>
+      <p class="procedure-step"><strong>7.2 データベースの論理バックアップ</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDB論理バックアップコマンド">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-dump-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-dump-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-dump-103" role="tabpanel">
+          <p>RHEL 8のMariaDB 10.3で<code>mysqldump</code>を使用したバックアップ</p>
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysqldump --single-transaction --routines --events --triggers --databases &lt;APP_DATABASE&gt; --result-file=/var/backups/mariadb/&lt;APP_DATABASE&gt;.sql</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-dump-105" role="tabpanel" hidden>
+          <p>MariaDB 10.5以降で<code>mariadb-dump</code>を使用したバックアップ</p>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb-dump --single-transaction --routines --events --triggers --databases &lt;APP_DATABASE&gt; --result-file=/var/backups/mariadb/&lt;APP_DATABASE&gt;.sql</code></pre></div>
+        </section>
+      </div>
+      <div class="callout">
+        <strong>論理バックアップの範囲</strong>
+        <p>アプリケーションDBだけのダンプにはMariaDBユーザーやサーバー設定を含まないため、必要な権限定義、<code>/etc/my.cnf</code>、<code>/etc/my.cnf.d/</code>も別途保全</p>
+      </div>
+      <p class="procedure-step"><strong>7.3 SQLダンプからの復元</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="MariaDB SQLダンプの復元">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="mariadb-restore-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="mariadb-restore-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="mariadb-restore-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql --execute="source /var/backups/mariadb/&lt;APP_DATABASE&gt;.sql"</code></pre></div>
+        </section>
+        <section class="tab-panel" id="mariadb-restore-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb --execute="source /var/backups/mariadb/&lt;APP_DATABASE&gt;.sql"</code></pre></div>
+        </section>
+      </div>
+      <p class="procedure-step"><strong>7.4 物理オンラインバックアップの作成</strong></p>
+      <p>mariadb-backupパッケージのインストール</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-backup</code></pre></div>
+      <p>バックアップ専用ユーザーの作成</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>CREATE USER '&lt;BACKUP_USER&gt;'@'localhost' IDENTIFIED BY '&lt;STRONG_PASSWORD&gt;';</code></pre></div>
+      <p>物理バックアップに必要な権限の付与</p>
+      <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO '&lt;BACKUP_USER&gt;'@'localhost';</code></pre></div>
+      <p>空の物理バックアップ先ディレクトリ作成</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0700 /var/backups/mariadb/full</code></pre></div>
+      <p>物理バックアップの取得</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariabackup --backup --target-dir=/var/backups/mariadb/full --user=&lt;BACKUP_USER&gt; --password</code></pre></div>
+      <p>物理バックアップのprepare処理</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariabackup --prepare --target-dir=/var/backups/mariadb/full</code></pre></div>
+      <p class="procedure-step"><strong>7.5 物理バックアップからの復元</strong></p>
+      <p>メンテナンス時間帯にMariaDBを停止</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl stop mariadb.service</code></pre></div>
+      <p>既存データディレクトリを退避</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mv /var/lib/mysql /var/lib/mysql.before-restore</code></pre></div>
+      <p>空のデータディレクトリ作成</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -o mysql -g mysql -m 0755 /var/lib/mysql</code></pre></div>
+      <p>prepare済みバックアップのコピー</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariabackup --copy-back --target-dir=/var/backups/mariadb/full</code></pre></div>
+      <p>データディレクトリの所有者修正</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo chown -R mysql:mysql /var/lib/mysql</code></pre></div>
+      <p>SELinuxコンテキスト復元</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo restorecon -RFv /var/lib/mysql</code></pre></div>
+      <p>MariaDBサービスの起動</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl start mariadb.service</code></pre></div>
+      <div class="callout callout-warning">
+        <strong>復元テスト</strong>
+        <p>物理バックアップ先は空または未作成であることを確認。復元先の<code>/var/lib/mysql.before-restore</code>が既に存在する場合は上書きせず、別名へ退避</p>
+        <p>バックアップ成功だけで完了とせず、隔離環境で復元、テーブル件数、文字セット、アプリケーション接続を定期的に確認</p>
+      </div>
+
+      <h2 id="galera">8. Galera Clusterの構成</h2>
+      <p>Galeraは複数ノードへ同期レプリケーションを行う構成であり、バックアップの代替ではない</p>
+      <p class="procedure-step"><strong>8.1 Galeraパッケージのインストール</strong></p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Galeraパッケージのインストール">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="galera-install-rhel8">RHEL 8</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="galera-install-rhel9">RHEL 9</button>
+        </div>
+        <section class="tab-panel active" id="galera-install-rhel8" role="tabpanel">
+          <p>選択したMariaDBストリームのGaleraプロファイルをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf module install mariadb:&lt;STREAM&gt;/galera</code></pre></div>
+        </section>
+        <section class="tab-panel" id="galera-install-rhel9" role="tabpanel" hidden>
+          <p>Galera用パッケージをインストール</p>
+          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mariadb-server-galera</code></pre></div>
+        </section>
+      </div>
+      <p class="procedure-step"><strong>8.2 Galera設定の編集</strong></p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo vi /etc/my.cnf.d/galera.cnf</code></pre></div>
+      <div class="code"><div class="code-header"><span>/etc/my.cnf.d/galera.cnf</span><button class="copy" type="button">Copy</button></div><pre><code>[galera]
+wsrep_on = 1
+wsrep_cluster_name = "mariadb_cluster"
+wsrep_cluster_address = "gcomm://&lt;NODE1_PRIVATE_IP&gt;,&lt;NODE2_PRIVATE_IP&gt;,&lt;NODE3_PRIVATE_IP&gt;"
+wsrep_node_name = "&lt;NODE_NAME&gt;"
+wsrep_node_address = "&lt;NODE_PRIVATE_IP&gt;"
+wsrep_provider_options = "socket.ssl_key=/etc/pki/tls/private/&lt;NODE_FQDN&gt;.key.pem;socket.ssl_cert=/etc/pki/tls/certs/&lt;NODE_FQDN&gt;.crt.pem;socket.ssl_ca=/etc/pki/tls/certs/ca.crt.pem"
+binlog_format = ROW
+default_storage_engine = InnoDB</code></pre></div>
+      <div class="callout">
+        <strong>Galeraレプリケーション通信のTLS</strong>
+        <p><code>wsrep_provider_options</code>はGalera Providerによるレプリケーション通信を暗号化する。全ノードで共通のCA証明書を使用し、各ノード証明書のSANをノード名と一致させ、拡張キー用途にサーバー認証とクライアント認証を含める</p>
+        <p>既定のrsync方式によるSST通信はこの設定の対象外となるため、ノード間ネットワークを分離するか、採用するSST方式で別途暗号化を設定</p>
+      </div>
+      <p>出典：<a href="https://mariadb.com/docs/galera-cluster/galera-security/securing-communications-in-galera-cluster">MariaDB - Securing Communications in Galera Cluster</a></p>
+      <p class="procedure-step"><strong>8.3 Galeraノード間ポートの許可</strong></p>
+      <p>firewalldの有効ゾーン確認</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --get-active-zones</code></pre></div>
+      <p>GaleraノードからのMariaDB接続許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;GALERA_NODE_CIDR&gt;" port protocol="tcp" port="&lt;DB_PORT&gt;" accept'</code></pre></div>
+      <p>Galeraレプリケーション用TCPポートの許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;GALERA_NODE_CIDR&gt;" port protocol="tcp" port="4567" accept'</code></pre></div>
+      <p>Galeraレプリケーション用UDPポートの許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;GALERA_NODE_CIDR&gt;" port protocol="udp" port="4567" accept'</code></pre></div>
+      <p>IST用TCPポートの許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;GALERA_NODE_CIDR&gt;" port protocol="tcp" port="4568" accept'</code></pre></div>
+      <p>SST用TCPポートの許可</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;GALERA_NODE_CIDR&gt;" port protocol="tcp" port="4444" accept'</code></pre></div>
+      <p>firewalld設定の再読み込み</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --reload</code></pre></div>
+      <div class="callout callout-warning">
+        <strong>Galeraのブートストラップ</strong>
+        <p>全ノード間通信、TLS、設定したDBポート、4567/TCP・UDP、4568/TCP、4444/TCPを設計し、新規クラスタまたは全停止からの復旧時に選定した1ノードだけでブートストラップを実行</p>
+      </div>
+      <p class="procedure-step"><strong>8.4 最初のノードのブートストラップ</strong></p>
       <div class="code"><div class="code-header"><span>first node only</span><button class="copy" type="button">Copy</button></div><pre><code>sudo galera_new_cluster</code></pre></div>
+      <p class="procedure-step"><strong>8.5 その他ノードの起動</strong></p>
       <div class="code"><div class="code-header"><span>other nodes</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl start mariadb.service</code></pre></div>
-      <div class="code"><div class="code-header"><span>verification</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb -e "SHOW STATUS WHERE Variable_name IN (
-  'wsrep_cluster_size',
-  'wsrep_cluster_status',
-  'wsrep_ready',
-  'wsrep_local_state_comment'
-);"</code></pre></div>
-      <p>正常時は<code>wsrep_cluster_status</code>が<code>Primary</code>、<code>wsrep_ready</code>が<code>ON</code>、<code>wsrep_local_state_comment</code>が<code>Synced</code>であることを確認します。<code>wsrep_cluster_size</code>は参加済みノード数と一致する必要がある</p>
+      <p>クラスタ状態の確認</p>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Galeraクラスタ状態の確認">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="galera-status-103">MariaDB 10.3</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="galera-status-105">MariaDB 10.5以降</button>
+        </div>
+        <section class="tab-panel active" id="galera-status-103" role="tabpanel">
+          <div class="code"><div class="code-header"><span>MariaDB 10.3</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mysql -e "SHOW STATUS WHERE Variable_name IN ('wsrep_cluster_size','wsrep_cluster_status','wsrep_ready','wsrep_local_state_comment');"</code></pre></div>
+        </section>
+        <section class="tab-panel" id="galera-status-105" role="tabpanel" hidden>
+          <div class="code"><div class="code-header"><span>MariaDB 10.5+</span><button class="copy" type="button">Copy</button></div><pre><code>sudo mariadb -e "SHOW STATUS WHERE Variable_name IN ('wsrep_cluster_size','wsrep_cluster_status','wsrep_ready','wsrep_local_state_comment');"</code></pre></div>
+        </section>
+      </div>
 
-      <h2 id="operations">日常確認と障害時の初動</h2>
+      <h2 id="operations">9. 更新と日常確認</h2>
+      <p>現在選択中のストリーム内におけるMariaDBパッケージ更新</p>
+      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf upgrade 'mariadb*'</code></pre></div>
       <table>
-        <thead><tr><th>観点</th><th>確認コマンド・確認内容</th></tr></thead>
+        <thead><tr><th>確認対象</th><th>確認方法</th></tr></thead>
         <tbody>
-          <tr><td>サービス</td><td><code>systemctl status mariadb --no-pager</code>、<code>journalctl -u mariadb -b</code></td></tr>
-          <tr><td>待受と接続</td><td><code>ss -lntp | grep ':3306'</code>、アプリケーション用ユーザー<code>t_hashimoto</code>での接続試験</td></tr>
-          <tr><td>容量</td><td><code>df -hT /var/lib/mysql</code>、<code>df -ih /var/lib/mysql</code>、バックアップ保存先の空き容量</td></tr>
-          <tr><td>ログ</td><td><code>/var/log/mariadb/mariadb.log</code>の有無と、systemd journalのエラーを確認</td></tr>
-          <tr><td>Galera</td><td><code>wsrep_cluster_size</code>、<code>wsrep_ready</code>、<code>wsrep_local_state_comment</code>を全ノードで確認</td></tr>
-          <tr><td>復元性</td><td>定期的に隔離環境へ復元し、テーブル数、件数、アプリケーション接続を確認</td></tr>
+          <tr><td>サービス</td><td><code>systemctl status mariadb.service --no-pager</code></td></tr>
+          <tr><td>設定値</td><td><code>SHOW VARIABLES</code>で待受、ポート、文字セットを確認</td></tr>
+          <tr><td>接続</td><td>アプリケーション用ユーザーと許可済み接続元から接続</td></tr>
+          <tr><td>ログ</td><td><code>journalctl -u mariadb.service -b</code>とMariaDBエラーログを確認</td></tr>
+          <tr><td>容量</td><td><code>/var/lib/mysql</code>のファイルシステム容量とinodeを確認</td></tr>
+          <tr><td>復元性</td><td>別環境への復元とアプリケーション疎通を確認</td></tr>
         </tbody>
       </table>
-
+      <p>メジャーバージョン変更では設定互換性とデータ移行が必要になるため、通常のパッケージ更新と分離し、Red Hatが対象ストリームに示す移行手順を使用</p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#overview">対象と基本方針</a>
-      <a href="#install">インストール</a>
-      <a href="#configuration">基本設定</a>
-      <a href="#users">ユーザー管理</a>
-      <a href="#backup">バックアップ</a>
-      <a href="#galera">Galera Cluster</a>
-      <a href="#operations">日常確認</a>
+      <a class="active" href="#versions">1. 提供バージョン</a>
+      <a href="#install">2. インストール</a>
+      <a href="#configuration">3. 設定ファイル</a>
+      <a href="#network">4. ポートと接続</a>
+      <a href="#users">5. DBとユーザー</a>
+      <a href="#client">6. クライアント更新</a>
+      <a href="#backup">7. バックアップ</a>
+      <a href="#galera">8. Galera Cluster</a>
+      <a href="#operations">9. 更新と日常確認</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

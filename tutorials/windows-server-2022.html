@@ -7,7 +7,7 @@
   <meta name="description" content="Amazon EC2上のWindows Server 2022を手動構築するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-value-highlighting="off">
+<body>
   <header class="site-header">
     <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
     <div class="header-actions">
@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -82,7 +82,7 @@
 
 
       <h3 id="launch-values">0.2 構築値</h3>
-      <table>
+      <table class="parameter-table">
         <thead>
           <tr><th>値</th><th>用途</th></tr>
         </thead>
@@ -101,9 +101,9 @@
       <h3 id="windows-password">1.1 Administratorパスワード取得</h3>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li>「アクション」から「セキュリティ」、「Windowsパスワードを取得」を選択</li>
+        <li><code class="ui-value">アクション</code>から<code class="ui-value">セキュリティ</code>、<code class="ui-value">Windowsパスワードを取得</code>を選択</li>
         <li>起動時に指定したRSAキーペアの秘密鍵をアップロード</li>
-        <li>「パスワードを復号化」を選択</li>
+        <li><code class="ui-value">パスワードを復号化</code>を選択</li>
         <li>表示されたAdministratorパスワードを認証情報管理ルールに従って保管</li>
       </ol>
 
@@ -111,8 +111,8 @@
       <ol>
         <li>踏み台サーバーへSSH接続</li>
         <li>SSHクライアントでローカルポートフォワードを設定</li>
-        <li>ローカルポートへ未使用の任意ポートを指定。例: <code>65001</code></li>
-        <li>転送先へ<code>&lt;WINDOWS_PRIVATE_IP&gt;:3389</code>を指定</li>
+        <li><code class="ui-value">ローカルポート</code>へ未使用の任意ポートを指定。例: <code>65001</code></li>
+        <li><code class="ui-value">転送先</code>へ<code>&lt;WINDOWS_PRIVATE_IP&gt;:3389</code>を指定</li>
         <li>リモートデスクトップクライアントで<code>127.0.0.1:65001</code>へ接続</li>
         <li><code>Administrator</code>と復号したパスワードでサインイン</li>
       </ol>
@@ -120,7 +120,7 @@
       <h3 id="connect-fleet-manager">1.3 Fleet Manager Remote Desktop接続</h3>
       <ol>
         <li>AWS Systems ManagerのFleet Managerで対象のマネージドノードを選択</li>
-        <li>「ノードアクション」から「リモートデスクトップで接続」を選択</li>
+        <li><code class="ui-value">ノードアクション</code>から<code class="ui-value">リモートデスクトップで接続</code>を選択</li>
         <li>ユーザー認証情報を使用する接続方式を選択</li>
         <li><code>Administrator</code>と復号したパスワードで接続</li>
       </ol>
@@ -136,9 +136,9 @@
       <h3 id="admin-user">2.1 管理用ローカルユーザー</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>compmgmt.msc</code>を実行</li>
-        <li>「ローカル ユーザーとグループ」から「ユーザー」を開く</li>
-        <li>「新しいユーザー」を選択</li>
-        <li>ユーザー名へ<code>&lt;ADMIN_USER&gt;</code>を入力</li>
+        <li><code class="ui-value">ローカル ユーザーとグループ</code>から<code class="ui-value">ユーザー</code>を開く</li>
+        <li><code class="ui-value">新しいユーザー</code>を選択</li>
+        <li><code class="ui-value">ユーザー名</code>へ<code>&lt;ADMIN_USER&gt;</code>を入力</li>
         <li>パスワード運用要件に合わせて初回変更と有効期限を設定</li>
         <li>対象ユーザーを<code>Administrators</code>グループへ追加</li>
       </ol>
@@ -147,8 +147,11 @@
       <p>管理者権限でPowerShellを起動し、パスワードを対話入力で受け取る</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString
-New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
+        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
       </div>
 
       <p>業務上必要な最小権限のローカルグループへ追加する</p>
@@ -167,16 +170,16 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h3 id="file-extensions">3.1 ファイル名拡張子の表示</h3>
       <ol>
         <li>エクスプローラーを開く</li>
-        <li>「表示」から「表示」を開く</li>
-        <li>「ファイル名拡張子」を有効化</li>
+        <li><code class="ui-value">表示</code>から<code class="ui-value">表示</code>を開く</li>
+        <li><code class="ui-value">ファイル名拡張子</code>を有効化</li>
       </ol>
       <p>実行ファイルや設定ファイルの種類を誤認しないよう、拡張子を常に表示する</p>
 
       <h3 id="hostname">3.2 コンピューター名設定</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「コンピューター名」タブから「変更」を選択</li>
-        <li>コンピューター名へ<code>&lt;HOSTNAME&gt;</code>を入力</li>
+        <li><code class="ui-value">コンピューター名</code>タブから<code class="ui-value">変更</code>を選択</li>
+        <li><code class="ui-value">コンピューター名</code>へ<code>&lt;HOSTNAME&gt;</code>を入力</li>
         <li>ドメイン参加が必要な場合は、名前解決と接続先Directory Serviceを確認して設定</li>
         <li>再起動要求を保留し、他の再起動を伴う設定とまとめて実施</li>
       </ol>
@@ -184,8 +187,8 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h3 id="timezone">3.3 タイムゾーン設定</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>timedate.cpl</code>を実行</li>
-        <li>「タイムゾーンの変更」を選択</li>
-        <li><code>(UTC+09:00) 大阪、札幌、東京</code>を選択</li>
+        <li><code class="ui-value">タイムゾーンの変更</code>を選択</li>
+        <li><code class="ui-value">(UTC+09:00) 大阪、札幌、東京</code>を選択</li>
       </ol>
 
       <div class="callout">
@@ -198,9 +201,9 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、自動更新を無効化する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li>「コンピューターの構成」、「管理用テンプレート」、「Windowsコンポーネント」、「Windows Update」の順に開く</li>
-        <li>「自動更新を構成する」を開く</li>
-        <li>「無効」を選択して保存</li>
+        <li><code class="ui-value">コンピューターの構成</code>、<code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>、<code class="ui-value">Windows Update</code>の順に開く</li>
+        <li><code class="ui-value">自動更新を構成する</code>を開く</li>
+        <li><code class="ui-value">無効</code>を選択して保存</li>
       </ol>
 
       <div class="callout callout-warning">
@@ -213,8 +216,8 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h4 id="rdp-nla">3.5.1 ネットワークレベル認証</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「リモート」タブを開く</li>
-        <li>「ネットワーク レベル認証でリモート デスクトップを実行しているコンピューターからのみ接続を許可する」を有効化</li>
+        <li><code class="ui-value">リモート</code>タブを開く</li>
+        <li><code class="ui-value">ネットワーク レベル認証でリモート デスクトップを実行しているコンピューターからのみ接続を許可する</code>を有効化</li>
       </ol>
       <p>ネットワークレベル認証は、RDPセッションを確立する前に利用者を認証し、未認証接続によるリソース消費と攻撃対象領域を抑える</p>
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/remotepc/remote-desktop-allow-access">Microsoft公式: Remote Desktopとネットワークレベル認証</a></p>
@@ -222,25 +225,25 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h4 id="rdp-limit">3.5.2 RDPセッション制限</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li>「管理用テンプレート」、「Windowsコンポーネント」、「リモート デスクトップ サービス」、「リモート デスクトップ セッション ホスト」、「接続」の順に開く</li>
-        <li>「接続数を制限する」を開き、運用要件に合わせて設定</li>
-        <li>複数セッションが必要な場合のみ、「リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する」を無効化</li>
+        <li><code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>、<code class="ui-value">リモート デスクトップ サービス</code>、<code class="ui-value">リモート デスクトップ セッション ホスト</code>、<code class="ui-value">接続</code>の順に開く</li>
+        <li><code class="ui-value">接続数を制限する</code>を開き、運用要件に合わせて設定</li>
+        <li>複数セッションが必要な場合のみ、<code class="ui-value">リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する</code>を無効化</li>
       </ol>
 
       <h4 id="rdp-encryption">3.5.3 RDP暗号化レベル</h4>
       <p>RDPのネイティブ暗号化を利用する接続に対して、クライアントとサーバー間の暗号化レベルを<code>高</code>へ固定する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li>「コンピューターの構成」、「管理用テンプレート」、「Windowsコンポーネント」の順に展開</li>
-        <li>「リモート デスクトップ サービス」、「リモート デスクトップ セッション ホスト」、「セキュリティ」の順に展開</li>
-        <li>「クライアント接続の暗号化レベルを設定する」を開く</li>
-        <li>「有効」を選択し、暗号化レベルへ「高」を指定</li>
+        <li><code class="ui-value">コンピューターの構成</code>、<code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>の順に展開</li>
+        <li><code class="ui-value">リモート デスクトップ サービス</code>、<code class="ui-value">リモート デスクトップ セッション ホスト</code>、<code class="ui-value">セキュリティ</code>の順に展開</li>
+        <li><code class="ui-value">クライアント接続の暗号化レベルを設定する</code>を開く</li>
+        <li><code class="ui-value">有効</code>を選択し、暗号化レベルへ<code class="ui-value">高</code>を指定</li>
         <li><code>gpupdate /force</code>を実行</li>
       </ol>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        「高」はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
+        <code class="ui-value">高</code>はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
@@ -249,8 +252,8 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <p>本手順の対象環境では、通信制御をSecurity Groupなどの上位レイヤーへ集約し、OS側との二重管理による設定差分や疎通障害を避ける社内標準に基づいてWindows Defender Firewallを無効化する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>wf.msc</code>を実行</li>
-        <li>「Windows Defender ファイアウォールのプロパティ」を開く</li>
-        <li>ドメイン、プライベート、パブリックの各プロファイルで「ファイアウォールの状態」を「無効」に変更</li>
+        <li><code class="ui-value">Windows Defender ファイアウォールのプロパティ</code>を開く</li>
+        <li>ドメイン、プライベート、パブリックの各プロファイルで<code class="ui-value">ファイアウォールの状態</code>を<code class="ui-value">無効</code>に変更</li>
         <li>設定を保存</li>
       </ol>
 
@@ -264,17 +267,17 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>diskmgmt.msc</code>を実行</li>
         <li>未初期化ディスクの容量とディスク番号を確認</li>
-        <li>パーティションスタイルへ<code>GPT</code>を選択</li>
-        <li>未割り当て領域から「新しいシンプル ボリューム」を選択</li>
+        <li><code class="ui-value">パーティションスタイル</code>へ<code class="ui-value">GPT</code>を選択</li>
+        <li>未割り当て領域から<code class="ui-value">新しいシンプル ボリューム</code>を選択</li>
         <li>ドライブ文字へ<code>&lt;VOLUME_DRIVE_LETTER&gt;</code>を割り当て</li>
-        <li>ファイルシステムへ<code>NTFS</code>を選択し、要件に合わせたボリュームラベルを設定</li>
+        <li><code class="ui-value">ファイルシステム</code>へ<code class="ui-value">NTFS</code>を選択し、要件に合わせたボリュームラベルを設定</li>
         <li>クイックフォーマットを実行</li>
       </ol>
 
       <h3 id="windows-update">3.8 Windows Update</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>ms-settings:windowsupdate</code>を実行</li>
-        <li>「更新プログラムのチェック」を選択</li>
+        <li><code class="ui-value">更新プログラムのチェック</code>を選択</li>
         <li>検出された更新プログラムをインストール</li>
         <li>再起動要求がある場合は、作業影響を確認して再起動</li>
         <li>更新プログラムが検出されなくなるまで繰り返し実行</li>
@@ -285,9 +288,9 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h3 id="cloudwatch-agent">4.1 CloudWatch Agent導入</h3>
       <p>AWS Systems Manager Run Commandを使用して、Amazon CloudWatch Agentをインストールします。インストールだけではメトリクスやログは収集されないため、後続手順で設定ファイルを作成して適用する</p>
       <ol>
-        <li>AWS Systems Managerコンソールで「Run Command」を開く</li>
-        <li>コマンドドキュメントへ<code>AWS-ConfigureAWSPackage</code>を選択</li>
-        <li>Actionへ<code>Install</code>、Nameへ<code>AmazonCloudWatchAgent</code>を指定</li>
+        <li>AWS Systems Managerコンソールで<code class="ui-value">Run Command</code>を開く</li>
+        <li><code class="ui-value">コマンドドキュメント</code>へ<code>AWS-ConfigureAWSPackage</code>を選択</li>
+        <li><code class="ui-value">Action</code>へ<code class="ui-value">Install</code>、<code class="ui-value">Name</code>へ<code>AmazonCloudWatchAgent</code>を指定</li>
         <li>対象インスタンスをタグまたはインスタンスIDで指定</li>
         <li>コマンドを実行</li>
       </ol>
@@ -321,11 +324,11 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
 .\amazon-cloudwatch-agent-config-wizard.exe</code></pre>
       </div>
       <ol>
-        <li>OSへ<code>Windows</code>、実行環境へ<code>EC2</code>を指定</li>
+        <li><code class="ui-value">OS</code>へ<code class="ui-value">Windows</code>、<code class="ui-value">実行環境</code>へ<code class="ui-value">EC2</code>を指定</li>
         <li>収集間隔とパフォーマンスカウンターを選択</li>
         <li>収集するWindowsイベントログ、イベントレベル、ロググループ名を指定</li>
         <li>ローカル利用の場合は、生成された<code>config.json</code>を確認</li>
-        <li>Parameter Storeで集中管理する場合は、保存確認へ<code>Yes</code>を選択し、パラメータ名とリージョンを指定</li>
+        <li>Parameter Storeで集中管理する場合は、保存確認へ<code class="ui-value">Yes</code>を選択し、パラメータ名とリージョンを指定</li>
       </ol>
 
       <p>ローカルの<code>config.json</code>を使用する場合は、次のコマンドで設定を読み込み、Agentを起動する</p>
@@ -357,13 +360,13 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <h3 id="cloudwatch-run-command">4.3 Run Commandによる設定適用</h3>
       <p>Parameter Storeに保存した設定を、AWS Systems Manager Run Commandから対象インスタンスへ適用する</p>
       <ol>
-        <li>AWS Systems Managerコンソールで「Run Command」を開く</li>
-        <li>コマンドドキュメントへ<code>AmazonCloudWatch-ManageAgent</code>を選択</li>
-        <li>Actionへ<code>configure</code>を指定</li>
-        <li>Modeへ<code>ec2</code>を指定</li>
-        <li>Optional Configuration Sourceへ<code>ssm</code>を指定</li>
-        <li>Optional Configuration Locationへ<code>&lt;CLOUDWATCH_AGENT_CONFIG_PARAMETER&gt;</code>を指定</li>
-        <li>Optional Restartへ<code>yes</code>を指定</li>
+        <li>AWS Systems Managerコンソールで<code class="ui-value">Run Command</code>を開く</li>
+        <li><code class="ui-value">コマンドドキュメント</code>へ<code>AmazonCloudWatch-ManageAgent</code>を選択</li>
+        <li><code class="ui-value">Action</code>へ<code class="ui-value">configure</code>を指定</li>
+        <li><code class="ui-value">Mode</code>へ<code class="ui-value">ec2</code>を指定</li>
+        <li><code class="ui-value">Optional Configuration Source</code>へ<code class="ui-value">ssm</code>を指定</li>
+        <li><code class="ui-value">Optional Configuration Location</code>へ<code>&lt;CLOUDWATCH_AGENT_CONFIG_PARAMETER&gt;</code>を指定</li>
+        <li><code class="ui-value">Optional Restart</code>へ<code class="ui-value">yes</code>を指定</li>
         <li>対象インスタンスをタグまたはインスタンスIDで指定し、コマンドを実行</li>
         <li>コマンド出力が成功していることを確認し、CloudWatchのメトリクスとロググループへデータが到着していることを確認</li>
       </ol>
@@ -380,9 +383,9 @@ New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&l
       <ol>
         <li>構築作業とWindows Updateを完了</li>
         <li>一時ファイル、個別の認証情報、作業用アカウント、固定IP設定などを除去</li>
-        <li>スタートメニューから「EC2Launch settings」を開く</li>
+        <li>スタートメニューから<code class="ui-value">EC2Launch settings</code>を開く</li>
         <li>AMI起動後に必要なタスクとSSM Agentの起動設定を確認</li>
-        <li>「Shutdown with Sysprep」を実行</li>
+        <li><code class="ui-value">Shutdown with Sysprep</code>を実行</li>
         <li>インスタンス停止後にAmazon EC2コンソールからAMIを作成</li>
       </ol>
 
@@ -485,19 +488,19 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
       <h4 id="pagefile-settings">5.2.2 ページファイル</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「詳細設定」タブの「パフォーマンス」から「設定」を選択</li>
-        <li>「詳細設定」タブの「仮想メモリ」から「変更」を選択</li>
-        <li>原則として「すべてのドライブのページング ファイルのサイズを自動的に管理する」を有効化</li>
+        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">パフォーマンス</code>から<code class="ui-value">設定</code>を選択</li>
+        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">仮想メモリ</code>から<code class="ui-value">変更</code>を選択</li>
+        <li>原則として<code class="ui-value">すべてのドライブのページング ファイルのサイズを自動的に管理する</code>を有効化</li>
         <li>完全メモリダンプを取得する場合は、OSボリューム上にメモリ容量とダンプ方式に応じたページファイルを確保</li>
       </ol>
 
       <h4 id="crash-dump-settings">5.2.3 クラッシュダンプ</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li>「詳細設定」タブの「起動と回復」から「設定」を選択</li>
-        <li>「デバッグ情報の書き込み」へ「自動メモリ ダンプ」を選択</li>
-        <li>ダンプファイルへ<code>%SystemRoot%\MEMORY.DMP</code>を指定</li>
-        <li>「既存のファイルに上書きする」を有効化</li>
+        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">起動と回復</code>から<code class="ui-value">設定</code>を選択</li>
+        <li><code class="ui-value">デバッグ情報の書き込み</code>へ<code class="ui-value">自動メモリ ダンプ</code>を選択</li>
+        <li><code class="ui-value">ダンプファイル</code>へ<code>%SystemRoot%\MEMORY.DMP</code>を指定</li>
+        <li><code class="ui-value">既存のファイルに上書きする</code>を有効化</li>
       </ol>
 
       <p>レジストリ上のダンプ方式と保存先を確認する</p>

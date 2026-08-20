@@ -7,7 +7,7 @@
   <meta name="description" content="Amazon SESのID作成、Postfix SMTPリレー、カスタムMAIL FROMを整理した構築手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="ses-smtp-user,bounce.zexample.com,no-reply@zexample.com,ses-relay.zexample.com,recipient@example.net">
+<body>
   <header class="site-header">
     <a class="brand" href="../">
       <img src="../assets/icon.jpg" alt="Documentation icon">
@@ -38,8 +38,7 @@
       <a class="active" href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -75,16 +75,16 @@
 
       <h2 id="ses-identity">Amazon SES作成</h2>
       <ol>
-        <li>Amazon SESコンソールの「ID」から「IDの作成」を選択</li>
-        <li>IDタイプは「ドメイン」を選択し、送信元として使用するドメインを入力</li>
+        <li>Amazon SESコンソールの<code class="ui-value">ID</code>から<code class="ui-value">IDの作成</code>を選択</li>
+        <li>IDタイプは<code class="ui-value">ドメイン</code>を選択し、送信元として使用するドメインを入力</li>
         <li>Easy DKIMを選択し、DKIM署名を有効化</li>
-        <li>「DNSレコードのRoute 53への発行」を有効にしてIDを作成</li>
-        <li>IDステータスが「検証済み」になることを確認</li>
+        <li><code class="ui-value">DNSレコードのRoute 53への発行</code>を有効にしてIDを作成</li>
+        <li>IDステータスが<code class="ui-value">検証済み</code>になることを確認</li>
       </ol>
 
       <div class="callout">
         <strong>ℹ️ Route 53を利用する場合</strong>
-        <p>「DNSレコードのRoute 53への発行」を有効にすると、SESがEasy DKIM用のCNAMEレコードを3件自動作成する。外部DNSを利用する場合、または自動発行を無効にした場合だけ、SESが提示する3件のCNAMEレコードを手動登録する</p>
+        <p><code class="ui-value">DNSレコードのRoute 53への発行</code>を有効にすると、SESがEasy DKIM用のCNAMEレコードを3件自動作成する。外部DNSを利用する場合、または自動発行を無効にした場合だけ、SESが提示する3件のCNAMEレコードを手動登録する</p>
       </div>
 
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/send-email-authentication-dkim-easy.html">Easy DKIM in Amazon SES</a></p>
@@ -93,8 +93,8 @@
       <p>PostfixからSES SMTPエンドポイントへ接続するため、IAM SMTP認証情報を作成する。Mail Manager SMTPは、Secrets Managerによるローテーションやトラフィックポリシーを含む別機能であり、このリレー手順では使用しない</p>
 
       <ol>
-        <li>Amazon SESコンソールの「SMTP設定」を選択</li>
-        <li>「IAM SMTP認証情報」の「IAM認証情報を作成する」を選択</li>
+        <li>Amazon SESコンソールの<code class="ui-value">SMTP設定</code>を選択</li>
+        <li><code class="ui-value">IAM SMTP認証情報</code>の<code class="ui-value">IAM認証情報を作成する</code>を選択</li>
         <li>用途を識別できるIAMユーザー名を入力。例: <code>ses-smtp-user</code></li>
         <li>ユーザーを作成し、生成されたSMTPユーザー名とSMTPパスワードを保存</li>
       </ol>
@@ -268,7 +268,7 @@ postqueue -p</code></pre>
       </figure>
 
       <h3>3. メールソースを確認</h3>
-      <p>Gmailの「メッセージのソースを表示」で、SPF、DKIM、DMARCが<code>PASS</code>であること、受信IPがAmazon SESの送信基盤であることを確認</p>
+      <p>Gmailの<code class="ui-value">メッセージのソースを表示</code>で、SPF、DKIM、DMARCが<code>PASS</code>であること、受信IPがAmazon SESの送信基盤であることを確認</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/amazon-ses/ses-gmail-original-redacted.png" alt="宛先をマスクしたGmailのメールソースとSPF DKIM DMARCの確認結果">
         <figcaption>宛先だけをマスクしたメールソース。SPF、DKIM、DMARCはいずれもPASS</figcaption>
@@ -308,7 +308,7 @@ postqueue -p</code></pre>
 
       <ol>
         <li>Amazon SESコンソールで対象IDを開く</li>
-        <li>「カスタムMAIL FROMドメイン」の「編集」を選択</li>
+        <li><code class="ui-value">カスタムMAIL FROMドメイン</code>の<code class="ui-value">編集</code>を選択</li>
         <li>MAIL FROM用サブドメインを入力。例: <code>bounce.zexample.com</code></li>
         <li>MX障害時の動作を選択して保存</li>
       </ol>
@@ -322,7 +322,7 @@ postqueue -p</code></pre>
         <pre><code>dig MX bounce.zexample.com +short
 dig TXT bounce.zexample.com +short</code></pre>
       </div>
-      <p>MXがリージョンの<code>feedback-smtp</code>エンドポイント、TXTが<code>v=spf1 include:amazonses.com ~all</code>を返し、SESのMAIL FROMステータスが「成功」になることを確認</p>
+      <p>MXがリージョンの<code>feedback-smtp</code>エンドポイント、TXTが<code>v=spf1 include:amazonses.com ~all</code>を返し、SESのMAIL FROMステータスが<code class="ui-value">成功</code>になることを確認</p>
 
       <h3>設定後のメールソースを確認</h3>
       <p>受信メールのソースで、<code>Return-Path</code>が<code>bounce.zexample.com</code>配下へ変わり、SPF、DKIM、DMARCがPASSになることを確認</p>

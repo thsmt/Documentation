@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a class="active" href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -184,7 +184,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
         <section class="tab-panel" id="zabbix-agent-windows" role="tabpanel">
           <h3>Windows Server 2022</h3>
           <p>Windows ServerへZabbix Agent 2を導入する場合は、Zabbix公式ダウンロードページからWindows向けMSIを取得し、ウィザードでServer、Host名、PSKを設定する</p>
-          <table>
+          <table class="parameter-table">
             <thead><tr><th>値</th><th>説明</th></tr></thead>
             <tbody>
               <tr><td><code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code></td><td>Zabbix ServerまたはProxyのIPアドレス、またはFQDN。複数ある場合はカンマ区切りで指定する</td></tr>
@@ -196,12 +196,12 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
 
           <ol>
             <li>出典：<a href="https://www.zabbix.com/download_agents">Zabbix公式のAgentダウンロードページ</a>を開く</li>
-            <li>OS Distributionに <code>Windows</code>、OS Versionに対象Windowsバージョン、Hardwareに <code>amd64</code> を選択</li>
-            <li>Zabbix Versionに <code>6.0 LTS</code>、Encryptionに <code>OpenSSL</code>、Packagingに <code>MSI</code> を選択</li>
+            <li><code class="ui-value">OS Distribution</code>に<code class="ui-value">Windows</code>、<code class="ui-value">OS Version</code>に対象Windowsバージョン、<code class="ui-value">Hardware</code>に<code class="ui-value">amd64</code>を選択</li>
+            <li><code class="ui-value">Zabbix Version</code>に<code class="ui-value">6.0 LTS</code>、<code class="ui-value">Encryption</code>に<code class="ui-value">OpenSSL</code>、<code class="ui-value">Packaging</code>に<code class="ui-value">MSI</code>を選択</li>
             <li>表示された6.0系の最新MSIをダウンロードし、対象サーバーで実行</li>
-            <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力</li>
-            <li>Zabbix server IP / DNS、Server or Proxy for active checksに <code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code> を入力</li>
-            <li>Agent listen portは <code>10050</code> を指定</li>
+            <li><code class="ui-value">Host name</code>に<code>&lt;HOSTNAME&gt;</code>を入力</li>
+            <li><code class="ui-value">Zabbix server IP / DNS</code>、<code class="ui-value">Server or Proxy for active checks</code>に<code>&lt;ZABBIX_SERVER_OR_PROXY&gt;</code>を入力</li>
+            <li><code class="ui-value">Agent listen port</code>は<code class="ui-value">10050</code>を指定</li>
             <li>PSKを利用する場合はEnable PSKを有効化し、PSK identityとPSK valueを入力</li>
             <li>インストール後、<code>services.msc</code> を開き、<code>Zabbix Agent 2</code> のスタートアップ種類が自動、サービス状態が実行中であることを確認</li>
           </ol>
@@ -223,8 +223,8 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <p>Zabbix管理画面で、監視対象をまとめるホストグループを作成する</p>
       <ol>
         <li>Zabbix管理画面にサインイン</li>
-        <li>「設定」から「ホストグループ」を開く</li>
-        <li>「ホストグループを作成」を選択</li>
+        <li><code class="ui-value">設定</code>から<code class="ui-value">ホストグループ</code>を開く</li>
+        <li><code class="ui-value">ホストグループを作成</code>を選択</li>
         <li>グループ名に、環境や案件を識別できる名称を入力</li>
         <li>作成後、ホストグループ一覧に表示されることを確認</li>
       </ol>
@@ -240,8 +240,8 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="maintenance">4. メンテナンス設定</h2>
       <p>構築中や運用開始前に不要な通知が出ないよう、対象ホストグループにメンテナンス期間を設定する</p>
       <ol>
-        <li>「設定」から「メンテナンス」を開く</li>
-        <li>「メンテナンス期間の作成」を選択</li>
+        <li><code class="ui-value">設定</code>から<code class="ui-value">メンテナンス</code>を開く</li>
+        <li><code class="ui-value">メンテナンス期間の作成</code>を選択</li>
         <li>名前に作業内容、日付、作業者がわかる名称を入力</li>
         <li>開始日時と終了日時を設定</li>
         <li>対象に、作成したホストグループを指定</li>
@@ -259,12 +259,12 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="host-registration">5. ホスト登録</h2>
       <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録する</p>
       <ol>
-        <li>「設定」から「ホスト」を開く</li>
-        <li>「ホストの作成」を選択</li>
-        <li>Host nameに <code>&lt;HOSTNAME&gt;</code> を入力</li>
+        <li><code class="ui-value">設定</code>から<code class="ui-value">ホスト</code>を開く</li>
+        <li><code class="ui-value">ホストの作成</code>を選択</li>
+        <li><code class="ui-value">Host name</code>に<code>&lt;HOSTNAME&gt;</code>を入力</li>
         <li>Templatesに対象OS向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Linux (Activeエージェント2)</code>、<code>基本監視 Windows (Activeエージェント2)</code></li>
         <li>Groupsに作成済みのホストグループを追加</li>
-        <li>InterfacesでAgentを追加し、IP addressに対象サーバーのプライベートIP、Portに <code>10050</code> を指定</li>
+        <li><code class="ui-value">Interfaces</code>で<code class="ui-value">Agent</code>を追加し、<code class="ui-value">IP address</code>に対象サーバーのプライベートIP、<code class="ui-value">Port</code>に<code class="ui-value">10050</code>を指定</li>
         <li>暗号化を利用する場合は、Agent側と同じPSK identityとPSK valueを設定</li>
         <li>保存後、ホスト一覧でStatusが有効になっていることを確認</li>
       </ol>
@@ -272,8 +272,8 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="latest-data">6. 最新データ確認</h2>
       <p>ホスト登録後、最新データが取得されるまで1から5分程度待ってから確認する</p>
       <ol>
-        <li>「監視データ」から「最新データ」を開く</li>
-        <li>Hostに <code>&lt;HOSTNAME&gt;</code> を指定してフィルタ</li>
+        <li><code class="ui-value">監視データ</code>から<code class="ui-value">最新データ</code>を開く</li>
+        <li><code class="ui-value">Host</code>に<code>&lt;HOSTNAME&gt;</code>を指定してフィルタ</li>
         <li>Agent Ping、CPU使用率、Disk使用量などのアイテムが表示されることを確認</li>
         <li>Latest checkの時刻が更新され、値が取得されていることを確認</li>
       </ol>

@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a class="active" href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -147,13 +147,13 @@ git config --global init.defaultBranch main</code></pre></div>
 
       <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>gh auth login</code></pre></div>
 
-      <p><code>GitHub.com</code>、<code>HTTPS</code>を選択</p>
+      <p><code class="ui-value">GitHub.com</code>、<code class="ui-value">HTTPS</code>を選択</p>
 
-      <p><code>Authenticate Git with your GitHub credentials?</code>は<code>Yes</code>を選択し、<code>Login with a web browser</code>から認証</p>
+      <p><code class="ui-value">Authenticate Git with your GitHub credentials?</code>は<code class="ui-value">Yes</code>を選択し、<code class="ui-value">Login with a web browser</code>から認証</p>
 
       <div class="notice">
         <strong>ℹ️ 情報</strong>
-        <p><code>Yes</code>を選択すると、GitHub CLIの認証情報をHTTPSによる<code>clone</code>、<code>pull</code>、<code>push</code>にも利用できる</p>
+      <p><code class="ui-value">Yes</code>を選択すると、GitHub CLIの認証情報をHTTPSによる<code>clone</code>、<code>pull</code>、<code>push</code>にも利用できる</p>
         <p>ワンタイムコードは認証画面だけで使用し、手順書、Git、スクリーンショットへ記録しない</p>
       </div>
 
@@ -244,7 +244,7 @@ git diff --staged</code></pre></div>
 
       <ol>
         <li>GitHubで対象リポジトリを開く</li>
-        <li><code>Compare &amp; pull request</code>を選択</li>
+        <li><code class="ui-value">Compare &amp; pull request</code>を選択</li>
         <li>baseが<code>main</code>、compareが作業ブランチであることを確認</li>
         <li>目的、変更内容、確認結果、影響範囲を記載</li>
         <li>必要なReviewerを指定してPull Requestを作成</li>
@@ -269,7 +269,7 @@ git diff --staged</code></pre></div>
 
       <h2 id="review">7. レビュー対応</h2>
 
-      <p>Reviewerは<code>Files changed</code>で差分を確認し、コメント、Approve、Request changesを選択する</p>
+      <p>Reviewerは<code class="ui-value">Files changed</code>で差分を確認し、コメント、<code class="ui-value">Approve</code>、<code class="ui-value">Request changes</code>を選択する</p>
 
       <p>修正依頼を受けた場合は同じ作業ブランチで修正し、再度コミットとpushを実行</p>
 
@@ -304,11 +304,11 @@ git fetch --prune</code></pre></div>
       <table>
         <thead><tr><th>操作</th><th>VS Code</th><th>CLI</th></tr></thead>
         <tbody>
-          <tr><td>変更確認</td><td>Source Controlでファイルを選択</td><td><code>git diff</code></td></tr>
-          <tr><td>ステージング</td><td>対象ファイルの<code>+</code>を選択</td><td><code>git add &lt;FILE&gt;</code></td></tr>
-          <tr><td>コミット</td><td>メッセージを入力してCommit</td><td><code>git commit -m</code></td></tr>
+          <tr><td>変更確認</td><td><code class="ui-value">Source Control</code>でファイルを選択</td><td><code>git diff</code></td></tr>
+          <tr><td>ステージング</td><td>対象ファイルの<code class="ui-value">+</code>を選択</td><td><code>git add &lt;FILE&gt;</code></td></tr>
+          <tr><td>コミット</td><td>メッセージを入力して<code class="ui-value">Commit</code></td><td><code>git commit -m</code></td></tr>
           <tr><td>ブランチ切り替え</td><td>左下のブランチ名を選択</td><td><code>git switch</code></td></tr>
-          <tr><td>同期</td><td>Sync ChangesまたはPush</td><td><code>git push</code></td></tr>
+          <tr><td>同期</td><td><code class="ui-value">Sync Changes</code>または<code class="ui-value">Push</code></td><td><code>git push</code></td></tr>
         </tbody>
       </table>
 

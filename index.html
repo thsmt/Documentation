@@ -37,8 +37,7 @@
       <a href="tutorials/amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="tutorials/amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="tutorials/amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="tutorials/aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="tutorials/apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="tutorials/apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="tutorials/rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="tutorials/rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -49,6 +48,7 @@
       <a href="tutorials/apache.html">Apache</a>
       <a href="tutorials/apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="tutorials/mariadb.html">MariaDB</a>
+      <a href="tutorials/postgresql.html">PostgreSQL</a>
       <a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="tutorials/git-github-basics.html">Git / GitHub 基本編</a>
@@ -112,12 +112,8 @@
           <p>インプレース更新との差分、仕組み、制約、切替、監視、復旧計画、本番適用手順を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/aws-certificate-manager.html">AWS Certificate Manager (ACM) と証明書運用</a></strong>
-          <p>ACM証明書の有効期間、更新方式、EC2への配置、ACMEとエクスポート証明書の自動更新を整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/apache-acm-certificate-update.html">ACM 証明書・更新</a></strong>
-          <p>ACMで発行したエクスポート可能な証明書をRHEL 9.8上のApacheへ配置し、証明書更新とTLS通信を確認する</p>
+          <strong><a href="tutorials/apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a></strong>
+          <p>ACM証明書の有効期間と更新方式を整理し、エクスポート可能な証明書をRHEL 9.8上のApacheへ配置してTLS通信を確認する</p>
         </article>
       </section>
 
@@ -157,7 +153,11 @@
         </article>
         <article class="card">
           <strong><a href="tutorials/mariadb.html">MariaDB</a></strong>
-          <p>MariaDBの導入、初期設定、ユーザー管理、バックアップ、Galera Clusterの基本運用を整理する</p>
+          <p>RHEL 8 / 9でのバージョン選択、設定、ユーザー管理、バックアップ、クライアント更新を整理する</p>
+        </article>
+        <article class="card">
+          <strong><a href="tutorials/postgresql.html">PostgreSQL</a></strong>
+          <p>RHEL 8 / 9でのバージョン選択、初期化、認証、ロール管理、バックアップ、クライアント更新を整理する</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a></strong>

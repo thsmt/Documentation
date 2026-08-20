@@ -35,8 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -47,6 +46,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -166,7 +166,7 @@
           <tr><td>AWSドライバー</td><td>事前にAWS PV、ENA、NVMeドライバーを確認する。ネットワークやストレージのドライバーが古いと、アップグレード後にRDP接続できない、またはEBSボリュームを認識できないおそれがある</td></tr>
           <tr><td>インスタンスサイズ</td><td>2 vCPU・4 GiB RAM以上での実施をAWSが推奨。小さいインスタンスは一時的にサイズ変更して実施できる</td></tr>
           <tr><td>ルートボリューム空き容量</td><td>Windowsセットアップは容量不足を警告しない場合がある。旧OSが<code>Windows.old</code>として保持される分の空きを確保する</td></tr>
-          <tr><td>RDP切断</td><td>セットアップ開始から数分でRDPセッションが切断される。進行状況は「インスタンスのスクリーンショットを取得」で確認する</td></tr>
+          <tr><td>RDP切断</td><td>セットアップ開始から数分でRDPセッションが切断される。進行状況は<code class="ui-value">インスタンスのスクリーンショットを取得</code>で確認する</td></tr>
           <tr><td>ステータスチェック</td><td>アップグレード中は一時的に失敗ステータスになる。監視・自動復旧(オートリカバリ等)を設定している場合は事前に抑止する</td></tr>
           <tr><td>所要時間</td><td>役割とアプリケーションの数に依存し、AWSは40分から数時間かかる場合があると案内</td></tr>
         </tbody>
@@ -230,10 +230,10 @@
 
       <h3 id="lab-launch">5.3 Windows Server 2016インスタンスの起動</h3>
       <ol>
-        <li>Amazon EC2コンソールで「インスタンスを起動」を選択</li>
-        <li>「その他のAMIを閲覧する」から<code>ami-01582627fc1ac1ed5</code>を検索</li>
+        <li>Amazon EC2コンソールで<code class="ui-value">インスタンスを起動</code>を選択</li>
+        <li><code class="ui-value">その他のAMIを閲覧する</code>から<code>ami-01582627fc1ac1ed5</code>を検索</li>
         <li>AMI名、<code>OwnerAlias: amazon</code>、日本語、64ビット、ENA有効を確認して選択</li>
-        <li>インスタンスタイプに<code>t3.large</code>を選択</li>
+        <li>インスタンスタイプに<code class="ui-value">t3.large</code>を選択</li>
         <li>検証用のRSAキーペアを指定</li>
         <li>検証用VPC・サブネットと、RDP(TCP/3389)を接続元限定で許可するSecurity Groupを設定</li>
         <li>ルートボリュームを<code>gp3</code> 100 GiBへ変更してインスタンスを起動</li>
@@ -280,15 +280,15 @@
       <h3 id="pre-backup">6.1 バックアップAMIの取得</h3>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li>「アクション」から「イメージとテンプレート」、「イメージを作成」を選択</li>
+        <li><code class="ui-value">アクション</code>から<code class="ui-value">イメージとテンプレート</code>、<code class="ui-value">イメージを作成</code>を選択</li>
         <li>イメージ名に用途と日付がわかる名前を入力。本検証では<code>Windows Server 2016_20260811</code>を使用</li>
         <li>イメージを作成し、発行されたAMI IDを作業記録へ保存</li>
-        <li>AMIのステータスが「利用可能」になることを確認</li>
+        <li>AMIのステータスが<code class="ui-value">利用可能</code>になることを確認</li>
       </ol>
 
       <div class="callout callout-warning">
         <strong>⚠️ 再起動の有無</strong>
-        既定ではイメージ作成時にインスタンスが再起動される。「再起動しない」を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する
+        既定ではイメージ作成時にインスタンスが再起動される。<code class="ui-value">再起動しない</code>を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する
       </div>
 
       <figure class="screenshot-wide">
@@ -301,7 +301,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ ドライバー更新前のバックアップ</strong>
-        AWS PV、ENA、NVMeはOSの起動、ストレージ、ネットワーク接続に関係する。6.1のバックアップAMIが「利用可能」になったことを確認してから更新する。PVドライバーのMSI実行後は自動的に再起動し、最大15分程度接続できなくなる場合がある
+        AWS PV、ENA、NVMeはOSの起動、ストレージ、ネットワーク接続に関係する。6.1のバックアップAMIが<code class="ui-value">利用可能</code>になったことを確認してから更新する。PVドライバーのMSI実行後は自動的に再起動し、最大15分程度接続できなくなる場合がある
       </div>
 
       <h4 id="pre-pv-driver">6.2.1 AWS PVドライバーの更新</h4>
@@ -311,7 +311,7 @@
         <pre><code>Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver</code></pre>
       </div>
 
-      <p>Windows Server 2016のWindows PowerShellでは、既定の通信プロトコルのままS3へ接続すると「SSL/TLSのセキュリティで保護されているチャネルを作成できませんでした」となり、ZIPを取得できない場合がある。その場合は、現在のPowerShellセッションでTLS 1.2を有効にしてから再実行する</p>
+      <p>Windows Server 2016のWindows PowerShellでは、既定の通信プロトコルのままS3へ接続すると<code class="ui-value">SSL/TLSのセキュリティで保護されているチャネルを作成できませんでした</code>となり、ZIPを取得できない場合がある。その場合は、現在のPowerShellセッションでTLS 1.2を有効にしてから再実行する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12</code></pre>
@@ -344,7 +344,7 @@
 Start-Process -FilePath $msi.FullName</code></pre>
       </div>
 
-      <p>セットアップウィザードでは、ライセンスに同意し、インストール先は既定値の<code>C:\Program Files\Amazon\XenTools\</code>を使用する。「Preparation for Upgrade」で自動再起動とバックアップに関する注意事項を確認してから「I'm Ready」を選択し、インストールを開始する</p>
+      <p>セットアップウィザードでは、ライセンスに同意し、インストール先は既定値の<code>C:\Program Files\Amazon\XenTools\</code>を使用する。<code class="ui-value">Preparation for Upgrade</code>で自動再起動とバックアップに関する注意事項を確認してから<code class="ui-value">I'm Ready</code>を選択し、インストールを開始する</p>
 
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/pv-driver-01-welcome.png" width="498" height="411" alt="AWS PV Drivers Setup Wizardの開始画面">
@@ -352,7 +352,7 @@ Start-Process -FilePath $msi.FullName</code></pre>
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/pv-driver-02-license.png" width="498" height="411" alt="AWS PV Driversのライセンス同意画面">
-        <figcaption>ライセンス内容を確認し「I Agree」を選択する</figcaption>
+        <figcaption>ライセンス内容を確認し<code class="ui-value">I Agree</code>を選択する</figcaption>
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/pv-driver-03-folder.png" width="498" height="411" alt="AWS PV Driversのインストール先選択画面">
@@ -360,11 +360,11 @@ Start-Process -FilePath $msi.FullName</code></pre>
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/pv-driver-04-preparation.png" width="498" height="411" alt="AWS PV Driversのアップグレード準備確認画面">
-        <figcaption>自動再起動とバックアップの注意事項を確認し「I'm Ready」を選択する</figcaption>
+        <figcaption>自動再起動とバックアップの注意事項を確認し<code class="ui-value">I'm Ready</code>を選択する</figcaption>
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/pv-driver-05-confirm.png" width="498" height="411" alt="AWS PV Driversのインストール確認画面">
-        <figcaption>「Next」を選択するとドライバー更新と再起動が始まる</figcaption>
+        <figcaption><code class="ui-value">Next</code>を選択するとドライバー更新と再起動が始まる</figcaption>
       </figure>
 
       <p>再起動後、EC2のステータスチェックとSSMの接続状態が正常に戻ったことを確認してから再接続し、レジストリのバージョンを再確認する</p>
@@ -487,10 +487,10 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       <h3 id="media-search">7.1 パブリックスナップショットの検索</h3>
       <p>AWSはWindows Serverインストールメディアを言語別のパブリックスナップショットとして提供している。ISOのダウンロードとアップロードは不要</p>
       <ol>
-        <li>Amazon EC2コンソールで「Elastic Block Store」の「スナップショット」を選択</li>
-        <li>フィルターを「パブリックスナップショット」へ変更</li>
-        <li>検索バーで「所有者のエイリアス」、「=」、「amazon」を指定</li>
-        <li>続けて「説明」に<code>Windows 2025 Japanese Installation Media</code>を入力して検索</li>
+        <li>Amazon EC2コンソールで<code class="ui-value">Elastic Block Store</code>の<code class="ui-value">スナップショット</code>を選択</li>
+        <li>フィルターを<code class="ui-value">パブリックスナップショット</code>へ変更</li>
+        <li>検索バーで<code class="ui-value">所有者のエイリアス</code>、<code class="ui-value">=</code>、<code class="ui-value">amazon</code>を指定</li>
+        <li>続けて<code class="ui-value">説明</code>に<code>Windows 2025 Japanese Installation Media</code>を入力して検索</li>
         <li>該当スナップショットのIDが5.1の表に記録したメディアスナップショットIDと一致することを確認</li>
       </ol>
 
@@ -506,14 +506,14 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="media-volume">7.2 ボリュームの作成</h3>
       <ol>
-        <li>該当スナップショットを選択し、「アクション」から「スナップショットからボリュームを作成」を選択</li>
+        <li>該当スナップショットを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">スナップショットからボリュームを作成</code>を選択</li>
         <li>アベイラビリティーゾーンを対象インスタンスと同じAZへ変更</li>
         <li>他の設定は既定のままボリュームを作成</li>
       </ol>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/windows-server-2016-upgrade/media-02-volume-available.png" width="1710" height="339" alt="Windows Server 2025インストールメディアのスナップショットから作成したEBSボリューム">
-        <figcaption>パブリックスナップショットから8 GiBのEBSボリュームを作成し、対象インスタンスと同じ<code>ap-northeast-1a</code>で「使用可能」になったことを確認する</figcaption>
+        <figcaption>パブリックスナップショットから8 GiBのEBSボリュームを作成し、対象インスタンスと同じ<code>ap-northeast-1a</code>で<code class="ui-value">使用可能</code>になったことを確認する</figcaption>
       </figure>
 
       <div class="callout callout-warning">
@@ -523,15 +523,15 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="media-attach">7.3 アタッチとオンライン化</h3>
       <ol>
-        <li>作成したボリュームを選択し、「アクション」から「ボリュームのアタッチ」を選択</li>
+        <li>作成したボリュームを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">ボリュームのアタッチ</code>を選択</li>
         <li>対象インスタンスとデバイス名(例: <code>xvdf</code>)を指定してアタッチ</li>
-        <li>RDP接続に戻り、「ディスクの管理」で該当ディスクを右クリックして「オンライン」を選択</li>
+        <li>RDP接続に戻り、<code class="ui-value">ディスクの管理</code>で該当ディスクを右クリックして<code class="ui-value">オンライン</code>を選択</li>
         <li>エクスプローラーでドライブ(例: <code>D:</code>)としてメディアの内容が見えることを確認</li>
       </ol>
 
       <div class="callout callout-warning">
         <strong>⚠️ ディスクの初期化はしない</strong>
-        「ディスクの管理」で初期化(フォーマット)を実行するとメディアの内容が消える。操作は「オンライン」への切り替えのみ
+        <code class="ui-value">ディスクの管理</code>で初期化(フォーマット)を実行するとメディアの内容が消える。操作は<code class="ui-value">オンライン</code>への切り替えのみ
       </div>
 
       <figure class="screenshot-wide">
@@ -565,7 +565,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       </div>
 
       <h3 id="upgrade-edition">8.2 エディションの選択</h3>
-      <p>アップグレード元のWindows Server 2016と同じエディション、同じインストールオプションを選択する。今回の環境では<code>Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)</code>を選択した</p>
+      <p>アップグレード元のWindows Server 2016と同じエディション、同じインストールオプションを選択する。今回の環境では<code class="ui-value">Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)</code>を選択した</p>
 
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/upgrade-01-edition-selection.png" width="577" height="455" alt="Windows Server 2025 Datacenterのデスクトップエクスペリエンスを選択した画面">
@@ -575,12 +575,12 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       <ol>
         <li>セットアップ画面で、現在のエディションとインストールオプションに対応するWindows Server 2025を選択</li>
         <li>ライセンス条項を確認して同意</li>
-        <li>「ファイル、設定、アプリを保持する」が選択されていることを確認してインストールを開始</li>
+        <li><code class="ui-value">ファイル、設定、アプリを保持する</code>が選択されていることを確認してインストールを開始</li>
       </ol>
 
       <figure class="screenshot-compact" style="max-width: 360px">
         <img src="../assets/img/windows-server-2016-upgrade/upgrade-02-license-terms.png" width="577" height="455" alt="Windows Server 2025の適用される通知とライセンス条項の画面">
-        <figcaption>通知とライセンス条項を確認し「同意する」を選択する</figcaption>
+        <figcaption>通知とライセンス条項を確認し<code class="ui-value">同意する</code>を選択する</figcaption>
       </figure>
 
       <div class="callout callout-warning">
@@ -592,8 +592,8 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       <p>セットアップ開始から数分でRDPセッションが切断され、以降はOSへ接続できない。進行状況はコンソール画面のキャプチャで確認する</p>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li>「アクション」から「モニタリングとトラブルシューティング」、「インスタンスのスクリーンショットを取得」を選択</li>
-        <li>「更新プログラムを構成しています」などの表示と進捗率を確認</li>
+        <li><code class="ui-value">アクション</code>から<code class="ui-value">モニタリングとトラブルシューティング</code>、<code class="ui-value">インスタンスのスクリーンショットを取得</code>を選択</li>
+        <li><code class="ui-value">更新プログラムを構成しています</code>などの表示と進捗率を確認</li>
         <li>スクリーンショットを更新しながら完了まで待機。CPUとディスクのCloudWatchメトリクスでも進行を確認</li>
       </ol>
 
@@ -612,13 +612,13 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
         <li>スクリーンショットにロック画面が表示されたらアップグレード完了と判断</li>
         <li>ステータスチェックが2/2で成功していることを確認</li>
         <li>RDPで再接続し、サインインできることを確認</li>
-        <li>初回サインイン時に診断データの選択画面が表示された場合は、組織のポリシーに従って選択する。本検証では「必須のみ」を選択</li>
+        <li>初回サインイン時に診断データの選択画面が表示された場合は、組織のポリシーに従って選択する。本検証では<code class="ui-value">必須のみ</code>を選択</li>
         <li>開始から完了までの時間を作業記録へ保存。本検証では約1時間で完了</li>
       </ol>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/windows-server-2016-upgrade/upgrade-04-diagnostic-data-choice.png" width="1718" height="1304" alt="Fleet ManagerでWindows Server 2025へ再接続し診断データを選択した画面">
-        <figcaption>同じEC2インスタンスID <code>i-034980b8a789187c1</code>でWindows Server 2025へ再接続し、診断データは「必須のみ」を選択する</figcaption>
+        <figcaption>同じEC2インスタンスID <code>i-034980b8a789187c1</code>でWindows Server 2025へ再接続し、診断データは<code class="ui-value">必須のみ</code>を選択する</figcaption>
       </figure>
 
       <h2 id="post-check">9. アップグレード後の確認と作業完了</h2>
@@ -686,10 +686,10 @@ Amazon Elastic Network Adapter         2.11.0.0</code></pre>
 登録 KMS コンピューター名: 169.254.169.251:1688</code></pre>
         </div>
       </details>
-      <p>ライセンス込みのAWS提供AMIでは、WindowsがAWS KMSへ到達して「ライセンスされています」と表示されれば正常</p>
+      <p>ライセンス込みのAWS提供AMIでは、WindowsがAWS KMSへ到達して<code class="ui-value">ライセンスされています</code>と表示されれば正常</p>
 
       <h3 id="post-cleanup">9.4 Windows Updateとインストールメディアの削除</h3>
-      <p>Dynamic Updateを無効化してアップグレードしたため、運用環境ではWindows Updateを適用して再起動する。検証終了後はインストールメディア用EBSボリュームをデタッチし、「使用可能」になったことを確認して削除する。デタッチしただけではEBS料金が継続する</p>
+      <p>Dynamic Updateを無効化してアップグレードしたため、運用環境ではWindows Updateを適用して再起動する。検証終了後はインストールメディア用EBSボリュームをデタッチし、<code class="ui-value">使用可能</code>になったことを確認して削除する。デタッチしただけではEBS料金が継続する</p>
       <ol>
         <li>6.4で無効化したウイルス対策ソフトとファイアウォールを再有効化</li>
         <li>8.3で無効化した監視・アラーム・自動復旧を再有効化</li>

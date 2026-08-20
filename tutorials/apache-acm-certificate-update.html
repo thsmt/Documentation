@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACM 証明書・更新 | Documentation</title>
-  <meta name="description" content="ACMで発行したエクスポート可能なパブリック証明書をRHEL 9.8上のApacheへ配置し、証明書更新とTLS通信を確認した実行記録。">
+  <title>AWS Certificate Manager (ACM) | Documentation</title>
+  <meta name="description" content="AWS Certificate Managerで発行したエクスポート可能なパブリック証明書をRHEL 9.8上のApacheへ配置し、有効期間、証明書更新、TLS通信を確認した実行記録。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="www.zexample.com,Amazon RSA 2048 M01,2026年8月15日,2027年3月1日">
+<body>
   <header class="site-header">
     <a class="brand" href="../">
       <img src="../assets/icon.jpg" alt="Documentation icon">
@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a class="active" href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a class="active" href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -70,18 +70,37 @@
         <span>トピック</span>
       </nav>
 
-      <h1>ACM 証明書・更新</h1>
+      <h1>AWS Certificate Manager (ACM)</h1>
       <p class="lead"></p>
 
       <div class="callout callout-warning">
-        <strong>証明書の有効期間とサーバーへの反映</strong>
-        <p>ACMのエクスポート可能なパブリック証明書の有効期間は198日</p>
-        <p>今回配置した証明書は2026年8月15日9時00分00秒JSTから2027年3月1日8時59分59秒JSTまで有効</p>
-        <p>ACMは有効期限の45日前から更新を試行するが、ACM側の更新とEC2上のApacheに配置した証明書ファイルの更新は別処理</p>
-        <p>証明書、証明書チェーン、秘密鍵は自動で置き換わらないため、更新後の証明書を再エクスポートしてサーバーへ配置し、Apacheへ反映</p>
+        <strong>ℹ️ サーバーに配置した証明書は自動更新の対象外</strong>
+        <p>ACMがエクスポート可能な証明書を更新しても、EC2上のApacheやNGINXに配置した証明書ファイルは自動で差し替わらない</p>
+        <p>更新後の証明書を再エクスポートし、対象サーバーへ配置して、構文確認とサービス再読み込みを行う仕組みが必要</p>
       </div>
 
-      <h2 id="before">1. 更新前の証明書確認</h2>
+      <h2 id="lifetime">有効期間と今後の短縮</h2>
+      <table>
+        <thead>
+          <tr><th>時期</th><th>公開TLS証明書の最大有効期間</th><th>運用への影響</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026年2月18日〜2027年3月14日</td><td>ACMパブリック証明書は198日</td><td>ACMは有効期限の45日前から更新を試行</td></tr>
+          <tr><td>2027年3月15日以降</td><td>100日未満</td><td>手動更新では作業頻度と期限切れリスクが高まる</td></tr>
+          <tr><td>2029年3月15日以降</td><td>47日未満</td><td>発行、配置、確認、失敗通知を含む自動化が重要</td></tr>
+        </tbody>
+      </table>
+      <p>既存の395日証明書は更新または有効期限まで引き続き利用できる。既存の398日証明書は有効期限の60日前に更新され、更新後は198日証明書へ切り替わる</p>
+      <p>ACMのACME機能で発行する証明書の有効期間は45日間。更新はACMEクライアントが行う。短期証明書では、更新処理の成否に加え、外部接続時にサーバーが実際に提示する証明書の有効期限も監視</p>
+
+      <h2 id="before">1. ブラウザでの証明書確認</h2>
+      <p>ブラウザで次のURLへアクセス</p>
+      <div class="code"><div class="code-header"><span>URL</span><button class="copy" type="button">Copy</button></div><pre><code>https://www.zexample.com/</code></pre></div>
+      <figure class="screenshot-wide">
+        <img src="../assets/img/apache-acm-certificate-update/browser-self-signed-certificate-before.png" alt="更新前のwww.zexample.com自己署名証明書の詳細" width="1718" height="1391" loading="lazy">
+        <figcaption>更新前の自己署名証明書。発行先と発行元が同一で、有効期限は2026年8月31日18時17分17秒JST</figcaption>
+      </figure>
+
       <p>Apacheが参照している証明書と秘密鍵のパス確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -nE '^[[:space:]]*SSLCertificate(File|KeyFile|ChainFile|CACertificateFile)' /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <details class="example-details execution-example">
@@ -116,10 +135,6 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
 
       <p>Apacheが更新前に提示している証明書の確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates -fingerprint -sha256</code></pre></div>
-      <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/browser-self-signed-certificate-before.png" alt="更新前のwww.zexample.com自己署名証明書の詳細" width="1718" height="1391" loading="lazy">
-        <figcaption>更新前の自己署名証明書。発行先と発行元が同一で、有効期限は2026年8月31日18時17分17秒JST</figcaption>
-      </figure>
 
       <h2 id="backup">2. 更新前ファイルのバックアップ</h2>
       <p>VirtualHost設定、サーバー証明書、秘密鍵のバックアップ</p>
@@ -150,9 +165,9 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
       </figure>
 
       <div class="callout">
-        <strong>「使用中ですか？：いいえ」の表示</strong>
-        <p>ACMコンソールの「使用中ですか？」は、証明書がACMと統合されたAWSサービスに関連付けられているかを示す項目</p>
-        <p>エクスポートした証明書をEC2上のApacheへ手動配置してもACMでは「いいえ」と表示されるため、Apacheで提示される証明書は後半のTLS通信確認で確認</p>
+        <strong><code class="ui-value">使用中ですか？：いいえ</code>の表示</strong>
+        <p>ACMコンソールの<code class="ui-value">使用中ですか？</code>は、証明書がACMと統合されたAWSサービスに関連付けられているかを示す項目</p>
+        <p>エクスポートした証明書をEC2上のApacheへ手動配置してもACMでは<code class="ui-value">いいえ</code>と表示されるため、Apacheで提示される証明書は後半のTLS通信確認で確認</p>
       </div>
 
       <h2 id="placement">4. ACM証明書のエクスポートとファイル配置</h2>
@@ -163,7 +178,7 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
         <figcaption>任意のパスフレーズと確認用の同じ値を入力。公開用画像では識別子、シリアル番号、入力値をマスク</figcaption>
       </figure>
 
-      <p><code>PEMエンコーディングを生成</code>を選択後、証明書本文、証明書チェーン、暗号化された秘密鍵を個別にダウンロード、または<code>すべてダウンロード</code>を選択</p>
+      <p><code class="ui-value">PEMエンコーディングを生成</code>を選択後、証明書本文、証明書チェーン、暗号化された秘密鍵を個別にダウンロード、または<code class="ui-value">すべてダウンロード</code>を選択</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/apache-acm-certificate-update/acm-export-download-redacted.png" alt="ACMから証明書本文、証明書チェーン、暗号化秘密鍵をダウンロードする画面" width="1750" height="899" loading="lazy">
         <figcaption>証明書本文、証明書チェーン、暗号化された秘密鍵のダウンロード。公開用画像では識別子、シリアル番号、PEM本文をマスク</figcaption>
@@ -325,7 +340,7 @@ New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
 Verify return code: 0 (ok)</code></pre></div>
       </details>
 
-      <h2 id="browser">10. ブラウザでの証明書確認</h2>
+      <h2 id="browser">10. 更新後のブラウザ確認</h2>
       <p>ブラウザで次のURLへアクセス</p>
       <div class="code"><div class="code-header"><span>URL</span><button class="copy" type="button">Copy</button></div><pre><code>https://www.zexample.com/</code></pre></div>
       <figure class="screenshot-wide">
@@ -336,7 +351,8 @@ Verify return code: 0 (ok)</code></pre></div>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#before">1. 更新前の証明書確認</a>
+      <a class="active" href="#lifetime">有効期間と今後の短縮</a>
+      <a href="#before">1. ブラウザでの証明書確認</a>
       <a href="#backup">2. 更新前ファイルのバックアップ</a>
       <a href="#request">3. ACMパブリック証明書のリクエスト</a>
       <a href="#placement">4. ACM証明書のエクスポートとファイル配置</a>
@@ -345,7 +361,7 @@ Verify return code: 0 (ok)</code></pre></div>
       <a href="#fullchain">7. fullchainの作成</a>
       <a href="#apache">8. Apache設定の更新</a>
       <a href="#verification">9. TLS通信確認</a>
-      <a href="#browser">10. ブラウザでの証明書確認</a>
+      <a href="#browser">10. 更新後のブラウザ確認</a>
     </aside>
   </div>
 

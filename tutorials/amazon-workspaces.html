@@ -7,7 +7,7 @@
   <meta name="description" content="Amazon WorkSpaces Personalのディレクトリ、ユーザー、接続、復旧、グループポリシーを整理した構築・運用手順。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
-<body data-user-values="t_hashimoto,workspaces.labx.com,testuser1">
+<body>
   <header class="site-header">
     <a class="brand" href="../">
       <img src="../assets/icon.jpg" alt="Documentation icon">
@@ -38,8 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
-      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
+      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -50,6 +49,7 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -200,8 +200,8 @@
 
       <h3>WorkSpacesディレクトリを作成・登録する</h3>
       <ol>
-        <li>Amazon WorkSpaces コンソールの「ディレクトリ」から「ディレクトリの作成」を選択</li>
-        <li>WorkSpace タイプは「個人」、WorkSpace デバイス管理は「AWS Directory Service」を選択</li>
+        <li>Amazon WorkSpaces コンソールの<code class="ui-value">ディレクトリ</code>から<code class="ui-value">ディレクトリの作成</code>を選択</li>
+        <li>WorkSpace タイプは<code class="ui-value">個人</code>、WorkSpace デバイス管理は<code class="ui-value">AWS Directory Service</code>を選択</li>
         <li>AWS Managed Microsoft AD など、登録する未登録ディレクトリを選択</li>
         <li>異なる Availability Zone にある登録用サブネットを2つ選択</li>
         <li>必要なセルフサービス権限を確認して登録し、ディレクトリの登録状態が有効になることを確認</li>
@@ -209,7 +209,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 同一 Availability Zone のサブネットは選択不可</strong>
-        <p>2つのサブネットが同じ Availability Zone にあると、ディレクトリを作成・登録できません。コンソールには「You tried to choose two subnets that are in the same Availability Zone」というエラーが表示される</p>
+        <p>2つのサブネットが同じ Availability Zone にあると、ディレクトリを作成・登録できません。コンソールには<code class="ui-value">You tried to choose two subnets that are in the same Availability Zone</code>というエラーが表示される</p>
       </div>
 
       <figure class="screenshot-wide">
@@ -220,7 +220,7 @@
       <h2 id="provision">WorkSpaces Personalの作成</h2>
       <ol>
         <li>Amazon WorkSpacesのナビゲーションから、WorkSpacesのプロビジョニングを開始</li>
-        <li>WorkSpaceタイプで「個人」を選択し、バンドル、実行モード、タグを設定</li>
+        <li>WorkSpaceタイプで<code class="ui-value">個人</code>を選択し、バンドル、実行モード、タグを設定</li>
         <li>登録済みディレクトリを選択し、対象ユーザーを選択または作成</li>
         <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズ</li>
         <li>作成後、ステータスが<code>AVAILABLE</code>になることを確認</li>
@@ -263,16 +263,16 @@
       <h3 id="web-access">Web Accessを有効化</h3>
       <p>Web Accessはディレクトリ単位で許可します。同じディレクトリへ登録したWorkSpaceに設定が適用されるため、対象ユーザーと接続元ネットワークへの影響を確認してから変更する</p>
       <ol>
-        <li>Amazon WorkSpacesコンソールで「ディレクトリ」を開き、対象のディレクトリIDを選択</li>
-        <li>ディレクトリ詳細の「他のプラットフォーム」で「編集」を選択</li>
-        <li>「Web Access」を選択して保存</li>
+        <li>Amazon WorkSpacesコンソールで<code class="ui-value">ディレクトリ</code>を開き、対象のディレクトリIDを選択</li>
+        <li>ディレクトリ詳細の<code class="ui-value">他のプラットフォーム</code>で<code class="ui-value">編集</code>を選択</li>
+        <li><code class="ui-value">Web Access</code>を選択して保存</li>
         <li>対象WorkSpaceを再起動して設定を反映</li>
-        <li>出典：<a href="https://clients.amazonworkspaces.com/ja">WorkSpacesクライアントページ</a>で「Webアクセス」を選択し、登録コードとディレクトリ資格情報で接続</li>
+        <li>出典：<a href="https://clients.amazonworkspaces.com/ja">WorkSpacesクライアントページ</a>で<code class="ui-value">Webアクセス</code>を選択し、登録コードとディレクトリ資格情報で接続</li>
       </ol>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-web-access-enabled-redacted.png" alt="Amazon WorkSpacesディレクトリの他のプラットフォーム設定でWeb Accessを有効にした画面" width="1716" height="492" loading="lazy">
-        <figcaption>ディレクトリの「他のプラットフォーム」でWeb Accessを有効化。<code>t_hashimoto</code>を残し、AWSアカウントIDのみマスク済み</figcaption>
+        <figcaption>ディレクトリの<code class="ui-value">他のプラットフォーム</code>でWeb Accessを有効化。<code>t_hashimoto</code>を残し、AWSアカウントIDのみマスク済み</figcaption>
       </figure>
 
       <div class="callout callout-warning">
@@ -356,13 +356,13 @@ Get-WindowsCapability -Online |
         <pre><code>Install-WindowsFeature -Name RSAT-ADDS,GPMC</code></pre>
       </div>
 
-      <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で「別のユーザーとして実行」し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨する</p>
+      <p>導入後は<code>dsa.msc</code>でActive Directory Users and Computers、<code>gpmc.msc</code>でGPMCを開きます。AWS Managed Microsoft ADでは、ディレクトリ管理者の<code>Admin</code>で<code class="ui-value">別のユーザーとして実行</code>し、必要な権限で管理します。AWSは、5台以上のWorkSpacesを運用する場合、管理ツールをWorkSpaceへ導入するよりも、ディレクトリへ参加させたAmazon EC2 Windowsインスタンスへ管理を集約する方法を推奨する</p>
 
       <h3 id="aduc-management">OU・ADユーザー管理</h3>
       <p><strong>AdminでAD管理ツールを起動:</strong></p>
       <ol>
-        <li>スタートメニューから「Active Directory ユーザーとコンピューター」を検索</li>
-        <li>検索結果を右クリックし、「別のユーザーとして実行」を選択</li>
+        <li>スタートメニューから<code class="ui-value">Active Directory ユーザーとコンピューター</code>を検索</li>
+        <li>検索結果を右クリックし、<code class="ui-value">別のユーザーとして実行</code>を選択</li>
         <li>AWS Managed Microsoft ADのディレクトリ管理者<code>Admin</code>の資格情報を入力</li>
         <li>Active Directory ユーザーとコンピューターを開き、管理対象のOUを確認</li>
       </ol>
@@ -385,12 +385,12 @@ Get-WindowsCapability -Online |
       </figure>
 
       <p><strong>ADユーザーを作成:</strong></p>
-      <p>利用者をAD側で管理する場合は、<code>Users</code> OUを選択して「新規作成」から「ユーザー」を選びます。姓名、表示名、ユーザーログオン名を入力し、作成後にWorkSpacesコンソールで対象ユーザーへWorkSpaceを割り当てる</p>
+      <p>利用者をAD側で管理する場合は、<code>Users</code> OUを選択して<code class="ui-value">新規作成</code>から<code class="ui-value">ユーザー</code>を選びます。姓名、表示名、ユーザーログオン名を入力し、作成後にWorkSpacesコンソールで対象ユーザーへWorkSpaceを割り当てる</p>
       <figure class="screenshot-compact">
         <img src="../assets/workspaces-aduc-new-user.png" alt="Active Directoryの新しいオブジェクトユーザー画面。ユーザー名testuser1を入力し、ドメインと作成先はマスクしている" width="1358" height="1158" loading="lazy">
         <figcaption>ユーザーログオン名は作成後に変更できないため、命名規則を確認してから登録する</figcaption>
       </figure>
-      <p>初回パスワードには一時パスワードを設定し、「ユーザーは次回ログオン時にパスワード変更が必要」を選択します。「パスワードを無期限にする」と「アカウントは無効」は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化する</p>
+      <p>初回パスワードには一時パスワードを設定し、<code class="ui-value">ユーザーは次回ログオン時にパスワード変更が必要</code>を選択します。<code class="ui-value">パスワードを無期限にする</code>と<code class="ui-value">アカウントは無効</code>は通常の利用者アカウントでは選択しません。後者を選択した場合は、WorkSpaceを割り当てる前に必ず有効化する</p>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、出典：<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
@@ -426,8 +426,8 @@ Get-WindowsCapability -Online |
       <h3>DCVテンプレートを中央ストアへ配置</h3>
       <ol>
         <li>実行中のDCV (WSP) Windows WorkSpaceで<code>C:\Program Files\Amazon\WSP</code>を開き、<code>wsp.admx</code>と<code>wsp.adml</code>を取得</li>
-        <li>エクスプローラーで「このPC」を右クリックし、「ネットワークドライブの割り当て」を選択</li>
-        <li>フォルダーへ<code>\\&lt;domain-fqdn&gt;\SYSVOL</code>を入力し、「別の認証情報を使用して接続する」を選択</li>
+        <li>エクスプローラーで<code class="ui-value">このPC</code>を右クリックし、<code class="ui-value">ネットワークドライブの割り当て</code>を選択</li>
+        <li>フォルダーへ<code>\\&lt;domain-fqdn&gt;\SYSVOL</code>を入力し、<code class="ui-value">別の認証情報を使用して接続する</code>を選択</li>
         <li>AWS Managed Microsoft ADの<code>Admin</code>とパスワードを入力して接続。ワークショップ環境ではSecrets Managerに保存されたパスワードを使用</li>
         <li>割り当てたドライブで<code>&lt;domain-fqdn&gt;\Policies</code>を開く</li>
         <li><code>PolicyDefinitions</code>が存在しない場合は作成し、<code>wsp.admx</code>をコピー</li>
@@ -519,27 +519,27 @@ Get-WindowsCapability -Online |
       <ul>
         <li><strong>復元:</strong> アプリケーションや設定を含め、直近の正常時点へ戻したい場合</li>
         <li><strong>再構築:</strong> ユーザーデータを直近スナップショットから戻し、OSを作成元バンドルの状態へ入れ直したい場合</li>
-        <li><strong>移行:</strong> バンドルやOSを変更したい場合。プロトコルだけをPCoIPからDCVへ変える場合は移行ではなく「プロトコルの変更」を使用</li>
+        <li><strong>移行:</strong> バンドルやOSを変更したい場合。プロトコルだけをPCoIPからDCVへ変える場合は移行ではなく<code class="ui-value">プロトコルの変更</code>を使用</li>
       </ul>
 
       <h3>コンソール操作</h3>
       <p><strong>復元:</strong></p>
       <ol>
-        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの再構築 / 復元」を選択</li>
+        <li>対象WorkSpaceを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">WorkSpaceの再構築 / 復元</code>を選択</li>
         <li>使用するスナップショットの日時を選択</li>
-        <li>影響を確認して「復元」を選択</li>
+        <li>影響を確認して<code class="ui-value">復元</code>を選択</li>
       </ol>
       <p><strong>再構築:</strong></p>
       <ol>
-        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの再構築 / 復元」を選択</li>
+        <li>対象WorkSpaceを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">WorkSpaceの再構築 / 復元</code>を選択</li>
         <li>使用するユーザーボリュームのスナップショット日時を確認</li>
-        <li>影響を確認して「再構築」を選択</li>
+        <li>影響を確認して<code class="ui-value">再構築</code>を選択</li>
       </ol>
       <p><strong>移行:</strong></p>
       <ol>
-        <li>対象WorkSpaceを選択し、「アクション」から「WorkSpaceの移行」を選択</li>
+        <li>対象WorkSpaceを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">WorkSpaceの移行</code>を選択</li>
         <li>移行先バンドルと最後のスナップショット日時を確認</li>
-        <li>影響を確認して「WorkSpaceの移行」を選択</li>
+        <li>影響を確認して<code class="ui-value">WorkSpaceの移行</code>を選択</li>
       </ol>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
 
@@ -554,9 +554,9 @@ Get-WindowsCapability -Online |
       <h3>コンソールで変更</h3>
       <ol>
         <li>対象WorkSpaceが<code>AVAILABLE</code>で、プロトコルが<code>PCoIP</code>であることを確認</li>
-        <li>WorkSpaceを選択し、「アクション」から「プロトコルの変更」を選択</li>
-        <li>変更を開始し、ステータスが「プロトコルを変更中」になることを確認</li>
-        <li>最大40分待機し、ステータスが「使用可能」、プロトコルが<code>DCV (WSP)</code>になったことを確認</li>
+        <li>WorkSpaceを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">プロトコルの変更</code>を選択</li>
+        <li>変更を開始し、ステータスが<code class="ui-value">プロトコルを変更中</code>になることを確認</li>
+        <li>最大40分待機し、ステータスが<code class="ui-value">使用可能</code>、プロトコルが<code>DCV (WSP)</code>になったことを確認</li>
       </ol>
 
       <figure class="screenshot-wide">
@@ -566,12 +566,12 @@ Get-WindowsCapability -Online |
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-protocol-change-in-progress-redacted.png" alt="Amazon WorkSpacesコンソールで対象WorkSpaceのステータスがプロトコルを変更中になった画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更中: ステータスが「プロトコルを変更中」になる</figcaption>
+        <figcaption>変更中: ステータスが<code class="ui-value">プロトコルを変更中</code>になる</figcaption>
       </figure>
 
       <figure class="screenshot-wide">
         <img src="../assets/img/workspaces/workspaces-protocol-dcv-completed-redacted.png" alt="Amazon WorkSpacesコンソールで対象WorkSpaceがDCV WSPかつ使用可能になった画面" width="1716" height="492" loading="lazy">
-        <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが「使用可能」になったことを確認</figcaption>
+        <figcaption>変更後: プロトコルが<code>DCV (WSP)</code>、ステータスが<code class="ui-value">使用可能</code>になったことを確認</figcaption>
       </figure>
 
       <h3>AWS CLIで変更</h3>
