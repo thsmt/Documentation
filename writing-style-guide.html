@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>★ [GitHub Pages] テンプレート | Documentation</title>
+  <meta name="description" content="Documentationサイトで使用する文章、表、コールアウト、コマンドブロック、置換値、強調表現のテンプレート">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./">
+      <img src="assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="./"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="記法一覧">
+      <div class="sidebar-heading">
+        <h2>記法一覧</h2>
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="記法一覧を閉じる" aria-label="記法一覧を閉じる">☰</button>
+      </div>
+      <a href="#rules">基本ルール</a>
+      <a href="#writing">文章</a>
+      <a href="#command-blocks">コマンドブロック</a>
+      <a href="#values">置換値と固定値</a>
+      <a href="#tables">表</a>
+      <a href="#callouts">コールアウト</a>
+      <a href="#emphasis">強調表現</a>
+      <a href="#components">構成要素</a>
+      <a href="#page-template">ページ構成</a>
+    </aside>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="./"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>スタイルガイド</span>
+      </nav>
+
+      <h1>★ [GitHub Pages] テンプレート</h1>
+      <p class="lead">文章のまとめ方、表、コールアウト、コマンドブロック、利用者が指定する値の表示方法を、実際の見た目とHTML記法で確認するためのテンプレート</p>
+
+      <h2 id="rules">基本ルール</h2>
+      <table>
+        <thead>
+          <tr><th>項目</th><th>ルール</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>説明文</td><td>対象、理由、制約、実施方法が一読で分かる文章にする</td></tr>
+          <tr><td>CLIのみの操作</td><td>AWSマネジメントコンソールでは実施できず、AWS CLIのみで変更可能な仕様を冒頭で明記する</td></tr>
+          <tr><td>コマンド</td><td>原則として1つのコマンドにつき1つのコードブロックへ分ける</td></tr>
+          <tr><td>連続操作</td><td>同じ対象の状態確認、設定、再確認などは1つのコードブロックへまとめてよい</td></tr>
+          <tr><td>利用者指定値</td><td>置換値、選択値、リソース名、IAMロール名、IAMポリシー名をオレンジ色の等幅書体で表示する</td></tr>
+          <tr><td>固定識別子</td><td>コマンド名、APIアクション、プロパティ名を通常色の等幅書体で表示する</td></tr>
+          <tr><td>出典</td><td>説明文へ埋め込まず、対象説明の直下に独立した出典行を配置する</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        このページを新規ページ作成時の表示見本とし、詳細な文章ルールは<code class="inline-code">CONTRIBUTING.md</code>で管理する
+      </div>
+
+      <h2 id="writing">文章のまとめ方</h2>
+      <p>手順の冒頭では、対象、制約、実施方法を一文で伝える。AWSマネジメントコンソールでは実施できず、AWS CLIのみで変更できる場合は、その仕様を明記する</p>
+
+      <div class="example-grid">
+        <section class="example-panel example-bad" aria-label="避ける例">
+          <span class="example-label">避ける例</span>
+          <p>EC2起動後にEBSボリュームの設定を変更する場合は、AWS CLIでコマンドを実行する。追加EBSボリュームは終了時削除が無効になっている場合があるため確認する</p>
+        </section>
+        <section class="example-panel example-good" aria-label="良い例">
+          <span class="example-label">良い例</span>
+          <p>EC2インスタンス起動後に追加したEBS終了設定（<code class="inline-code">DeleteOnTermination</code>）を変更する場合は、<strong>AWS CLIのみで変更可能</strong></p>
+        </section>
+      </div>
+
+      <div class="callout">
+        <strong>情報</strong>
+        良い例は、何を変更するのか、いつの設定なのか、なぜCLI手順を掲載するのかを一文で判断できる
+      </div>
+
+      <h2 id="command-blocks">コマンドブロック</h2>
+      <p>変数代入、ユーザー作成、設定変更など、単独で意味を持つ操作は1つのコマンドにつき1つのコードブロックへ分ける</p>
+
+      <p class="procedure-step"><strong>パスワードの対話入力</strong></p>
+      <div class="code">
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString</code></pre>
+      </div>
+
+      <p class="procedure-step"><strong>ローカルユーザーの作成</strong></p>
+      <div class="code">
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
+      </div>
+
+      <p>サービス状態の確認、設定、再確認のように、同じ対象へ連続して実行する短い操作は1つのコードブロックへまとめてよい</p>
+
+      <p class="procedure-step"><strong>Postfixサービスの自動起動確認と有効化</strong></p>
+      <div class="code">
+        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl is-enabled postfix.service
+systemctl enable postfix.service
+systemctl is-enabled postfix.service</code></pre>
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>注意</strong>
+        複数コマンドをまとめる場合も、対象が同じで、上から順番に安全に実行でき、途中結果を読み取れることを条件とする
+      </div>
+
+      <h3>置換値を含むAWS CLI</h3>
+      <p>利用者が置き換える値を<code>&lt;UPPER_SNAKE_CASE&gt;</code>形式で記載する。コードブロック内の置換値は自動的にオレンジ色で表示される</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt; --region &lt;REGION&gt;</code></pre>
+      </div>
+
+      <h3>置換値を含まない通常のAWS CLI</h3>
+      <p>利用者が変更する値を含まないコマンドは、通常色のコードブロックで表示する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws sts get-caller-identity</code></pre>
+      </div>
+
+      <h3>複数の置換値を含むJSON</h3>
+      <p>JSON内でもアカウントIDなどの置換値と、利用者が決定するリソース名をオレンジ色で表示する</p>
+      <div class="code">
+        <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>{
+  "ScheduleExpression": "&lt;SCHEDULE_EXPRESSION&gt;",
+  "State": "<span class="user-value">ENABLED</span>",
+  "ActionAfterCompletion": "<span class="user-value">NONE</span>",
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/<span class="user-value">EventBridgeSchedulerEC2Stop</span>"
+}</code></pre>
+      </div>
+
+      <h2 id="values">置換値と固定値</h2>
+      <p>利用者が入力または選択する値は、オレンジ色の等幅書体で表示する。コマンド名、APIアクション、設定プロパティなど変更しない識別子は、通常色の等幅書体で表示する</p>
+
+      <table>
+        <thead>
+          <tr><th>種類</th><th>表示例</th><th>用途</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>置換値</td><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>実行前に利用者が置き換える値</td></tr>
+          <tr><td>選択値</td><td><code class="user-value">NONE</code></td><td>画面または設定ファイルで利用者が指定する値</td></tr>
+          <tr><td>リソース名</td><td><code class="user-value">EventBridgeSchedulerEC2Stop</code></td><td>環境ごとに決定するロール名やリソース名</td></tr>
+          <tr><td>固定識別子</td><td><code class="inline-code">scheduler:GetWidget</code></td><td>変更しないAPIアクションやプロパティ名</td></tr>
+        </tbody>
+      </table>
+
+      <h3>画面操作の記載例</h3>
+      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="user-value">EventBridgeSchedulerEC2Stop</code>を指定する</p>
+
+      <h3>AWSドキュメントに近い記載例</h3>
+      <p>Mateoのポリシーを更新し、<code class="inline-code">scheduler:GetWidget</code>アクションを使用して<code class="user-value">my-example-widget</code>リソースへアクセスできるようにする</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/security_iam_troubleshoot.html">EventBridge SchedulerのIAMトラブルシューティング</a></p>
+
+      <h2 id="tables">使用する表</h2>
+      <p>入力値、比較、確認結果など、同じ項目を繰り返し説明する場合は表を使用する。文章だけで説明できる内容を無理に表へ変換しない</p>
+
+      <h3>入力値の説明表</h3>
+      <table>
+        <thead>
+          <tr><th>値</th><th>説明</th><th>必須</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>&lt;INSTANCE_ID&gt;</code></td><td>対象のEC2インスタンスID</td><td><span class="badge badge-required">必須</span></td></tr>
+          <tr><td><code>&lt;REGION&gt;</code></td><td>対象リソースが存在するAWSリージョン</td><td><span class="badge badge-required">必須</span></td></tr>
+          <tr><td><code>&lt;PROFILE_NAME&gt;</code></td><td>既定以外の認証情報を利用する場合のプロファイル名</td><td><span class="badge badge-optional">任意</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>方式の比較表</h3>
+      <table>
+        <thead>
+          <tr><th>方式</th><th>画面</th><th>主な管理方法</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="user-value">Base</code></td><td>デスクトップGUIあり</td><td>サーバーマネージャー、MMC、PowerShell</td></tr>
+          <tr><td><code class="user-value">Core</code></td><td>デスクトップGUIなし</td><td>PowerShell、SConfig、Windows Admin Center</td></tr>
+        </tbody>
+      </table>
+
+      <h3>変更前後の確認表</h3>
+      <table>
+        <thead>
+          <tr><th>確認項目</th><th>変更前</th><th>変更後</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="inline-code">DeleteOnTermination</code></td><td><code class="user-value">false</code></td><td><code class="user-value">true</code></td></tr>
+          <tr><td>確認結果</td><td><span class="badge badge-optional">未変更</span></td><td><span class="badge badge-success">変更済み</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="callouts">コールアウト</h2>
+      <p>本文から分離して認識させる必要がある情報だけをコールアウトで表示する。通常の説明をすべてコールアウトにしない</p>
+
+      <div class="callout">
+        <strong>ℹ️ 情報</strong>
+        仕様、前提条件、補足、利用できる代替手段を記載する
+      </div>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ 注意</strong>
+        データ削除、停止、再起動、権限変更など、実行前に判断が必要な影響を記載する
+      </div>
+
+      <div class="callout callout-success">
+        <strong>✅ 成功</strong>
+        コマンドの実行結果や設定値が期待する状態になったことを示す
+      </div>
+
+      <div class="callout callout-error">
+        <strong>❌ エラー</strong>
+        想定されるエラー、原因、作業を中止する条件、切り戻し判断を記載する
+      </div>
+
+      <h2 id="emphasis">そのほかの強調表現</h2>
+      <table>
+        <thead>
+          <tr><th>記法</th><th>表示例</th><th>使用目的</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>太字</td><td><strong>再起動が必要</strong></td><td>結論や重要条件</td></tr>
+          <tr><td>通常の等幅書体</td><td><code class="inline-code">DeleteOnTermination</code></td><td>コマンド、APIアクション、設定名</td></tr>
+          <tr><td>キー表示</td><td><kbd>Windows</kbd> + <kbd>R</kbd></td><td>キーボード操作</td></tr>
+          <tr><td>バッジ</td><td><span class="badge badge-required">必須</span> <span class="badge badge-optional">任意</span></td><td>短い状態や適用条件</td></tr>
+          <tr><td>マーカー</td><td><mark>公開前に再確認</mark></td><td>一時的なレビュー対象</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="components">そのほかの構成要素</h2>
+      <p>OSや方式ごとにコマンドが異なる場合はタブを使用し、長い実行例や補足は折りたたみ表示を使用する</p>
+
+      <h3>タブ</h3>
+      <div class="tab-group" data-tabs>
+        <div class="tabs" role="tablist" aria-label="OS別サービス確認例">
+          <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="template-windows">Windows</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="template-linux">Linux</button>
+        </div>
+        <section class="tab-panel active" id="template-windows" role="tabpanel">
+          <div class="code">
+            <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>Get-Service -Name AmazonCloudWatchAgent</code></pre>
+          </div>
+        </section>
+        <section class="tab-panel" id="template-linux" role="tabpanel" hidden>
+          <div class="code">
+            <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>systemctl status amazon-cloudwatch-agent.service</code></pre>
+          </div>
+        </section>
+      </div>
+
+      <h3>折りたたみ</h3>
+      <details class="example-details">
+        <summary>実行例を展開する</summary>
+        <p>初期表示では必須ではない長い実行例、出力例、補足画像を格納する</p>
+        <div class="code">
+          <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId" --output table</code></pre>
+        </div>
+      </details>
+
+      <h2 id="page-template">ページ構成</h2>
+      <ol>
+        <li>対象、目的、CLIのみで実施する理由</li>
+        <li>前提条件と利用者が指定する値</li>
+        <li>変更前の確認</li>
+        <li>変更または構築</li>
+        <li>変更後の確認</li>
+        <li>必要な場合の切り戻し</li>
+        <li>影響と注意事項</li>
+        <li>独立した出典行</li>
+      </ol>
+    </main>
+
+    <aside class="toc" aria-label="Table of contents">
+      <h2>ページ内</h2>
+      <a href="#rules">基本ルール</a>
+      <a href="#writing">文章</a>
+      <a href="#command-blocks">コマンドブロック</a>
+      <a href="#values">置換値と固定値</a>
+      <a href="#tables">表</a>
+      <a href="#callouts">コールアウト</a>
+      <a href="#emphasis">強調表現</a>
+      <a href="#components">構成要素</a>
+      <a href="#page-template">ページ構成</a>
+    </aside>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

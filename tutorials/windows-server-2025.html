@@ -6,6 +6,38 @@
   <title>Windows Server 2025 | Documentation</title>
   <meta name="description" content="Amazon EC2上のWindows Server 2025を手動構築するための手順。">
   <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    .powershell-command-table {
+      table-layout: fixed;
+    }
+
+    .powershell-command-table th:first-child,
+    .powershell-command-table td:first-child {
+      width: 210px;
+    }
+
+    .powershell-command-table .code {
+      min-width: 0;
+      margin: 0;
+    }
+
+    .powershell-command-table .code + .code {
+      margin-top: 10px;
+    }
+
+    .powershell-command-table pre code {
+      white-space: pre;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    @media (max-width: 640px) {
+      .powershell-command-table th:first-child,
+      .powershell-command-table td:first-child {
+        width: 130px;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -35,7 +67,8 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="aws-certificate-manager.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">ACM 証明書・更新</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -46,7 +79,6 @@
       <a href="apache.html">Apache</a>
       <a href="apache-self-signed-https.html">EC2 SSLターミネーション</a>
       <a href="mariadb.html">MariaDB</a>
-      <a href="postgresql.html">PostgreSQL</a>
       <a href="zabbix-ops.html">Zabbix 6.0 運用手順</a>
       <p class="sidebar-group">開発／自動化</p>
       <a href="git-github-basics.html">Git / GitHub 基本編</a>
@@ -70,23 +102,20 @@
       <h1>Windows Server 2025</h1>
       <p class="lead">Amazon EC2上でWindows Server 2025を起動し、接続、ユーザー、更新、OpenSSH、SMB、セキュリティの初期設定を確認する手順を整理する</p>
 
-      <h2 id="ami-selection">最初に確認するAMIの違い</h2>
+      <h2 id="ami-selection">AMIの違い</h2>
       <p>AMIについては、<code>Base</code>がデスクトップGUI付き、<code>Core</code>がGUIを含まないServer Core。今回の<code>compmgmt.msc</code>による手順では<code>Base</code>を選択する。<code>Core</code>はPowerShell、SConfig、Windows Admin Centerなどによる管理向け</p>
       <table>
-        <thead><tr><th>AMI</th><th>画面と管理方法</th><th>選択基準</th></tr></thead>
+        <thead><tr><th>AMI</th><th>画面と管理方法</th></tr></thead>
         <tbody>
-          <tr><td><code>Base</code><br><code>Windows_Server-2025-English-Full-Base</code></td><td>デスクトップエクスペリエンスを含み、通常のWindows GUI、サーバーマネージャー、MMC、リモートデスクトップを利用できる</td><td>本ページの画面操作を実施する場合に選択</td></tr>
-          <tr><td><code>Core</code><br><code>Windows_Server-2025-English-Core-Base</code></td><td>標準のデスクトップGUIを含まないServer Core。PowerShell、SConfig、Windows Admin Center、RSATなどで管理する</td><td>GUIを必要とせず、ディスク使用量と攻撃対象領域を抑えたい場合に選択</td></tr>
+          <tr><td><code>Base</code><br><code>Windows_Server-2025-English-Full-Base</code></td><td>デスクトップエクスペリエンスを含み、通常のWindows GUI、サーバーマネージャー、MMC、リモートデスクトップを利用できる</td></tr>
+          <tr><td><code>Core</code><br><code>Windows_Server-2025-English-Core-Base</code></td><td>標準のデスクトップGUIを含まないServer Core。PowerShell、SConfig、Windows Admin Center、RSATなどで管理する</td></tr>
         </tbody>
       </table>
 
-      <p>確認した<code>ami-0c8c5308226f34f90</code>はBase、<code>ami-058b781e9791d335d</code>はCoreです。AMI IDはリージョンと月次リリースごとに変わるため、継続利用する構成ではAMI名またはSystems Managerの公開パラメータで最新版を取得する</p>
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows-server/get-started/install-options-server-core-desktop-experience">Microsoft公式: Server Coreとデスクトップエクスペリエンスの違い</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami-parameter-store.html">AWS公式: Systems Manager公開パラメータによる最新AMIの参照</a></p>
 
-      <h2 id="command-summary">Windows操作のコマンド実行例</h2>
-      <p>本ページのWindows GUI操作を管理者権限のPowerShellで実行する場合の対応例。山括弧の値を構築値へ置き換え、ディスク番号など対象を特定する値は実行前に確認する</p>
-      <table>
+      <h2 id="command-summary">PowerShell実行例</h2>
+      <table class="powershell-command-table">
         <thead><tr><th>手順番号+見出し</th><th>実行するコマンド</th></tr></thead>
         <tbody>
           <tr>
@@ -97,9 +126,11 @@ Add-LocalGroupMember -Group "Administrators" -Member "&lt;ADMIN_USER&gt;"</code>
           </tr>
           <tr>
             <td>2.2 利用者用ローカルユーザー</td>
-            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"
-New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"
-Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre></div></td>
+            <td>
+              <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"</code></pre></div>
+              <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"</code></pre></div>
+              <div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre></div>
+            </td>
           </tr>
           <tr>
             <td>3.1 ファイル名拡張子の表示</td>
@@ -174,20 +205,8 @@ if ($updates.Count -gt 0) {
             <td>5.3 最終再起動</td>
             <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>Restart-Computer -Force</code></pre></div></td>
           </tr>
-          <tr>
-            <td>5.4 AMI横展開時のみ: EC2Launch v2とSysprep</td>
-            <td><div class="code"><div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div><pre><code>&amp; "$Env:ProgramFiles\Amazon\EC2Launch\EC2Launch.exe" sysprep --shutdown=true</code></pre></div></td>
-          </tr>
         </tbody>
       </table>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        ディスク初期化は対象番号を誤るとデータを失います。<code>Get-Disk</code>で容量、状態、番号を照合し、対象が未初期化の追加ディスクであることを確認してから実行する。再起動は手順5.3まで保留する
-      </div>
-
-      <p>Windows Updateのコマンド例は、ローカル管理者としてWindows Update Agent APIを呼び出す。更新元、承認、適用時刻を一元管理する環境では、Patch Manager、WSUS、SCCMなど組織の管理方式を優先する</p>
-      <p>出典：<a href="https://learn.microsoft.com/en-us/windows/win32/wua_sdk/windows-update-agent-object-model">Microsoft公式: Windows Update Agent Object Model</a></p>
 
       <h2 id="launch">0. 起動時の確認</h2>
 
@@ -253,13 +272,13 @@ if ($updates.Count -gt 0) {
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/02-decrypt-windows-password-redacted.png" alt="Windowsパスワード取得画面でRSA秘密鍵をアップロードして復号する画面" width="1718" height="681" loading="lazy">
-        <figcaption>起動時に指定したRSAキーペアの秘密鍵をアップロードし、「パスワードを復号化」を選択。公開用画像では秘密鍵本文と識別子をマスク済み</figcaption>
+        <img src="../assets/img/windows-server-2025/02-decrypt-windows-password-redacted.png" alt="Windowsパスワード取得画面でRSA秘密鍵をアップロードして復号する画面" width="1991" height="789" loading="lazy">
+        <figcaption>起動時に指定したRSAキーペアの秘密鍵をアップロードし、「パスワードを復号化」を選択</figcaption>
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/03-windows-password-result-redacted.png" alt="復号されたAdministratorパスワードと接続先情報を確認する画面" width="542" height="426" loading="lazy">
-        <figcaption>復号結果で接続先とAdministratorパスワードを確認。公開用画像では接続先情報、パスワード、識別子をマスク済み</figcaption>
+        <img src="../assets/img/windows-server-2025/03-windows-password-result-redacted.png" alt="復号されたAdministratorパスワードと接続先情報を確認する画面" width="1416" height="1111" loading="lazy">
+        <figcaption>復号結果で接続先とAdministratorパスワードを確認</figcaption>
       </figure>
 
       <h3 id="connect-bastion">1.2 踏み台経由のRDP接続</h3>
@@ -310,31 +329,37 @@ if ($updates.Count -gt 0) {
 
       <figure class="screenshot-compact">
         <img src="../assets/img/windows-server-2025/08-new-user-redacted.png" alt="新しいユーザー画面で管理用ローカルユーザーの情報とパスワード設定を入力した状態" width="443" height="441" loading="lazy">
-        <figcaption>管理用ローカルユーザーの情報とパスワード運用要件を設定し、「作成(E)」を選択。公開用画像ではユーザー名をマスク済み</figcaption>
+        <figcaption>管理用ローカルユーザーの情報とパスワード運用要件を設定し、「作成(E)」を選択</figcaption>
       </figure>
 
       <figure class="screenshot-compact">
         <img src="../assets/img/windows-server-2025/09-user-group-membership-redacted.png" alt="ローカルユーザーのプロパティで所属するグループを開いた画面" width="478" height="591" loading="lazy">
-        <figcaption>作成したユーザーをダブルクリックし、「所属するグループ」タブから「追加(D)」を選択。公開用画像ではユーザー名をマスク済み</figcaption>
+        <figcaption>作成したユーザーをダブルクリックし、「所属するグループ」タブから「追加(D)」を選択</figcaption>
       </figure>
 
       <figure class="screenshot-compact">
         <img src="../assets/img/windows-server-2025/10-select-administrators-redacted.png" alt="グループの選択画面へAdministratorsを入力して名前を確認する画面" width="546" height="286" loading="lazy">
-        <figcaption><code>Administrators</code>を入力して「名前の確認(C)」を選択し、名前が解決されたことを確認。公開用画像ではコンピューター名をマスク済み</figcaption>
+        <figcaption><code>Administrators</code>を入力して「名前の確認(C)」を選択し、名前が解決されたことを確認</figcaption>
       </figure>
 
       <figure class="screenshot-compact">
         <img src="../assets/img/windows-server-2025/11-administrators-membership-redacted.png" alt="ローカルユーザーの所属するグループにAdministratorsが追加された画面" width="479" height="593" loading="lazy">
-        <figcaption>所属するグループに<code>Administrators</code>と<code>Users</code>が表示されることを確認。公開用画像ではユーザー名をマスク済み</figcaption>
+        <figcaption>所属するグループに<code>Administrators</code>と<code>Users</code>が表示されることを確認</figcaption>
       </figure>
 
       <h3 id="customer-user">2.2 利用者用ローカルユーザー</h3>
       <p>管理者権限でPowerShellを起動し、パスワードを対話入力で受け取り、パスワードとアカウントの有効期限を無期限にしたローカルユーザーを作成して<code>Administrators</code>グループへ追加する</p>
       <div class="code">
         <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"
-New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"
-Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
+        <pre><code>$Password = Read-Host -AsSecureString "パスワードを入力"</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -PasswordNeverExpires -AccountNeverExpires -Description "&lt;DESCRIPTION&gt;"</code></pre>
+      </div>
+      <div class="code">
+        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</code></pre>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/new-localuser?view=powershell-5.1">Microsoft公式: New-LocalUser</a></p>
@@ -532,15 +557,15 @@ Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</co
       <p>AWS Systems Manager Run Commandを使用して、Amazon CloudWatch Agentをインストールします。インストールだけではメトリクスやログは収集されないため、後続手順で設定ファイルを作成して適用する</p>
       <ol>
         <li>AWS Systems Managerコンソールで「Run Command」を開く</li>
-        <li>コマンドドキュメントへ<code>AWS-ConfigureAWSPackage</code>を選択</li>
-        <li>Actionへ<code>Install</code>、Nameへ<code>AmazonCloudWatchAgent</code>を指定</li>
+        <li>コマンドドキュメントへ<code><span class="user-value">AWS-ConfigureAWSPackage</span></code>を選択</li>
+        <li>Actionへ<code><span class="user-value">Install</span></code>、Nameへ<code><span class="user-value">AmazonCloudWatchAgent</span></code>を指定</li>
         <li>対象インスタンスをタグまたはインスタンスIDで指定</li>
         <li>コマンドを実行</li>
       </ol>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない
+        EC2インスタンスのIAMロールには、Systems Manager管理用の<code><span class="user-value">AmazonSSMManagedInstanceCore</span></code>と、メトリクス・ログ送信用の<code><span class="user-value">CloudWatchAgentServerPolicy</span></code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない
       </div>
 
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
@@ -634,7 +659,7 @@ Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</co
 
       <figure class="screenshot-compact">
         <img src="../assets/img/windows-server-2025/12-system-properties-hostname-redacted.png" alt="システムのプロパティで現在のコンピューター名を確認する画面" width="471" height="534" loading="lazy">
-        <figcaption>「コンピューター名」タブで現在の名前を確認し、「変更(C)」を選択。公開用画像では現在のコンピューター名をマスク済み</figcaption>
+        <figcaption>「コンピューター名」タブで現在の名前を確認し、「変更(C)」を選択</figcaption>
       </figure>
 
       <figure class="screenshot-compact">
@@ -669,33 +694,11 @@ Add-LocalGroupMember -Group "Administrators" -Member "&lt;CUSTOMER_USER&gt;"</co
         <li>更新プログラムが検出されず、各動作確認が完了したことを記録</li>
       </ol>
 
-      <h3 id="ec2launch-sysprep">5.4 AMI横展開時のみ: EC2Launch v2とSysprep</h3>
-      <p>AWS提供のWindows Server 2025 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合だけ、すべての設定、更新、最終再起動後の動作確認を完了してからSysprepを実行する</p>
-      <ol>
-        <li>一時ファイル、個別の認証情報、作業用アカウント、固定IP設定などを除去</li>
-        <li>スタートメニューから「EC2Launch settings」を開く</li>
-        <li>AMI起動後に必要なタスクとSSM Agentの起動設定を確認</li>
-        <li>「Shutdown with Sysprep」を実行</li>
-        <li>インスタンス停止後にAmazon EC2コンソールからAMIを作成</li>
-      </ol>
-
-      <p>コマンドで実行する場合は、管理者権限のPowerShellから次を実行する</p>
-      <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>&amp; "$Env:ProgramFiles\Amazon\EC2Launch\EC2Launch.exe" sysprep --shutdown=true</code></pre>
-      </div>
-
-      <div class="callout callout-warning">
-        <strong>⚠️ 注意</strong>
-        Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化し、実行後はインスタンスが停止します。稼働中インスタンスの復旧用AMIを取得する目的では使用しない
-      </div>
-
-      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/sysprep-using-ec2launchv2.html">AWS公式: EC2Launch v2によるSysprepとAMI作成</a></p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a href="#command-summary">コマンド一覧</a>
+      <a href="#command-summary">PowerShell実行例</a>
       <a class="active" href="#launch">0. 起動時</a>
       <a href="#connect">1. 接続</a>
       <a href="#local-users">2. ローカルユーザー</a>
