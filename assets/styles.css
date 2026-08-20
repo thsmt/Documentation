@@ -474,16 +474,6 @@ mark {
   color: var(--success-text);
 }
 
-.badge-managed {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-
-.badge-user-created {
-  border-color: var(--user-value);
-  color: var(--user-value);
-}
-
 .markup-label {
   margin: 18px 0 8px;
   color: var(--muted);

@@ -89,7 +89,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
       </div>
 
       <h2 id="values">入力パラメータと固定値</h2>
-      <p>利用者が環境ごとに決定する値は、オレンジ色の等幅書体で表示する。コマンド名、APIアクション、設定プロパティ、AWSが名称を定義する識別子は、通常色の等幅書体で表示する</p>
+      <p>利用者が置き換えるプレースホルダーと選択するパラメータ値は、オレンジ色の等幅書体で表示する。確定済みのリソース名、ポリシー名、コマンド名、APIアクション、設定プロパティは通常色の等幅書体で表示する</p>
 
       <table>
         <thead>
@@ -98,8 +98,8 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
         <tbody>
           <tr><td>プレースホルダー</td><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>実行前に利用者が置き換える入力パラメータ</td></tr>
           <tr><td>選択値</td><td><code class="user-value">NONE</code></td><td>要件に応じて利用者が決定する画面または設定ファイルの値</td></tr>
-          <tr><td>リソース名</td><td><code class="user-value">EventBridgeSchedulerEC2Stop</code> <span class="badge badge-user-created">利用者作成</span></td><td>環境ごとに決定するロール名やリソース名</td></tr>
-          <tr><td>AWS管理ポリシー</td><td><code class="inline-code">AmazonSSMManagedInstanceCore</code> <span class="badge badge-managed">AWS管理</span></td><td>AWSが名称を定義し、利用者が変更しない値</td></tr>
+          <tr><td>利用者作成リソース名</td><td><code class="inline-code">EventBridgeSchedulerEC2Stop</code></td><td>利用者が作成した確定済みのロール名やリソース名</td></tr>
+          <tr><td>AWS管理ポリシー</td><td><code class="inline-code">AmazonSSMManagedInstanceCore</code></td><td>AWSが名称を定義し、利用者が変更しない値</td></tr>
           <tr><td>固定値</td><td><code class="inline-code">true</code></td><td>手順または仕様によって値が確定している真偽値や列挙値</td></tr>
           <tr><td>固定識別子</td><td><code class="inline-code">scheduler:GetWidget</code></td><td>変更しないAPIアクションやプロパティ名</td></tr>
         </tbody>
@@ -111,8 +111,9 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
           <tr><th>判断</th><th>表示</th><th>記載方法</th></tr>
         </thead>
         <tbody>
-          <tr><td>利用者が環境ごとに入力または作成する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ROLE_NAME&gt;</code>または確定した利用者作成リソース名を記載</td></tr>
+          <tr><td>利用者が環境ごとに入力する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ROLE_NAME&gt;</code>などのプレースホルダーで記載</td></tr>
           <tr><td>利用者が選択肢から決定する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ACTION_AFTER_COMPLETION&gt;</code>のようにプレースホルダーで記載</td></tr>
+          <tr><td>利用者が作成した名称を記載する</td><td><code class="inline-code">通常色</code></td><td>確定済みのリソース名、IAMロール名、IAMポリシー名をそのまま記載</td></tr>
           <tr><td>手順や製品仕様で値が確定している</td><td><code class="inline-code">通常色</code></td><td><code class="inline-code">true</code>、<code class="inline-code">NONE</code>など確定値をそのまま記載</td></tr>
           <tr><td>AWSが名称を定義している</td><td><code class="inline-code">通常色</code></td><td>AWS管理ポリシー、サービスリンクロール、APIアクションを正式名称で記載</td></tr>
         </tbody>
@@ -120,7 +121,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
 
       <div class="callout">
         <strong>ℹ️ 判断の基準</strong>
-        <code class="inline-code">true</code>や<code class="inline-code">NONE</code>という文字列の種類ではなく、利用者が決める値か、手順やAWS仕様で決まる値かで色を分ける
+        実行前に利用者が置き換える値か、確定済みの名称や固定値かで色を分ける。利用者作成またはAWS管理という所有元だけでは色を変えない
       </div>
 
       <h3>JSONの記載例</h3>
@@ -134,20 +135,20 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
 }</code></pre>
       </div>
 
-      <p><code class="inline-code">Enabled</code>の<code class="inline-code">true</code>とAWS管理ポリシー名は手順上の固定値として通常色にする。完了後のアクション、アカウントID、利用者作成ロール名は環境ごとに決定するためオレンジ色にする</p>
+      <p><code class="inline-code">Enabled</code>の<code class="inline-code">true</code>とAWS管理ポリシー名は手順上の固定値として通常色にする。完了後のアクション、アカウントID、ロール名は実行前に置き換えるプレースホルダーのためオレンジ色にする</p>
 
       <p class="markup-label">HTML記法</p>
       <div class="code">
         <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>&lt;code class="user-value"&gt;EventBridgeSchedulerEC2Stop&lt;/code&gt;
+        <pre><code>&lt;code class="inline-code"&gt;EventBridgeSchedulerEC2Stop&lt;/code&gt;
 &lt;code class="inline-code"&gt;AmazonSSMManagedInstanceCore&lt;/code&gt;</code></pre>
       </div>
 
       <h3>画面操作の記載例</h3>
-      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="user-value">EventBridgeSchedulerEC2Stop</code> <span class="badge badge-user-created">利用者作成</span>を指定する</p>
+      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="inline-code">EventBridgeSchedulerEC2Stop</code>を指定する</p>
 
       <h3>AWSドキュメントに近い記載例</h3>
-      <p>Mateoのポリシーを更新し、<code class="inline-code">scheduler:GetWidget</code>アクションを使用して<code class="user-value">my-example-widget</code>リソースへアクセスできるようにする</p>
+      <p>Mateoのポリシーを更新し、<code class="inline-code">scheduler:GetWidget</code>アクションを使用して<code class="inline-code">my-example-widget</code>リソースへアクセスできるようにする</p>
       <p>出典：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/security_iam_troubleshoot.html">EventBridge SchedulerのIAMトラブルシューティング</a></p>
 
       <h2 id="tables">使用する表</h2>
@@ -181,28 +182,6 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
   &lt;/tbody&gt;
 &lt;/table&gt;</code></pre>
       </div>
-
-      <h3>方式の比較表</h3>
-      <table>
-        <thead>
-          <tr><th>方式</th><th>画面</th><th>主な管理方法</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code class="user-value">Base</code></td><td>デスクトップGUIあり</td><td>サーバーマネージャー、MMC、PowerShell</td></tr>
-          <tr><td><code class="user-value">Core</code></td><td>デスクトップGUIなし</td><td>PowerShell、SConfig、Windows Admin Center</td></tr>
-        </tbody>
-      </table>
-
-      <h3>変更前後の確認表</h3>
-      <table>
-        <thead>
-          <tr><th>確認項目</th><th>変更前</th><th>変更後</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code class="inline-code">DeleteOnTermination</code></td><td><code class="inline-code">false</code></td><td><code class="inline-code">true</code></td></tr>
-          <tr><td>確認結果</td><td><span class="badge badge-optional">未変更</span></td><td><span class="badge badge-success">変更済み</span></td></tr>
-        </tbody>
-      </table>
 
       <h2 id="callouts">コールアウト</h2>
       <p>本文から分離して認識させる必要がある情報だけをコールアウトで表示する。通常の説明をすべてコールアウトにしない</p>
@@ -261,7 +240,6 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
           <tr><td>通常の等幅書体</td><td><code class="inline-code">DeleteOnTermination</code></td><td>コマンド、APIアクション、設定名</td></tr>
           <tr><td>キー表示</td><td><kbd>Windows</kbd> + <kbd>R</kbd></td><td>キーボード操作</td></tr>
           <tr><td>状態バッジ</td><td><span class="badge badge-required">必須</span> <span class="badge badge-optional">任意</span></td><td>短い状態や適用条件</td></tr>
-          <tr><td>所有元バッジ</td><td><span class="badge badge-managed">AWS管理</span> <span class="badge badge-user-created">利用者作成</span></td><td>AWSが定義した名称と環境固有の名称を区別</td></tr>
           <tr><td>マーカー</td><td><mark>公開前に再確認</mark></td><td>一時的なレビュー対象</td></tr>
         </tbody>
       </table>
@@ -274,8 +252,6 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
 &lt;kbd&gt;Windows&lt;/kbd&gt; + &lt;kbd&gt;R&lt;/kbd&gt;
 &lt;span class="badge badge-required"&gt;必須&lt;/span&gt;
 &lt;span class="badge badge-optional"&gt;任意&lt;/span&gt;
-&lt;span class="badge badge-managed"&gt;AWS管理&lt;/span&gt;
-&lt;span class="badge badge-user-created"&gt;利用者作成&lt;/span&gt;
 &lt;mark&gt;公開前に再確認&lt;/mark&gt;</code></pre>
       </div>
 
