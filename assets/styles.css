@@ -18,6 +18,8 @@
   --warning-bg: rgba(250, 204, 21, 0.12);
   --warning-line: #eab308;
   --warning-text: #fde68a;
+  --summary-accent: #f59e0b;
+  --summary-title: #fbbf24;
   --user-value: #ff9900;
   --ui-value-bg: rgba(88, 166, 255, 0.14);
   --ui-value-line: rgba(88, 166, 255, 0.48);
@@ -54,6 +56,8 @@
   --warning-bg: #fff8c5;
   --warning-line: #9a6700;
   --warning-text: #7d4e00;
+  --summary-accent: #f59e0b;
+  --summary-title: #b45309;
   --user-value: #a84b00;
   --ui-value-bg: #ddf4ff;
   --ui-value-line: #54aeff;
@@ -348,7 +352,19 @@ li {
   display: none;
 }
 
-.page-purpose .lead {
+.page-summary {
+  margin: 24px 0 40px;
+  padding: 2px 0 2px 18px;
+  border-left: 4px solid var(--summary-accent);
+}
+
+.page-summary strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--summary-title);
+}
+
+.page-summary .lead {
   margin: 0;
 }
 
