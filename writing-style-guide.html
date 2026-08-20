@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>★ [GitHub Pages] テンプレート | Documentation</title>
-  <meta name="description" content="Documentationサイトで使用する文章、表、コールアウト、コマンドブロック、置換値、強調表現のテンプレート">
-  <link rel="stylesheet" href="assets/styles.css">
+  <title>[GitHub Pages] 記法・テンプレート | Documentation</title>
+  <meta name="description" content="Documentationサイトで使用するコードブロック、入力パラメータ、表、コールアウト、強調表現の表示例とHTML記法">
+  <link rel="stylesheet" href="assets/styles.css?v=20260821">
 </head>
 <body>
   <header class="site-header">
@@ -29,10 +29,8 @@
         <h2>記法一覧</h2>
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="記法一覧を閉じる" aria-label="記法一覧を閉じる">☰</button>
       </div>
-      <a href="#rules">基本ルール</a>
-      <a href="#writing">文章</a>
-      <a href="#command-blocks">コマンドブロック</a>
-      <a href="#values">置換値と固定値</a>
+      <a href="#command-blocks">コードブロック</a>
+      <a href="#values">入力パラメータと固定値</a>
       <a href="#tables">表</a>
       <a href="#callouts">コールアウト</a>
       <a href="#emphasis">強調表現</a>
@@ -43,70 +41,14 @@
     <main class="content">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="./"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-        <span>スタイルガイド</span>
+        <span>記法・テンプレート</span>
       </nav>
 
-      <h1>★ [GitHub Pages] テンプレート</h1>
-      <p class="lead">文章のまとめ方、表、コールアウト、コマンドブロック、利用者が指定する値の表示方法を、実際の見た目とHTML記法で確認するためのテンプレート</p>
+      <h1>[GitHub Pages] 記法・テンプレート</h1>
 
-      <h2 id="rules">基本ルール</h2>
-      <table>
-        <thead>
-          <tr><th>項目</th><th>ルール</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>説明文</td><td>対象、理由、制約、実施方法が一読で分かる文章にする</td></tr>
-          <tr><td>CLIのみの操作</td><td>AWSマネジメントコンソールでは実施できず、AWS CLIのみで変更可能な仕様を冒頭で明記する</td></tr>
-          <tr><td>コマンド</td><td>原則として1つのコマンドにつき1つのコードブロックへ分ける</td></tr>
-          <tr><td>連続操作</td><td>同じ対象の状態確認、設定、再確認などは1つのコードブロックへまとめてよい</td></tr>
-          <tr><td>利用者指定値</td><td>置換値、選択値、リソース名、IAMロール名、IAMポリシー名をオレンジ色の等幅書体で表示する</td></tr>
-          <tr><td>固定識別子</td><td>コマンド名、APIアクション、プロパティ名を通常色の等幅書体で表示する</td></tr>
-          <tr><td>出典</td><td>説明文へ埋め込まず、対象説明の直下に独立した出典行を配置する</td></tr>
-        </tbody>
-      </table>
+      <h2 id="command-blocks">コードブロック</h2>
 
-      <div class="callout">
-        <strong>ℹ️ 情報</strong>
-        このページを新規ページ作成時の表示見本とし、詳細な文章ルールは<code class="inline-code">CONTRIBUTING.md</code>で管理する
-      </div>
-
-      <h2 id="writing">文章のまとめ方</h2>
-      <p>手順の冒頭では、対象、制約、実施方法を一文で伝える。AWSマネジメントコンソールでは実施できず、AWS CLIのみで変更できる場合は、その仕様を明記する</p>
-
-      <div class="example-grid">
-        <section class="example-panel example-bad" aria-label="避ける例">
-          <span class="example-label">避ける例</span>
-          <p>EC2起動後にEBSボリュームの設定を変更する場合は、AWS CLIでコマンドを実行する。追加EBSボリュームは終了時削除が無効になっている場合があるため確認する</p>
-        </section>
-        <section class="example-panel example-good" aria-label="良い例">
-          <span class="example-label">良い例</span>
-          <p>EC2インスタンス起動後に追加したEBS終了設定（<code class="inline-code">DeleteOnTermination</code>）を変更する場合は、<strong>AWS CLIのみで変更可能</strong></p>
-        </section>
-      </div>
-
-      <div class="callout">
-        <strong>情報</strong>
-        良い例は、何を変更するのか、いつの設定なのか、なぜCLI手順を掲載するのかを一文で判断できる
-      </div>
-
-      <h2 id="command-blocks">コマンドブロック</h2>
-      <p>変数代入、ユーザー作成、設定変更など、単独で意味を持つ操作は1つのコマンドにつき1つのコードブロックへ分ける</p>
-
-      <p class="procedure-step"><strong>パスワードの対話入力</strong></p>
-      <div class="code">
-        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString</code></pre>
-      </div>
-
-      <p class="procedure-step"><strong>ローカルユーザーの作成</strong></p>
-      <div class="code">
-        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>New-LocalUser -Name "&lt;CUSTOMER_USER&gt;" -Password $Password -Description "&lt;CUSTOMER_USER&gt;"</code></pre>
-      </div>
-
-      <p>サービス状態の確認、設定、再確認のように、同じ対象へ連続して実行する短い操作は1つのコードブロックへまとめてよい</p>
-
-      <p class="procedure-step"><strong>Postfixサービスの自動起動確認と有効化</strong></p>
+      <h3>パターン1：プレースホルダーを含まない通常のコードブロック</h3>
       <div class="code">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl is-enabled postfix.service
@@ -114,54 +56,95 @@ systemctl enable postfix.service
 systemctl is-enabled postfix.service</code></pre>
       </div>
 
-      <div class="callout callout-warning">
-        <strong>注意</strong>
-        複数コマンドをまとめる場合も、対象が同じで、上から順番に安全に実行でき、途中結果を読み取れることを条件とする
-      </div>
-
-      <h3>置換値を含むAWS CLI</h3>
-      <p>利用者が置き換える値を<code>&lt;UPPER_SNAKE_CASE&gt;</code>形式で記載する。コードブロック内の置換値は自動的にオレンジ色で表示される</p>
+      <p class="markup-label">HTML記法</p>
       <div class="code">
-        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt; --region &lt;REGION&gt;</code></pre>
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="code"&gt;
+  &lt;div class="code-header"&gt;
+    &lt;span&gt;bash&lt;/span&gt;
+    &lt;button class="copy" type="button"&gt;Copy&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;pre&gt;&lt;code&gt;systemctl is-enabled postfix.service
+systemctl enable postfix.service
+systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</code></pre>
       </div>
 
-      <h3>置換値を含まない通常のAWS CLI</h3>
-      <p>利用者が変更する値を含まないコマンドは、通常色のコードブロックで表示する</p>
+      <h3>パターン2：プレースホルダーを含むコードブロック</h3>
       <div class="code">
-        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws sts get-caller-identity</code></pre>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString</code></pre>
       </div>
 
-      <h3>複数の置換値を含むJSON</h3>
-      <p>JSON内でもアカウントIDなどの置換値と、利用者が決定するリソース名をオレンジ色で表示する</p>
+      <p class="markup-label">HTML記法</p>
       <div class="code">
-        <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>{
-  "ScheduleExpression": "&lt;SCHEDULE_EXPRESSION&gt;",
-  "State": "<span class="user-value">ENABLED</span>",
-  "ActionAfterCompletion": "<span class="user-value">NONE</span>",
-  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/<span class="user-value">EventBridgeSchedulerEC2Stop</span>"
-}</code></pre>
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="code"&gt;
+  &lt;div class="code-header"&gt;
+    &lt;span&gt;PowerShell&lt;/span&gt;
+    &lt;button class="copy" type="button"&gt;Copy&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;pre&gt;&lt;code&gt;$Password = Read-Host "Password for &amp;lt;CUSTOMER_USER&amp;gt;" -AsSecureString&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</code></pre>
       </div>
 
-      <h2 id="values">置換値と固定値</h2>
-      <p>利用者が入力または選択する値は、オレンジ色の等幅書体で表示する。コマンド名、APIアクション、設定プロパティなど変更しない識別子は、通常色の等幅書体で表示する</p>
+      <h2 id="values">入力パラメータと固定値</h2>
+      <p>利用者が環境ごとに決定する値は、オレンジ色の等幅書体で表示する。コマンド名、APIアクション、設定プロパティ、AWSが名称を定義する識別子は、通常色の等幅書体で表示する</p>
 
       <table>
         <thead>
           <tr><th>種類</th><th>表示例</th><th>用途</th></tr>
         </thead>
         <tbody>
-          <tr><td>置換値</td><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>実行前に利用者が置き換える値</td></tr>
-          <tr><td>選択値</td><td><code class="user-value">NONE</code></td><td>画面または設定ファイルで利用者が指定する値</td></tr>
-          <tr><td>リソース名</td><td><code class="user-value">EventBridgeSchedulerEC2Stop</code></td><td>環境ごとに決定するロール名やリソース名</td></tr>
+          <tr><td>プレースホルダー</td><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>実行前に利用者が置き換える入力パラメータ</td></tr>
+          <tr><td>選択値</td><td><code class="user-value">NONE</code></td><td>要件に応じて利用者が決定する画面または設定ファイルの値</td></tr>
+          <tr><td>リソース名</td><td><code class="user-value">EventBridgeSchedulerEC2Stop</code> <span class="badge badge-user-created">利用者作成</span></td><td>環境ごとに決定するロール名やリソース名</td></tr>
+          <tr><td>AWS管理ポリシー</td><td><code class="inline-code">AmazonSSMManagedInstanceCore</code> <span class="badge badge-managed">AWS管理</span></td><td>AWSが名称を定義し、利用者が変更しない値</td></tr>
+          <tr><td>固定値</td><td><code class="inline-code">true</code></td><td>手順または仕様によって値が確定している真偽値や列挙値</td></tr>
           <tr><td>固定識別子</td><td><code class="inline-code">scheduler:GetWidget</code></td><td>変更しないAPIアクションやプロパティ名</td></tr>
         </tbody>
       </table>
 
+      <h3>色分けの判断基準</h3>
+      <table>
+        <thead>
+          <tr><th>判断</th><th>表示</th><th>記載方法</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>利用者が環境ごとに入力または作成する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ROLE_NAME&gt;</code>または確定した利用者作成リソース名を記載</td></tr>
+          <tr><td>利用者が選択肢から決定する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ACTION_AFTER_COMPLETION&gt;</code>のようにプレースホルダーで記載</td></tr>
+          <tr><td>手順や製品仕様で値が確定している</td><td><code class="inline-code">通常色</code></td><td><code class="inline-code">true</code>、<code class="inline-code">NONE</code>など確定値をそのまま記載</td></tr>
+          <tr><td>AWSが名称を定義している</td><td><code class="inline-code">通常色</code></td><td>AWS管理ポリシー、サービスリンクロール、APIアクションを正式名称で記載</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>ℹ️ 判断の基準</strong>
+        <code class="inline-code">true</code>や<code class="inline-code">NONE</code>という文字列の種類ではなく、利用者が決める値か、手順やAWS仕様で決まる値かで色を分ける
+      </div>
+
+      <h3>JSONの記載例</h3>
+      <div class="code">
+        <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>{
+  "Enabled": true,
+  "ActionAfterCompletion": "&lt;ACTION_AFTER_COMPLETION&gt;",
+  "ManagedPolicy": "AmazonSSMManagedInstanceCore",
+  "RoleArn": "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/&lt;ROLE_NAME&gt;"
+}</code></pre>
+      </div>
+
+      <p><code class="inline-code">Enabled</code>の<code class="inline-code">true</code>とAWS管理ポリシー名は手順上の固定値として通常色にする。完了後のアクション、アカウントID、利用者作成ロール名は環境ごとに決定するためオレンジ色にする</p>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;code class="user-value"&gt;EventBridgeSchedulerEC2Stop&lt;/code&gt;
+&lt;code class="inline-code"&gt;AmazonSSMManagedInstanceCore&lt;/code&gt;</code></pre>
+      </div>
+
       <h3>画面操作の記載例</h3>
-      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="user-value">EventBridgeSchedulerEC2Stop</code>を指定する</p>
+      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="user-value">EventBridgeSchedulerEC2Stop</code> <span class="badge badge-user-created">利用者作成</span>を指定する</p>
 
       <h3>AWSドキュメントに近い記載例</h3>
       <p>Mateoのポリシーを更新し、<code class="inline-code">scheduler:GetWidget</code>アクションを使用して<code class="user-value">my-example-widget</code>リソースへアクセスできるようにする</p>
@@ -170,10 +153,10 @@ systemctl is-enabled postfix.service</code></pre>
       <h2 id="tables">使用する表</h2>
       <p>入力値、比較、確認結果など、同じ項目を繰り返し説明する場合は表を使用する。文章だけで説明できる内容を無理に表へ変換しない</p>
 
-      <h3>入力値の説明表</h3>
-      <table>
+      <h3>入力パラメータの説明表</h3>
+      <table class="parameter-table">
         <thead>
-          <tr><th>値</th><th>説明</th><th>必須</th></tr>
+          <tr><th>パラメータ</th><th>説明</th><th>必須</th></tr>
         </thead>
         <tbody>
           <tr><td><code>&lt;INSTANCE_ID&gt;</code></td><td>対象のEC2インスタンスID</td><td><span class="badge badge-required">必須</span></td></tr>
@@ -181,6 +164,23 @@ systemctl is-enabled postfix.service</code></pre>
           <tr><td><code>&lt;PROFILE_NAME&gt;</code></td><td>既定以外の認証情報を利用する場合のプロファイル名</td><td><span class="badge badge-optional">任意</span></td></tr>
         </tbody>
       </table>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;table class="parameter-table"&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;&lt;th&gt;パラメータ&lt;/th&gt;&lt;th&gt;説明&lt;/th&gt;&lt;th&gt;必須&lt;/th&gt;&lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;&amp;lt;INSTANCE_ID&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;対象のEC2インスタンスID&lt;/td&gt;
+      &lt;td&gt;&lt;span class="badge badge-required"&gt;必須&lt;/span&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+      </div>
 
       <h3>方式の比較表</h3>
       <table>
@@ -199,7 +199,7 @@ systemctl is-enabled postfix.service</code></pre>
           <tr><th>確認項目</th><th>変更前</th><th>変更後</th></tr>
         </thead>
         <tbody>
-          <tr><td><code class="inline-code">DeleteOnTermination</code></td><td><code class="user-value">false</code></td><td><code class="user-value">true</code></td></tr>
+          <tr><td><code class="inline-code">DeleteOnTermination</code></td><td><code class="inline-code">false</code></td><td><code class="inline-code">true</code></td></tr>
           <tr><td>確認結果</td><td><span class="badge badge-optional">未変更</span></td><td><span class="badge badge-success">変更済み</span></td></tr>
         </tbody>
       </table>
@@ -227,6 +227,30 @@ systemctl is-enabled postfix.service</code></pre>
         想定されるエラー、原因、作業を中止する条件、切り戻し判断を記載する
       </div>
 
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="callout"&gt;
+  &lt;strong&gt;ℹ️ 情報&lt;/strong&gt;
+  仕様、前提条件、補足、利用できる代替手段を記載する
+&lt;/div&gt;
+
+&lt;div class="callout callout-warning"&gt;
+  &lt;strong&gt;⚠️ 注意&lt;/strong&gt;
+  実行前に判断が必要な影響を記載する
+&lt;/div&gt;
+
+&lt;div class="callout callout-success"&gt;
+  &lt;strong&gt;✅ 成功&lt;/strong&gt;
+  設定値が期待する状態になったことを示す
+&lt;/div&gt;
+
+&lt;div class="callout callout-error"&gt;
+  &lt;strong&gt;❌ エラー&lt;/strong&gt;
+  作業を中止する条件や切り戻し判断を記載する
+&lt;/div&gt;</code></pre>
+      </div>
+
       <h2 id="emphasis">そのほかの強調表現</h2>
       <table>
         <thead>
@@ -236,13 +260,41 @@ systemctl is-enabled postfix.service</code></pre>
           <tr><td>太字</td><td><strong>再起動が必要</strong></td><td>結論や重要条件</td></tr>
           <tr><td>通常の等幅書体</td><td><code class="inline-code">DeleteOnTermination</code></td><td>コマンド、APIアクション、設定名</td></tr>
           <tr><td>キー表示</td><td><kbd>Windows</kbd> + <kbd>R</kbd></td><td>キーボード操作</td></tr>
-          <tr><td>バッジ</td><td><span class="badge badge-required">必須</span> <span class="badge badge-optional">任意</span></td><td>短い状態や適用条件</td></tr>
+          <tr><td>状態バッジ</td><td><span class="badge badge-required">必須</span> <span class="badge badge-optional">任意</span></td><td>短い状態や適用条件</td></tr>
+          <tr><td>所有元バッジ</td><td><span class="badge badge-managed">AWS管理</span> <span class="badge badge-user-created">利用者作成</span></td><td>AWSが定義した名称と環境固有の名称を区別</td></tr>
           <tr><td>マーカー</td><td><mark>公開前に再確認</mark></td><td>一時的なレビュー対象</td></tr>
         </tbody>
       </table>
 
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;strong&gt;再起動が必要&lt;/strong&gt;
+&lt;code class="inline-code"&gt;DeleteOnTermination&lt;/code&gt;
+&lt;kbd&gt;Windows&lt;/kbd&gt; + &lt;kbd&gt;R&lt;/kbd&gt;
+&lt;span class="badge badge-required"&gt;必須&lt;/span&gt;
+&lt;span class="badge badge-optional"&gt;任意&lt;/span&gt;
+&lt;span class="badge badge-managed"&gt;AWS管理&lt;/span&gt;
+&lt;span class="badge badge-user-created"&gt;利用者作成&lt;/span&gt;
+&lt;mark&gt;公開前に再確認&lt;/mark&gt;</code></pre>
+      </div>
+
       <h2 id="components">そのほかの構成要素</h2>
-      <p>OSや方式ごとにコマンドが異なる場合はタブを使用し、長い実行例や補足は折りたたみ表示を使用する</p>
+      <table>
+        <thead>
+          <tr><th>構成要素</th><th>使用する場面</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>タブ</td><td>WindowsとLinuxなど、同じ目的で方式だけが異なる内容を切り替える</td></tr>
+          <tr><td>折りたたみ</td><td>長い実行例、出力例、補足画像など、初期表示では必須ではない内容を格納する</td></tr>
+          <tr><td>ページ内リンク</td><td>1ページ内の関連セクションへすぐ移動できるようにする</td></tr>
+          <tr><td>手順カード</td><td>順番が重要な操作を番号と短い説明で区切る</td></tr>
+          <tr><td>チェックリスト</td><td>作業前後の確認項目や完了条件を漏れなく示す</td></tr>
+          <tr><td>定義リスト</td><td>用語、設定名、短い説明を1対1で整理する</td></tr>
+          <tr><td>別ページ</td><td>目的、対象読者、実施タイミングが独立する長い手順を分割する</td></tr>
+          <tr><td>関連ページカード</td><td>分割したページや次に確認するページを視覚的に案内する</td></tr>
+        </tbody>
+      </table>
 
       <h3>タブ</h3>
       <div class="tab-group" data-tabs>
@@ -264,6 +316,19 @@ systemctl is-enabled postfix.service</code></pre>
         </section>
       </div>
 
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="tab-group" data-tabs&gt;
+  &lt;div class="tabs" role="tablist" aria-label="OS別サービス確認例"&gt;
+    &lt;button class="tab" type="button" role="tab" aria-selected="true" aria-controls="example-windows"&gt;Windows&lt;/button&gt;
+    &lt;button class="tab" type="button" role="tab" aria-selected="false" aria-controls="example-linux"&gt;Linux&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;section class="tab-panel active" id="example-windows" role="tabpanel"&gt;Windowsの内容&lt;/section&gt;
+  &lt;section class="tab-panel" id="example-linux" role="tabpanel" hidden&gt;Linuxの内容&lt;/section&gt;
+&lt;/div&gt;</code></pre>
+      </div>
+
       <h3>折りたたみ</h3>
       <details class="example-details">
         <summary>実行例を展開する</summary>
@@ -273,6 +338,108 @@ systemctl is-enabled postfix.service</code></pre>
           <pre><code>aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId" --output table</code></pre>
         </div>
       </details>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;details class="example-details"&gt;
+  &lt;summary&gt;実行例を展開する&lt;/summary&gt;
+  &lt;p&gt;初期表示では必須ではない長い実行例を格納する&lt;/p&gt;
+&lt;/details&gt;</code></pre>
+      </div>
+
+      <h3>ページ内リンク</h3>
+      <nav class="section-links" aria-label="記法ページの主要セクション">
+        <a href="#command-blocks">コードブロック</a>
+        <a href="#tables">表</a>
+        <a href="#callouts">コールアウト</a>
+        <a href="#emphasis">強調表現</a>
+      </nav>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;nav class="section-links" aria-label="主要セクション"&gt;
+  &lt;a href="#overview"&gt;概要&lt;/a&gt;
+  &lt;a href="#procedure"&gt;手順&lt;/a&gt;
+  &lt;a href="#verification"&gt;確認&lt;/a&gt;
+&lt;/nav&gt;</code></pre>
+      </div>
+
+      <h3>手順カード</h3>
+      <ol class="step-list">
+        <li><strong>変更前の確認</strong><span>現在の設定値と対象リソースの確認</span></li>
+        <li><strong>設定変更</strong><span>指定したパラメータによるコマンド実行</span></li>
+        <li><strong>変更後の確認</strong><span>期待する設定値への変更確認</span></li>
+      </ol>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;ol class="step-list"&gt;
+  &lt;li&gt;&lt;strong&gt;変更前の確認&lt;/strong&gt;&lt;span&gt;現在の設定値を確認する&lt;/span&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;設定変更&lt;/strong&gt;&lt;span&gt;コマンドを実行する&lt;/span&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;変更後の確認&lt;/strong&gt;&lt;span&gt;期待する状態を確認する&lt;/span&gt;&lt;/li&gt;
+&lt;/ol&gt;</code></pre>
+      </div>
+
+      <h3>チェックリスト</h3>
+      <ul class="check-list">
+        <li>対象のAWSアカウントとリージョンを確認</li>
+        <li>変更前の設定値を記録</li>
+        <li>変更後の動作確認を完了</li>
+      </ul>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;ul class="check-list"&gt;
+  &lt;li&gt;対象のAWSアカウントとリージョンを確認&lt;/li&gt;
+  &lt;li&gt;変更前の設定値を記録&lt;/li&gt;
+  &lt;li&gt;変更後の動作確認を完了&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+      </div>
+
+      <h3>定義リスト</h3>
+      <dl class="definition-list">
+        <dt><code class="inline-code">DeleteOnTermination</code></dt>
+        <dd>EC2インスタンス終了時にEBSボリュームも削除するかを指定する属性</dd>
+        <dt><code class="inline-code">DeviceName</code></dt>
+        <dd>インスタンス側でEBSボリュームを識別するデバイス名</dd>
+      </dl>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;dl class="definition-list"&gt;
+  &lt;dt&gt;&lt;code class="inline-code"&gt;DeleteOnTermination&lt;/code&gt;&lt;/dt&gt;
+  &lt;dd&gt;EC2インスタンス終了時にEBSボリュームも削除するかを指定する属性&lt;/dd&gt;
+&lt;/dl&gt;</code></pre>
+      </div>
+
+      <h3>ページ分割と関連ページカード</h3>
+      <p>ページを分ける場合は、元ページまたはカテゴリの先頭へ関連ページカードを配置する</p>
+      <div class="page-link-grid">
+        <a class="page-link-card" href="tutorials/aws-cli.html">
+          <strong>AWS CLI 特殊対応</strong>
+          <span>CLIやAPIで実施する変更・復旧手順</span>
+        </a>
+        <a class="page-link-card" href="tutorials/windows-server-2025.html">
+          <strong>Windows Server 2025</strong>
+          <span>EC2起動後のWindows OS初期設定</span>
+        </a>
+      </div>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="page-link-grid"&gt;
+  &lt;a class="page-link-card" href="related-page.html"&gt;
+    &lt;strong&gt;関連ページ名&lt;/strong&gt;
+    &lt;span&gt;ページの対象と内容を短く記載する&lt;/span&gt;
+  &lt;/a&gt;
+&lt;/div&gt;</code></pre>
+      </div>
 
       <h2 id="page-template">ページ構成</h2>
       <ol>
@@ -289,10 +456,8 @@ systemctl is-enabled postfix.service</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a href="#rules">基本ルール</a>
-      <a href="#writing">文章</a>
-      <a href="#command-blocks">コマンドブロック</a>
-      <a href="#values">置換値と固定値</a>
+      <a href="#command-blocks">コードブロック</a>
+      <a href="#values">入力パラメータと固定値</a>
       <a href="#tables">表</a>
       <a href="#callouts">コールアウト</a>
       <a href="#emphasis">強調表現</a>

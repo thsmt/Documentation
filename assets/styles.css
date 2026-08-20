@@ -27,6 +27,8 @@
   --error-bg: rgba(248, 81, 73, 0.12);
   --error-line: #f85149;
   --error-text: #ff7b72;
+  --badge-required-bg: #da3633;
+  --badge-optional-bg: #1f6feb;
 }
 
 :root[data-theme="light"] {
@@ -58,6 +60,8 @@
   --error-bg: #ffebe9;
   --error-line: #cf222e;
   --error-text: #a40e26;
+  --badge-required-bg: #cf222e;
+  --badge-optional-bg: #0969da;
 }
 
 * {
@@ -454,18 +458,182 @@ mark {
 }
 
 .badge-required {
-  border-color: var(--example-bad);
-  color: var(--example-bad);
+  background: var(--badge-required-bg);
+  border-color: var(--badge-required-bg);
+  color: #ffffff;
 }
 
 .badge-optional {
-  border-color: var(--accent);
-  color: var(--accent-strong);
+  background: var(--badge-optional-bg);
+  border-color: var(--badge-optional-bg);
+  color: #ffffff;
 }
 
 .badge-success {
   border-color: var(--success-line);
   color: var(--success-text);
+}
+
+.badge-managed {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.badge-user-created {
+  border-color: var(--user-value);
+  color: var(--user-value);
+}
+
+.markup-label {
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.parameter-table .user-value {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 24px;
+}
+
+.section-links a {
+  padding: 7px 12px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.step-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 24px;
+  padding: 0;
+  counter-reset: documentation-step;
+  list-style: none;
+}
+
+.step-list li {
+  position: relative;
+  min-height: 64px;
+  padding: 14px 16px 14px 58px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  counter-increment: documentation-step;
+}
+
+.step-list li::before {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  background: var(--accent);
+  border-radius: 50%;
+  color: #ffffff;
+  content: counter(documentation-step);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.step-list strong {
+  display: block;
+}
+
+.step-list span {
+  color: var(--muted);
+}
+
+.check-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  position: relative;
+  padding-left: 28px;
+}
+
+.check-list li::before {
+  position: absolute;
+  left: 0;
+  color: var(--success-text);
+  content: "✓";
+  font-weight: 900;
+}
+
+.definition-list {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(0, 1fr);
+  margin: 16px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.definition-list dt,
+.definition-list dd {
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.definition-list dt {
+  background: var(--panel-soft);
+  font-weight: 800;
+}
+
+.definition-list dd:nth-last-child(1),
+.definition-list dt:nth-last-child(2) {
+  border-bottom: 0;
+}
+
+.page-link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0 24px;
+}
+
+.page-link-card {
+  display: block;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.page-link-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.page-link-card strong,
+.page-link-card span {
+  display: block;
+}
+
+.page-link-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .template-feature {
@@ -532,6 +700,15 @@ mark {
 @media (max-width: 800px) {
   .example-grid {
     grid-template-columns: 1fr;
+  }
+
+  .definition-list,
+  .page-link-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .definition-list dd {
+    border-bottom: 1px solid var(--line);
   }
 }
 
