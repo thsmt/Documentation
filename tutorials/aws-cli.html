@@ -71,11 +71,13 @@
       </nav>
 
       <h1>AWS CLI 特殊対応</h1>
-      <p class="lead">AWSマネジメントコンソールでは変更・切り戻し・復旧できない設定について、AWS CLIを使用した対応方法をまとめる<br>GUIに操作項目がない場合や、保留中の変更を打ち消す必要がある場合の確認手順と実行コマンドを整理する</p>
+      <div class="notice page-purpose">
+        <strong>📍 このページの目的</strong>
+        <p class="lead">AWSマネジメントコンソールでは変更・切り戻し・復旧できない設定について、AWS CLIを使用した対応方法をまとめる<br>GUIに操作項目がない場合や、保留中の変更を打ち消す必要がある場合の確認手順と実行コマンドを整理する</p>
+      </div>
 
       <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
       <p>Amazon RDSのエンジンバージョン変更を<code class="ui-value">次回のメンテナンスウィンドウで適用</code>として保存した後は、AWSマネジメントコンソールに保留中の変更を取り消す操作がない仕様となっている。その場合は、AWS CLIで現在稼働中の値を再指定し、保留中の変更を打ち消す</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-instances.html">describe-db-instances</a></p>
       <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html">modify-db-instance</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -147,8 +149,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="ec2-ebs-delete-on-termination">EC2 EBS終了時削除属性の変更</h2>
-      <p>EC2インスタンス起動後に追加したEBS終了設定（<code>DeleteOnTermination</code>）は、AWSマネジメントコンソールでは変更できず、AWS CLIのみで変更可能</p>
-      <p>EC2コンソールからインスタンス起動時に追加したEBSデータボリュームは、終了時削除が既定で無効となる。インスタンス終了時に追加EBSボリュームも削除する場合は、以下のコマンドで設定を変更する</p>
+      <p>EC2インスタンス起動後に追加したEBS終了設定（<code>DeleteOnTermination</code>）は、AWSマネジメントコンソールでは変更できず、AWS CLIのみで変更可能<br>EC2コンソールからインスタンス起動時に追加したEBSデータボリュームは、終了時削除が既定で無効となる。インスタンス終了時に追加EBSボリュームも削除する場合は、以下のコマンドで設定を変更する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/ec2/latest/devguide/example_ec2_ModifyInstanceAttribute_section.html">ModifyInstanceAttribute のAWS公式例</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -189,7 +190,6 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
 
       <h2 id="elastic-ip">Elastic IP 解放後の再取得</h2>
       <p>Elastic IPを誤って解放した場合でも、他のAWSアカウントに割り当てられていなければ、AWS CLIで同じPublic IPv4アドレスを指定して再取得できる場合がある</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Amazon EC2 User Guide</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -217,21 +217,20 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         解放済みのElastic IPが他のAWSアカウントに割り当てられている場合は再取得できません。作業前に対象リージョン、対象IP、現在の割り当て状況を確認する
       </div>
 
-      <h2 id="s3-versioning-restore">Amazon S3 Versioning環境で削除されたフォルダを復元</h2>
-      <p>S3 Versioningが有効なバケットでは、オブジェクト削除時にDelete Markerが作成される</p>
-      <p>S3に実体としてのフォルダはないため、フォルダ復元は指定Prefix配下のDelete Markerを確認し、対象のDelete MarkerをVersion ID付きで削除する作業として扱う</p>
+      <h2 id="s3-versioning-restore">Amazon S3 バージョニング環境で削除されたフォルダを復元</h2>
+      <p>Amazon S3 バージョニングが有効なバケットでは、オブジェクト削除時にDelete Markerが作成される<br>S3に実体としてのフォルダはないため、フォルダ復元は指定Prefix配下のDelete Markerを確認し、対象のDelete MarkerをVersion ID付きで削除する作業として扱う</p>
       <p>出典：<a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/RestoringPreviousVersions.html">Restoring previous versions</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
-          <tr><td><code>&lt;BUCKET_NAME&gt;</code></td><td>Versioningが有効なS3バケット名</td></tr>
+          <tr><td><code>&lt;BUCKET_NAME&gt;</code></td><td>バージョニングが有効なS3バケット名</td></tr>
           <tr><td><code>&lt;PREFIX&gt;</code></td><td>復元対象のPrefix。例: <code>logs/app</code></td></tr>
           <tr><td><code>&lt;OBJECT_KEY&gt;</code></td><td>復元対象オブジェクトのKey</td></tr>
           <tr><td><code>&lt;DELETE_MARKER_VERSION_ID&gt;</code></td><td>削除するDelete MarkerのVersion ID</td></tr>
         </tbody>
       </table>
 
-      <p>作業前に、対象バケットのVersioning状態を確認する</p>
+      <p>作業前に、対象バケットのバージョニング状態を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws s3api get-bucket-versioning --bucket &lt;BUCKET_NAME&gt;</code></pre>
@@ -261,9 +260,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="iam-virtual-mfa-cleanup">IAM仮想MFAデバイスの未割当て状態を解消</h2>
-      <p>IAMコンソールで仮想MFAデバイス登録を途中で中断すると、IAMユーザーに割り当てられていない仮想MFAデバイスが残る場合がある</p>
-      <p>同じ名前で再登録できない場合は、AWS CLIで未割当てデバイスを確認して削除する</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/list-virtual-mfa-devices.html">list-virtual-mfa-devices</a></p>
+      <p>IAMコンソールで仮想MFAデバイス登録を途中で中断すると、IAMユーザーに割り当てられていない仮想MFAデバイスが残る場合がある<br>同じ名前で再登録できない場合は、AWS CLIで未割当てデバイスを確認して削除する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/delete-virtual-mfa-device.html">delete-virtual-mfa-device</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -296,8 +293,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="autoscaling-lifecycle-action">Auto Scalingライフサイクルアクションの待機時間を延長・完了</h2>
-      <p>Auto Scalingのライフサイクルフックでインスタンスが <code>Pending:Wait</code> または <code>Terminating:Wait</code> になっている場合、作業時間の延長や処理完了通知をAWS CLIで実行する</p>
-      <p>デプロイ前の初期設定、監視エージェント登録、終了前のログ退避などで利用する</p>
+      <p>Auto Scalingのライフサイクルフックでインスタンスが <code>Pending:Wait</code> または <code>Terminating:Wait</code> になっている場合、作業時間の延長や処理完了通知をAWS CLIで実行する<br>デプロイ前の初期設定、監視エージェント登録、終了前のログ退避などで利用する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/record-lifecycle-action-heartbeat.html">record-lifecycle-action-heartbeat</a></p>
       <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/autoscaling/complete-lifecycle-action.html">complete-lifecycle-action</a></p>
       <table class="parameter-table">
@@ -339,8 +335,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="cloudwatch-logs-kms">既存CloudWatch LogsロググループへKMSキーを関連付け</h2>
-      <p>既存のCloudWatch LogsロググループにCustomer Managed KMS Keyを関連付ける場合は、AWS CLIで <code>associate-kms-key</code> を実行する</p>
-      <p>監査要件や暗号化キー管理を後から整備する場合に利用する</p>
+      <p>既存のCloudWatch LogsロググループにCustomer Managed KMS Keyを関連付ける場合は、AWS CLIで <code>associate-kms-key</code> を実行する<br>監査要件や暗号化キー管理を後から整備する場合に利用する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html">Encrypt log data in CloudWatch Logs using AWS KMS</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -374,8 +369,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       </div>
 
       <h2 id="cloudformation-stack-policy">既存CloudFormationスタックへスタックポリシーを設定</h2>
-      <p>CloudFormation Stack Policyを使うと、スタック更新時に特定のLogical IDを誤って変更しないよう保護できる</p>
-      <p>既存スタックへStack Policyを追加または置き換える場合は、AWS CLIで設定する</p>
+      <p>CloudFormation Stack Policyを使うと、スタック更新時に特定のLogical IDを誤って変更しないよう保護できる<br>既存スタックへStack Policyを追加または置き換える場合は、AWS CLIで設定する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html">Prevent updates to stack resources</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -456,7 +450,7 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       <a class="active" href="#rds-pending-maintenance">Amazon RDS保留変更</a>
       <a href="#ec2-ebs-delete-on-termination">EBS終了時削除</a>
       <a href="#elastic-ip">Elastic IP</a>
-      <a href="#s3-versioning-restore">S3 Versioning復元</a>
+      <a href="#s3-versioning-restore">S3 バージョニング復元</a>
       <a href="#iam-virtual-mfa-cleanup">IAM仮想MFA</a>
       <a href="#autoscaling-lifecycle-action">Auto Scaling Lifecycle</a>
       <a href="#cloudwatch-logs-kms">CloudWatch Logs KMS</a>

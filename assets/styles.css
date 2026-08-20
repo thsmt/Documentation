@@ -284,8 +284,10 @@ main {
   min-width: 0;
 }
 
-.aws-cli-guide h2 {
+.aws-cli-guide > h2 {
   margin-top: 68px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line);
 }
 
 .breadcrumb {
@@ -344,6 +346,10 @@ li {
 
 .lead:empty {
   display: none;
+}
+
+.page-purpose .lead {
+  margin: 0;
 }
 
 .notice,
