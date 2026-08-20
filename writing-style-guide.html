@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>[GitHub Pages] 記法・テンプレート | Documentation</title>
   <meta name="description" content="Documentationサイトで使用するコードブロック、入力パラメータ、表、コールアウト、強調表現の表示例とHTML記法">
-  <link rel="stylesheet" href="assets/styles.css?v=20260821">
+  <link rel="stylesheet" href="assets/styles.css?v=20260821-ui1">
 </head>
 <body>
   <header class="site-header">
@@ -89,7 +89,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
       </div>
 
       <h2 id="values">入力パラメータと固定値</h2>
-      <p>利用者が置き換えるプレースホルダーと選択するパラメータ値は、オレンジ色の等幅書体で表示する。確定済みのリソース名、ポリシー名、コマンド名、APIアクション、設定プロパティは通常色の等幅書体で表示する</p>
+      <p>利用者が置き換えるプレースホルダーはオレンジ色、画面上の項目名、選択値、ボタン名は青系の背景付き等幅書体で表示する。確定済みのリソース名、ポリシー名、コマンド名、APIアクション、設定プロパティは通常色の等幅書体で表示する</p>
 
       <table>
         <thead>
@@ -97,7 +97,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
         </thead>
         <tbody>
           <tr><td>プレースホルダー</td><td><code>&lt;CUSTOMER_USER&gt;</code></td><td>実行前に利用者が置き換える入力パラメータ</td></tr>
-          <tr><td>選択値</td><td><code class="user-value">NONE</code></td><td>要件に応じて利用者が決定する画面または設定ファイルの値</td></tr>
+          <tr><td>画面項目・選択値</td><td><code class="ui-value">NONE</code></td><td>画面上の項目名、選択値、ボタン名</td></tr>
           <tr><td>利用者作成リソース名</td><td><code class="inline-code">EventBridgeSchedulerEC2Stop</code></td><td>利用者が作成した確定済みのロール名やリソース名</td></tr>
           <tr><td>AWS管理ポリシー</td><td><code class="inline-code">AmazonSSMManagedInstanceCore</code></td><td>AWSが名称を定義し、利用者が変更しない値</td></tr>
           <tr><td>固定値</td><td><code class="inline-code">true</code></td><td>手順または仕様によって値が確定している真偽値や列挙値</td></tr>
@@ -112,7 +112,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
         </thead>
         <tbody>
           <tr><td>利用者が環境ごとに入力する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ROLE_NAME&gt;</code>などのプレースホルダーで記載</td></tr>
-          <tr><td>利用者が選択肢から決定する</td><td><code class="user-value">オレンジ</code></td><td><code>&lt;ACTION_AFTER_COMPLETION&gt;</code>のようにプレースホルダーで記載</td></tr>
+          <tr><td>画面上の項目または選択値を記載する</td><td><code class="ui-value">青系</code></td><td>画面に表示される名称や値をそのまま記載</td></tr>
           <tr><td>利用者が作成した名称を記載する</td><td><code class="inline-code">通常色</code></td><td>確定済みのリソース名、IAMロール名、IAMポリシー名をそのまま記載</td></tr>
           <tr><td>手順や製品仕様で値が確定している</td><td><code class="inline-code">通常色</code></td><td><code class="inline-code">true</code>、<code class="inline-code">NONE</code>など確定値をそのまま記載</td></tr>
           <tr><td>AWSが名称を定義している</td><td><code class="inline-code">通常色</code></td><td>AWS管理ポリシー、サービスリンクロール、APIアクションを正式名称で記載</td></tr>
@@ -121,7 +121,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
 
       <div class="callout">
         <strong>ℹ️ 判断の基準</strong>
-        実行前に利用者が置き換える値か、確定済みの名称や固定値かで色を分ける。利用者作成またはAWS管理という所有元だけでは色を変えない
+        実行前に置き換える値、画面上に表示される値、確定済みの名称や固定値を分ける。利用者作成またはAWS管理という所有元だけでは色を変えない
       </div>
 
       <h3>JSONの記載例</h3>
@@ -140,12 +140,13 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
       <p class="markup-label">HTML記法</p>
       <div class="code">
         <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>&lt;code class="inline-code"&gt;EventBridgeSchedulerEC2Stop&lt;/code&gt;
+        <pre><code>&lt;code class="ui-value"&gt;NONE&lt;/code&gt;
+&lt;code class="inline-code"&gt;EventBridgeSchedulerEC2Stop&lt;/code&gt;
 &lt;code class="inline-code"&gt;AmazonSSMManagedInstanceCore&lt;/code&gt;</code></pre>
       </div>
 
       <h3>画面操作の記載例</h3>
-      <p>Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="inline-code">EventBridgeSchedulerEC2Stop</code>を指定する</p>
+      <p><code class="ui-value">Schedule</code>を有効化し、完了後のアクションは<code class="ui-value">NONE</code>、再試行は<code class="ui-value">OFF</code>、DLQは<code class="ui-value">なし</code>、暗号化は<code class="ui-value">デフォルト</code>とする。<code class="ui-value">既存のロールを使用</code>を選択し、<code class="inline-code">EventBridgeSchedulerEC2Stop</code>を指定する</p>
 
       <h3>AWSドキュメントに近い記載例</h3>
       <p>Mateoのポリシーを更新し、<code class="inline-code">scheduler:GetWidget</code>アクションを使用して<code class="inline-code">my-example-widget</code>リソースへアクセスできるようにする</p>
@@ -238,6 +239,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
         <tbody>
           <tr><td>太字</td><td><strong>再起動が必要</strong></td><td>結論や重要条件</td></tr>
           <tr><td>通常の等幅書体</td><td><code class="inline-code">DeleteOnTermination</code></td><td>コマンド、APIアクション、設定名</td></tr>
+          <tr><td>画面操作用書式</td><td><code class="ui-value">既存のロールを使用</code></td><td>画面上の項目名、選択値、ボタン名</td></tr>
           <tr><td>キー表示</td><td><kbd>Windows</kbd> + <kbd>R</kbd></td><td>キーボード操作</td></tr>
           <tr><td>状態バッジ</td><td><span class="badge badge-required">必須</span> <span class="badge badge-optional">任意</span></td><td>短い状態や適用条件</td></tr>
           <tr><td>マーカー</td><td><mark>公開前に再確認</mark></td><td>一時的なレビュー対象</td></tr>
@@ -249,6 +251,7 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
         <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
         <pre><code>&lt;strong&gt;再起動が必要&lt;/strong&gt;
 &lt;code class="inline-code"&gt;DeleteOnTermination&lt;/code&gt;
+&lt;code class="ui-value"&gt;既存のロールを使用&lt;/code&gt;
 &lt;kbd&gt;Windows&lt;/kbd&gt; + &lt;kbd&gt;R&lt;/kbd&gt;
 &lt;span class="badge badge-required"&gt;必須&lt;/span&gt;
 &lt;span class="badge badge-optional"&gt;任意&lt;/span&gt;

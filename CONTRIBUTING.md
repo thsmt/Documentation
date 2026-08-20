@@ -68,7 +68,8 @@ systemctl is-enabled postfix.service
 - 利用者が置換する値は `<UPPER_SNAKE_CASE>` 形式にし、オレンジ色で表示する
 - `<INSTANCE_ID>`や`<REGION>`はプレースホルダーと呼び、入力項目をまとめる表では入力パラメータとして扱う
 - コマンド内のプレースホルダーはオレンジ色で表示し、入力パラメータの説明表では表の文脈が明確なため通常色で表示してよい
-- 説明文中で利用者が環境ごとに入力または選択するパラメータ値は、オレンジ色の等幅書体で表示する
+- 説明文中で利用者がコマンドや設定ファイルへ入力するパラメータ値は、オレンジ色の等幅書体で表示する
+- 画面操作で表示される項目名、選択値、ボタン名は、青系の背景と枠線を持つ等幅書体で表示する
 - 固定のコマンド名、APIアクション、プロパティ名は通常色の等幅書体で表示し、プレースホルダーと区別する
 - 色分けは値の文字列ではなく、利用者が環境ごとに決定する値か、手順や製品仕様で確定する値かで判断する
 - コピーして実行するコード内の `true`、`false`、`NONE`など、利用者が置換しない固定値は通常色で表示する
@@ -83,7 +84,7 @@ systemctl is-enabled postfix.service
 色分けの判断順序：
 
 1. 利用者が置換するプレースホルダーはオレンジ色にする
-2. 利用者が選択する値は、文章中ではオレンジ色、コード内ではプレースホルダーとして記載する
+2. 画面上で選択する値は青系の画面操作用書式、コマンドや設定ファイルで置き換える値はオレンジ色のプレースホルダーとして記載する
 3. 利用者作成またはAWS管理を問わず、確定済みのリソース名やポリシー名は通常色にする
 4. 手順で確定しており、コピー後に変更しない値は通常色にする
 5. AWSが正式名称を定義している識別子は通常色にする
@@ -100,10 +101,16 @@ systemctl is-enabled postfix.service
 <code class="inline-code">scheduler:GetWidget</code>
 ```
 
+画面上の項目名、選択値、ボタン名：
+
+```html
+<code class="ui-value">NONE</code>
+```
+
 文章中の例：
 
 ```html
-Scheduleを有効化し、完了後のアクションは<code class="user-value">NONE</code>、再試行は<code class="user-value">OFF</code>、DLQは<code class="user-value">なし</code>、暗号化は<code class="user-value">デフォルト</code>とする。「既存のロールを使用」を選択し、<code class="inline-code">EventBridgeSchedulerEC2Stop</code>を指定する
+<code class="ui-value">Schedule</code>を有効化し、完了後のアクションは<code class="ui-value">NONE</code>、再試行は<code class="ui-value">OFF</code>、DLQは<code class="ui-value">なし</code>、暗号化は<code class="ui-value">デフォルト</code>とする。<code class="ui-value">既存のロールを使用</code>を選択し、<code class="inline-code">EventBridgeSchedulerEC2Stop</code>を指定する
 ```
 
 ## 検証

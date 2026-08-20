@@ -19,6 +19,9 @@
   --warning-line: #eab308;
   --warning-text: #fde68a;
   --user-value: #ff9900;
+  --ui-value-bg: rgba(88, 166, 255, 0.14);
+  --ui-value-line: rgba(88, 166, 255, 0.48);
+  --ui-value-text: #79c0ff;
   --example-good: #3fb950;
   --example-bad: #f85149;
   --success-bg: rgba(63, 185, 80, 0.12);
@@ -52,6 +55,9 @@
   --warning-line: #9a6700;
   --warning-text: #7d4e00;
   --user-value: #a84b00;
+  --ui-value-bg: #ddf4ff;
+  --ui-value-line: #54aeff;
+  --ui-value-text: #0550ae;
   --example-good: #1a7f37;
   --example-bad: #cf222e;
   --success-bg: #dafbe1;
@@ -411,12 +417,20 @@ li {
 }
 
 code.inline-code,
-code.user-value {
+code.user-value,
+code.ui-value {
   padding: 0.12em 0.38em;
   background: var(--code);
   border: 1px solid var(--line);
   border-radius: 4px;
   white-space: normal;
+}
+
+code.ui-value {
+  background: var(--ui-value-bg);
+  border-color: var(--ui-value-line);
+  color: var(--ui-value-text);
+  font-weight: 700;
 }
 
 kbd {
