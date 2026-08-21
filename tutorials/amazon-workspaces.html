@@ -188,7 +188,14 @@
       <p>出典：<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
 
       <h2 id="flow">構築フロー</h2>
-      <p>VPC → 異なるAvailability Zoneの2サブネット → AWS Managed Microsoft AD → WorkSpacesディレクトリ登録<br>利用者選択・作成 → バンドル・実行モード・タグ → 暗号化・ルートボリューム・ユーザーボリューム → WorkSpaces Personal作成<br>AVAILABLE確認 → WorkSpacesクライアントまたはWeb Accessで接続</p>
+      <ol>
+        <li>WorkSpaces Personalで使用するVPC、2つの異なるAZのサブネット、AWS Managed Microsoft ADを準備</li>
+        <li>WorkSpacesディレクトリを作成・登録し、アクセス制御とセルフサービス権限を確認</li>
+        <li>WorkSpaces Personalを作成し、バンドル、実行モード、タグを設定</li>
+        <li>登録済みディレクトリから利用者を選択するか、利用者アカウントを作成</li>
+        <li>必要に応じて、暗号化、ルートボリューム、ユーザーボリュームをカスタマイズ</li>
+        <li>WorkSpaceが<code class="ui-value">AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続</li>
+      </ol>
 
       <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
       <p>Directory Serviceで作成または接続したディレクトリをAmazon WorkSpacesへ登録する<br>登録後に利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定する</p>
