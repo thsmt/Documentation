@@ -208,6 +208,8 @@ systemctl status sshd</code></pre>
 
       <h2 id="step-09">7. 追加ディスクのマウント</h2>
       <p>追加EBSのデバイス名は、EC2の指定値とOS上の表示が異なる<br>Nitroベースのインスタンスでは、通常<code>/dev/nvme1n1</code>のようなNVMeデバイスとして認識される</p>
+      <p>再起動後も自動的にマウントする場合は、デバイス名ではなくファイルシステムのUUIDを<code>/etc/fstab</code>へ指定する<br><code>nofail</code>を指定すると、対象ボリュームをアタッチしていない場合やマウントに失敗した場合もインスタンスの起動を継続できる</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/ebs/latest/userguide/ebs-using-volumes.html">Amazon EBS ボリュームを使用できるようにする</a></p>
 
       <p class="procedure-step"><strong>1. デバイスとファイルシステムの確認</strong></p>
       <div class="code">
@@ -251,6 +253,11 @@ vi /etc/fstab</code></pre>
       <div class="code">
         <div class="code-header"><span>fstab</span><button class="copy" type="button">Copy</button></div>
         <pre><code>UUID=&lt;UUID&gt; &lt;MOUNT_POINT&gt; xfs defaults,nofail 0 2</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>ℹ️ fstabの指定例</strong>
+        <p><code>UUID=&lt;UUID&gt;</code>は<code>blkid</code>で確認したファイルシステムUUID、<code>&lt;MOUNT_POINT&gt;</code>は<code>/data</code>などのマウント先を指定する<br><code>xfs</code>はファイルシステム、<code>defaults,nofail</code>はマウントオプション、末尾の<code>0 2</code>はdump対象外とルート以外のfsck順序を示す</p>
       </div>
 
       <p class="procedure-step"><strong>6. fstab設定の確認</strong></p>
@@ -362,7 +369,8 @@ vi /etc/fstab</code></pre>
       <p class="procedure-step"><strong>7. fstab設定の確認</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>systemctl daemon-reload
+        <pre><code>mount -a
+systemctl daemon-reload
 swapon --all --verbose
 swapon --show</code></pre>
       </div>
