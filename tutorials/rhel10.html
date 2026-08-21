@@ -61,14 +61,17 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content rhel10-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
       <h1>Red Hat Enterprise Linux 10</h1>
-      <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 10を初期構築し、CPU要件、リポジトリ、パッケージ、ログ、セキュリティ設定を確認する手順を整理する</p>
+      <div class="page-summary">
+        <strong>⚡ このページの要約</strong>
+        <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 10を初期構築し、OS、ストレージ、ミドルウェア、ログの設定手順をまとめる<br>CPU要件、リポジトリ、パッケージ、セキュリティを含む初期設定と確認方法を整理する</p>
+      </div>
 
       <div class="callout">
         <strong>ℹ️ Red Hat Enterprise Linux 10の主な変更点</strong>
@@ -488,7 +491,7 @@ df -hT /data</code></pre>
         既存のデータがあるデバイスに<code>mkfs</code>を実行するとデータを失います。<code>file -s</code>と<code>lsblk -f</code>の結果が空の新規ボリュームであることを確認してから実行する
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ebs-using-volumes.html">Amazon EBSボリュームの使用</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ebs-using-volumes.html">Amazon EBSボリュームの使用</a></p>
 
       <h3>既存EBSボリューム拡張後のOS側反映</h3>
       <p class="procedure-step"><strong>6. ファイルシステムとパーティション構成の確認</strong></p>

@@ -61,14 +61,17 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content windows-server-2022-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
       <h1>Windows Server 2022</h1>
-      <p class="lead">Amazon EC2上でWindows Server 2022を起動し、接続、ユーザー、ネットワーク、更新、セキュリティの初期設定を確認する手順を整理する</p>
+      <div class="page-summary">
+        <strong>⚡ このページの要約</strong>
+        <p class="lead">Amazon EC2上でWindows Server 2022を初期構築し、接続、ローカルユーザー、OS、AWS管理機能の設定手順をまとめる<br>更新、セキュリティ、ログ、クラッシュダンプを含む初期設定と確認方法を整理する</p>
+      </div>
 
       <h2 id="launch">0. 起動時の確認</h2>
 
@@ -77,7 +80,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用する
+        <p>Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用する</p>
       </div>
 
 
@@ -127,7 +130,7 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与する
+        <p>Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与する</p>
       </div>
 
 
@@ -162,7 +165,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        <code>Administrators</code>グループへの追加とパスワード無期限化は、対象ユーザーに管理権限が必要で、社内標準で許可されている場合に限ります。Active Directoryへ参加する環境では、ローカルアカウントを増やさず、ドメインアカウントとグループポリシーによる管理を優先する
+        <p><code>Administrators</code>グループへの追加とパスワード無期限化は、対象ユーザーに管理権限が必要で、社内標準で許可されている場合に限ります。Active Directoryへ参加する環境では、ローカルアカウントを増やさず、ドメインアカウントとグループポリシーによる管理を優先する</p>
       </div>
 
       <h2 id="os-settings">3. Windows OS初期設定</h2>
@@ -193,7 +196,7 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        2018年8月以降のAWS提供Windows AMIは、Amazon Time Sync Serviceを既定で使用します。Windows Server 2022の標準AMIでは追加のNTP設定は不要です。ドメイン参加後は、Active Directoryの時刻階層を含む設計に従う
+        <p>2018年8月以降のAWS提供Windows AMIは、Amazon Time Sync Serviceを既定で使用します。Windows Server 2022の標準AMIでは追加のNTP設定は不要です。ドメイン参加後は、Active Directoryの時刻階層を含む設計に従う</p>
       </div>
 
 
@@ -208,7 +211,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        自動更新を無効化する場合は、AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意します。更新経路がない状態で無効化すると、既知の脆弱性が残る
+        <p>自動更新を無効化する場合は、AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意します。更新経路がない状態で無効化すると、既知の脆弱性が残る</p>
       </div>
 
       <h3 id="rdp-security">3.5 RDPセキュリティ設定</h3>
@@ -243,7 +246,7 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <code class="ui-value">高</code>はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
+        <p><code class="ui-value">高</code>はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する</p>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
@@ -259,7 +262,7 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用する
+        <p>Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用する</p>
       </div>
 
 
@@ -297,10 +300,10 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない
+        <p>EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
 
       <h3 id="cloudwatch-config">4.2 CloudWatch Agent設定ファイル作成</h3>
       <p>収集するWindowsイベントログ、パフォーマンスカウンター、収集間隔、CloudWatch Logsのロググループ名をJSON形式の設定ファイルへ定義する</p>
@@ -352,10 +355,10 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録する
+        <p>Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録する</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
 
       <h3 id="cloudwatch-run-command">4.3 Run Commandによる設定適用</h3>
       <p>Parameter Storeに保存した設定を、AWS Systems Manager Run Commandから対象インスタンスへ適用する</p>
@@ -373,10 +376,10 @@
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行する
+        <p>共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行する</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/installing-cloudwatch-agent-ssm.html">AWS公式: Systems ManagerによるCloudWatch Agentの設定と起動</a></p>
 
       <h3 id="ec2launch-sysprep">4.4 EC2Launch v2とAMI横展開</h3>
       <p>AWS提供のWindows Server 2022 AMIにはEC2Launch v2が含まれます。構築済みインスタンスをカスタムAMIとして横展開する場合は、EC2Launch v2からSysprepを実行してインスタンス固有情報を一般化する</p>
@@ -391,10 +394,10 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しない
+        <p>Sysprepはバックアップ手段ではありません。コンピューター名やSIDなどのインスタンス固有情報を一般化するため、稼働中インスタンスの復旧用AMIを取得する目的では使用しない</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2launch-v2-settings.html">AWS公式: EC2Launch v2設定</a></p>
 
       <h2 id="security-options">5. 要件に応じた追加設定</h2>
 
@@ -454,7 +457,7 @@ foreach ($protocol in $protocols) {
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Schannel設定はOS全体へ影響します。互換性問題が発生した場合は<code>schannel-before.reg</code>を<code>reg import</code>で復元し、再起動して切り戻します。Microsoftはレジストリの直接変更より、グループポリシーや管理された構成方式の利用を推奨している
+        <p>Schannel設定はOS全体へ影響します。互換性問題が発生した場合は<code>schannel-before.reg</code>を<code>reg import</code>で復元し、再起動して切り戻します。Microsoftはレジストリの直接変更より、グループポリシーや管理された構成方式の利用を推奨している</p>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows/win32/secauthn/tls-10-11-deprecation-in-windows">Microsoft公式: WindowsにおけるTLS 1.0 / 1.1の非推奨化</a></p>
@@ -481,7 +484,7 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <code>/rt:false</code>は上限到達時に古いイベントを上書きします。<code>/rt:true</code>は既存イベントを保持し、上限到達後の新規イベントを保存しません。監査要件がある場合はログ転送と保管先を先に設計する
+        <p><code>/rt:false</code>は上限到達時に古いイベントを上書きします。<code>/rt:true</code>は既存イベントを保持し、上限到達後の新規イベントを保存しません。監査要件がある場合はログ転送と保管先を先に設計する</p>
       </div>
 
 
@@ -522,7 +525,7 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        Microsoftはメモリ32GB以下では完全メモリダンプ、32GB超ではシステム管理のページファイルと自動メモリダンプを基本構成として案内しています。完全メモリダンプにはOSボリューム上へ十分なページファイル容量が必要
+        <p>Microsoftはメモリ32GB以下では完全メモリダンプ、32GB超ではシステム管理のページファイルと自動メモリダンプを基本構成として案内しています。完全メモリダンプにはOSボリューム上へ十分なページファイル容量が必要</p>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/troubleshoot-stop-errors-best-practices-dump-configuration-recommendations">Microsoft公式: クラッシュダンプ設定の推奨事項</a></p>

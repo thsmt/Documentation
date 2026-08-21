@@ -93,14 +93,17 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content windows-server-2025-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
       <h1>Windows Server 2025</h1>
-      <p class="lead">Amazon EC2上でWindows Server 2025を起動し、接続、ユーザー、更新、OpenSSH、SMB、セキュリティの初期設定を確認する手順を整理する</p>
+      <div class="page-summary">
+        <strong>⚡ このページの要約</strong>
+        <p class="lead">Amazon EC2上でWindows Server 2025 Baseを初期構築し、接続、ローカルユーザー、OS、AWS管理機能の設定手順をまとめる<br>再起動を伴うコンピューター名変更とWindows Updateを最後に実施し、設定後の確認方法を整理する</p>
+      </div>
 
       <h2 id="ami-selection">AMIの違い</h2>
       <p>AMIについては、<code>Base</code>がデスクトップGUI付き、<code>Core</code>がGUIを含まないServer Core。今回の<code>compmgmt.msc</code>による手順では<code>Base</code>を選択する。<code>Core</code>はPowerShell、SConfig、Windows Admin Centerなどによる管理向け</p>
@@ -217,7 +220,7 @@ if ($updates.Count -gt 0) {
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用する
+        <p>Amazon EC2のWindowsインスタンスは<code>ED25519</code>キーペアに対応していません。Administratorの初期パスワードを復号できるよう、Windows Serverでは<code>RSA</code>キーペアを使用する</p>
       </div>
 
 
@@ -269,18 +272,18 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/01-ec2-get-windows-password-redacted.png" alt="EC2インスタンスのアクションメニューからセキュリティ、Windowsパスワードを取得の順に選択する画面" width="1718" height="469" loading="lazy">
         <figcaption>対象インスタンスを選択し、<code class="ui-value">アクション</code> ＞ <code class="ui-value">セキュリティ</code> ＞ <code class="ui-value">Windowsパスワードを取得</code>の順に選択</figcaption>
+        <img src="../assets/img/windows-server-2025/01-ec2-get-windows-password-redacted.png" alt="EC2インスタンスのアクションメニューからセキュリティ、Windowsパスワードを取得の順に選択する画面" width="1718" height="469" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/02-decrypt-windows-password-redacted.png" alt="Windowsパスワード取得画面でRSA秘密鍵をアップロードして復号する画面" width="1991" height="789" loading="lazy">
         <figcaption>起動時に指定したRSAキーペアの秘密鍵をアップロードし、<code class="ui-value">パスワードを復号化</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/02-decrypt-windows-password-redacted.png" alt="Windowsパスワード取得画面でRSA秘密鍵をアップロードして復号する画面" width="1991" height="789" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/03-windows-password-result-redacted.png" alt="復号されたAdministratorパスワードと接続先情報を確認する画面" width="1416" height="1111" loading="lazy">
         <figcaption>復号結果で接続先とAdministratorパスワードを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/03-windows-password-result-redacted.png" alt="復号されたAdministratorパスワードと接続先情報を確認する画面" width="1416" height="1111" loading="lazy">
       </figure>
 
       <h3 id="connect-bastion">1.2 踏み台経由のRDP接続</h3>
@@ -303,7 +306,7 @@ if ($updates.Count -gt 0) {
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与する
+        <p>Fleet Managerを利用するEC2インスタンスには、SSM Agentと<code>AmazonSSMManagedInstanceCore</code>相当の権限を持つIAMインスタンスプロファイルが必要です。インスタンスへアクセスキーを保存せず、IAMロールで権限を付与する</p>
       </div>
 
 
@@ -325,28 +328,28 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/07-computer-management-user-list.png" alt="コンピューターの管理でローカルユーザーとグループのユーザーを開いた画面" width="985" height="709" loading="lazy">
         <figcaption><code class="ui-value">コンピューターの管理</code>で<code class="ui-value">ローカル ユーザーとグループ</code> ＞ <code class="ui-value">ユーザー</code>を開き、メニューバーの<code class="ui-value">操作(A)</code> ＞ <code class="ui-value">新しいユーザー(N)</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/07-computer-management-user-list.png" alt="コンピューターの管理でローカルユーザーとグループのユーザーを開いた画面" width="985" height="709" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/08-new-user-redacted.png" alt="新しいユーザー画面で管理用ローカルユーザーの情報とパスワード設定を入力した状態" width="443" height="441" loading="lazy">
         <figcaption>管理用ローカルユーザーの情報とパスワード運用要件を設定し、<code class="ui-value">作成(E)</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/08-new-user-redacted.png" alt="新しいユーザー画面で管理用ローカルユーザーの情報とパスワード設定を入力した状態" width="443" height="441" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/09-user-group-membership-redacted.png" alt="ローカルユーザーのプロパティで所属するグループを開いた画面" width="478" height="591" loading="lazy">
         <figcaption>作成したユーザーをダブルクリックし、<code class="ui-value">所属するグループ</code>タブ ＞ <code class="ui-value">追加(D)</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/09-user-group-membership-redacted.png" alt="ローカルユーザーのプロパティで所属するグループを開いた画面" width="478" height="591" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/10-select-administrators-redacted.png" alt="グループの選択画面へAdministratorsを入力して名前を確認する画面" width="546" height="286" loading="lazy">
         <figcaption><code>Administrators</code>を入力して<code class="ui-value">名前の確認(C)</code>を選択し、名前が解決されたことを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/10-select-administrators-redacted.png" alt="グループの選択画面へAdministratorsを入力して名前を確認する画面" width="546" height="286" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/11-administrators-membership-redacted.png" alt="ローカルユーザーの所属するグループにAdministratorsが追加された画面" width="479" height="593" loading="lazy">
         <figcaption>所属するグループに<code>Administrators</code>と<code>Users</code>が表示されることを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/11-administrators-membership-redacted.png" alt="ローカルユーザーの所属するグループにAdministratorsが追加された画面" width="479" height="593" loading="lazy">
       </figure>
 
       <h3 id="customer-user">2.2 利用者用ローカルユーザー</h3>
@@ -384,13 +387,13 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/15-date-and-time.png" alt="日付と時刻画面で現在のタイムゾーンを確認する画面" width="449" height="484" loading="lazy">
         <figcaption><code class="ui-value">日付と時刻</code> ＞ <code class="ui-value">タイムゾーンの変更(Z)</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/15-date-and-time.png" alt="日付と時刻画面で現在のタイムゾーンを確認する画面" width="449" height="484" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/16-time-zone.png" alt="タイムゾーンの設定画面でUTCプラス9時間の大阪、札幌、東京を選択した状態" width="430" height="244" loading="lazy">
         <figcaption><code class="ui-value">タイムゾーン</code>へ<code class="ui-value">(UTC+09:00) 大阪、札幌、東京</code>を指定</figcaption>
+        <img src="../assets/img/windows-server-2025/16-time-zone.png" alt="タイムゾーンの設定画面でUTCプラス9時間の大阪、札幌、東京を選択した状態" width="430" height="244" loading="lazy">
       </figure>
 
 
@@ -405,18 +408,18 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/17-windows-update-policy.png" alt="ローカルグループポリシーエディターで自動更新を構成するポリシーを選択した画面" width="1368" height="768" loading="lazy">
         <figcaption><code class="ui-value">エンド ユーザー エクスペリエンスの管理</code> ＞ <code class="ui-value">自動更新を構成する</code>を開く</figcaption>
+        <img src="../assets/img/windows-server-2025/17-windows-update-policy.png" alt="ローカルグループポリシーエディターで自動更新を構成するポリシーを選択した画面" width="1368" height="768" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/18-configure-automatic-updates.png" alt="自動更新を構成するポリシーを有効にして自動ダウンロード後にインストールを通知する設定画面" width="792" height="720" loading="lazy">
         <figcaption>ポリシーを<code class="ui-value">有効</code>にし、<code class="ui-value">3 - 自動ダウンロードしインストールを通知</code>を指定</figcaption>
+        <img src="../assets/img/windows-server-2025/18-configure-automatic-updates.png" alt="自動更新を構成するポリシーを有効にして自動ダウンロード後にインストールを通知する設定画面" width="792" height="720" loading="lazy">
       </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        この設定では更新プログラムが自動適用されません。AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意し、既知の脆弱性を残さないようにする
+        <p>この設定では更新プログラムが自動適用されません。AWS Systems Manager Patch Manager、WSUS、SCCMなどで定期的に更新を適用する運用を必ず用意し、既知の脆弱性を残さないようにする</p>
       </div>
 
       <h3 id="rdp-security">3.4 RDPセキュリティ設定</h3>
@@ -430,13 +433,13 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/19-rdp-connection-limit-policy.png" alt="ローカルグループポリシーエディターでリモートデスクトップ接続数を制限するポリシーを選択した画面" width="1365" height="772" loading="lazy">
         <figcaption><code class="ui-value">リモート デスクトップ セッション ホスト</code> ＞ <code class="ui-value">接続</code> ＞ <code class="ui-value">接続数を制限する</code>を開く</figcaption>
+        <img src="../assets/img/windows-server-2025/19-rdp-connection-limit-policy.png" alt="ローカルグループポリシーエディターでリモートデスクトップ接続数を制限するポリシーを選択した画面" width="1365" height="772" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/20-disable-rdp-connection-limit.png" alt="接続数を制限するポリシーを無効にした画面" width="786" height="720" loading="lazy">
         <figcaption>接続数の上限を設けない場合は<code class="ui-value">無効</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/20-disable-rdp-connection-limit.png" alt="接続数を制限するポリシーを無効にした画面" width="786" height="720" loading="lazy">
       </figure>
 
       <h4 id="rdp-encryption">3.4.2 RDP暗号化レベル</h4>
@@ -451,18 +454,18 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/21-rdp-encryption-policy.png" alt="ローカルグループポリシーエディターでクライアント接続の暗号化レベルを設定するポリシーを選択した画面" width="1368" height="767" loading="lazy">
         <figcaption><code class="ui-value">リモート デスクトップ セッション ホスト</code> ＞ <code class="ui-value">セキュリティ</code> ＞ <code class="ui-value">クライアント接続の暗号化レベルを設定する</code>を開く</figcaption>
+        <img src="../assets/img/windows-server-2025/21-rdp-encryption-policy.png" alt="ローカルグループポリシーエディターでクライアント接続の暗号化レベルを設定するポリシーを選択した画面" width="1368" height="767" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/22-rdp-high-encryption-level.png" alt="クライアント接続の暗号化レベルを設定するポリシーを有効にして高レベルを選択した画面" width="787" height="722" loading="lazy">
         <figcaption>ポリシーを<code class="ui-value">有効</code>にし、暗号化レベルへ<code class="ui-value">高レベル</code>を指定</figcaption>
+        <img src="../assets/img/windows-server-2025/22-rdp-high-encryption-level.png" alt="クライアント接続の暗号化レベルを設定するポリシーを有効にして高レベルを選択した画面" width="787" height="722" loading="lazy">
       </figure>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <code class="ui-value">高</code>はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する
+        <p><code class="ui-value">高</code>はRDPのネイティブ暗号化へ128ビット暗号化を要求する設定です。TLSをセキュリティレイヤーとして使用する接続では、証明書とTLS設定を優先して設計します。FIPS準拠設定は互換性へ影響するため、準拠要件がある場合だけ別途検証する</p>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-remotedesktopservices">Microsoft公式: Remote Desktop Servicesポリシー</a></p>
@@ -477,23 +480,23 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/23-windows-defender-firewall-enabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが有効な状態" width="1044" height="713" loading="lazy">
         <figcaption><code class="ui-value">Windows Defender ファイアウォールのプロパティ</code>を開く前に、ドメイン、プライベート、パブリックの各プロファイルが有効であることを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/23-windows-defender-firewall-enabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが有効な状態" width="1044" height="713" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/24-disable-windows-defender-firewall-profile.png" alt="Windows Defenderファイアウォールのプロパティでファイアウォールの状態を無効にした画面" width="403" height="459" loading="lazy">
         <figcaption>ドメイン、プライベート、パブリックの各タブで<code class="ui-value">ファイアウォールの状態</code>を<code class="ui-value">無効</code>に変更</figcaption>
+        <img src="../assets/img/windows-server-2025/24-disable-windows-defender-firewall-profile.png" alt="Windows Defenderファイアウォールのプロパティでファイアウォールの状態を無効にした画面" width="403" height="459" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/25-windows-defender-firewall-disabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが無効になった状態" width="1046" height="714" loading="lazy">
         <figcaption>設定後、ドメイン、プライベート、パブリックの各プロファイルが無効になったことを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/25-windows-defender-firewall-disabled.png" alt="セキュリティが強化されたWindows Defenderファイアウォールで各プロファイルが無効になった状態" width="1046" height="714" loading="lazy">
       </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用する
+        <p>Windows Defender Firewallの無効化は、すべての環境に適用する一般的なAWS推奨ではありません。AWSはOS側ファイアウォールを多層防御として利用することを推奨しています。本手順は、Security GroupとNetwork ACLによる通信制御、EDRによる検知・防御、変更承認が整備された対象環境に限って適用する</p>
       </div>
 
 
@@ -509,48 +512,48 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/26-file-explorer-before-additional-volume.png" alt="エクスプローラーのPC画面で追加ボリュームがまだ表示されていない状態" width="661" height="525" loading="lazy">
         <figcaption>初期化前は、エクスプローラーに追加ボリュームが表示されていないことを確認</figcaption>
+        <img src="../assets/img/windows-server-2025/26-file-explorer-before-additional-volume.png" alt="エクスプローラーのPC画面で追加ボリュームがまだ表示されていない状態" width="661" height="525" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/27-initialize-disk-gpt.png" alt="ディスクの初期化画面でパーティションスタイルにGPTを選択した状態" width="422" height="327" loading="lazy">
         <figcaption>対象ディスクを確認し、パーティションスタイルへ<code class="ui-value">GPT</code>を指定</figcaption>
+        <img src="../assets/img/windows-server-2025/27-initialize-disk-gpt.png" alt="ディスクの初期化画面でパーティションスタイルにGPTを選択した状態" width="422" height="327" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/28-create-new-simple-volume.png" alt="ディスクの管理で未割り当て領域から新しいシンプルボリュームを選択する画面" width="679" height="537" loading="lazy">
         <figcaption>対象ディスクの未割り当て領域を右クリックし、<code class="ui-value">新しいシンプル ボリューム</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/28-create-new-simple-volume.png" alt="ディスクの管理で未割り当て領域から新しいシンプルボリュームを選択する画面" width="679" height="537" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/29-new-simple-volume-wizard.png" alt="新しいシンプルボリュームウィザードの開始画面" width="524" height="404" loading="lazy">
         <figcaption><code class="ui-value">新しいシンプル ボリューム ウィザード</code> ＞ <code class="ui-value">次へ</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/29-new-simple-volume-wizard.png" alt="新しいシンプルボリュームウィザードの開始画面" width="524" height="404" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/30-simple-volume-size.png" alt="新しいシンプルボリュームウィザードでボリュームサイズを指定する画面" width="524" height="404" loading="lazy">
         <figcaption>使用するシンプルボリュームのサイズを指定</figcaption>
+        <img src="../assets/img/windows-server-2025/30-simple-volume-size.png" alt="新しいシンプルボリュームウィザードでボリュームサイズを指定する画面" width="524" height="404" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/31-assign-drive-letter.png" alt="新しいシンプルボリュームウィザードでドライブ文字を割り当てる画面" width="524" height="404" loading="lazy">
         <figcaption><code class="ui-value">ドライブ文字</code>へ<code>&lt;VOLUME_DRIVE_LETTER&gt;</code>を割り当て</figcaption>
+        <img src="../assets/img/windows-server-2025/31-assign-drive-letter.png" alt="新しいシンプルボリュームウィザードでドライブ文字を割り当てる画面" width="524" height="404" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/32-format-volume-ntfs.png" alt="新しいシンプルボリュームウィザードでNTFSとクイックフォーマットを指定する画面" width="524" height="404" loading="lazy">
         <figcaption>ファイルシステムへ<code class="ui-value">NTFS</code>を指定し、ボリュームラベルとクイックフォーマットを設定</figcaption>
+        <img src="../assets/img/windows-server-2025/32-format-volume-ntfs.png" alt="新しいシンプルボリュームウィザードでNTFSとクイックフォーマットを指定する画面" width="524" height="404" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/33-simple-volume-wizard-complete.png" alt="新しいシンプルボリュームウィザードの設定確認と完了画面" width="524" height="404" loading="lazy">
         <figcaption>設定内容を確認して<code class="ui-value">完了</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/33-simple-volume-wizard-complete.png" alt="新しいシンプルボリュームウィザードの設定確認と完了画面" width="524" height="404" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/34-file-explorer-additional-volume.png" alt="エクスプローラーでローカルディスクと追加ボリュームが表示された状態" width="659" height="525" loading="lazy">
         <figcaption>エクスプローラーで追加ボリュームと割り当てたドライブ文字を確認</figcaption>
+        <img src="../assets/img/windows-server-2025/34-file-explorer-additional-volume.png" alt="エクスプローラーでローカルディスクと追加ボリュームが表示された状態" width="659" height="525" loading="lazy">
       </figure>
 
       <h2 id="aws-management">4. AWS管理機能の設定</h2>
@@ -567,10 +570,10 @@ if ($updates.Count -gt 0) {
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない
+        <p>EC2インスタンスのIAMロールには、Systems Manager管理用の<code>AmazonSSMManagedInstanceCore</code>と、メトリクス・ログ送信用の<code>CloudWatchAgentServerPolicy</code>相当の権限を付与します。設定ファイルにアクセスキーやシークレットアクセスキーを保存しない</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Agent-on-EC2-Instance.html">AWS公式: CloudWatch Agentのインストール</a></p>
 
       <h3 id="cloudwatch-config">4.2 CloudWatch Agent設定ファイル作成</h3>
       <p>収集するWindowsイベントログ、パフォーマンスカウンター、収集間隔、CloudWatch Logsのロググループ名をJSON形式の設定ファイルへ定義する</p>
@@ -622,10 +625,10 @@ if ($updates.Count -gt 0) {
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録する
+        <p>Parameter Storeへ設定を登録する作業者には<code>ssm:PutParameter</code>権限が必要です。EC2インスタンスには<code>ssm:GetParameter</code>だけを許可し、設定登録権限は付与しません。<code>AmazonCloudWatch-</code>以外のパラメータ名を使う場合は、対象パラメータに限定した<code>ssm:GetParameter</code>権限をインスタンスロールへ追加します。Parameter Storeはアカウントおよびリージョン単位で管理されるため、適用先と同じリージョンへ登録する</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/create-cloudwatch-agent-configuration-file-wizard.html">AWS公式: ウィザードによる設定ファイル作成</a></p>
 
       <h3 id="cloudwatch-run-command">4.3 Run Commandによる設定適用</h3>
       <p>Parameter Storeに保存した設定を、AWS Systems Manager Run Commandから対象インスタンスへ適用する</p>
@@ -643,7 +646,7 @@ if ($updates.Count -gt 0) {
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行する
+        <p>共通設定をParameter Storeで管理すると、インスタンスへJSONファイルを個別配布せずに同じ設定を再適用できます。設定変更時はJSONをレビューし、Parameter Storeを更新してから対象タグ単位でRun Commandを実行する</p>
       </div>
 
 
@@ -660,18 +663,18 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/12-system-properties-hostname-redacted.png" alt="システムのプロパティで現在のコンピューター名を確認する画面" width="471" height="534" loading="lazy">
         <figcaption><code class="ui-value">コンピューター名</code>タブ ＞ <code class="ui-value">変更(C)</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/12-system-properties-hostname-redacted.png" alt="システムのプロパティで現在のコンピューター名を確認する画面" width="471" height="534" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/13-change-computer-name.png" alt="コンピューター名またはドメイン名の変更画面で新しいコンピューター名を入力した状態" width="378" height="446" loading="lazy">
         <figcaption><code class="ui-value">コンピューター名</code>へ<code>&lt;HOSTNAME&gt;</code>を入力し、<code class="ui-value">OK</code>を選択</figcaption>
+        <img src="../assets/img/windows-server-2025/13-change-computer-name.png" alt="コンピューター名またはドメイン名の変更画面で新しいコンピューター名を入力した状態" width="378" height="446" loading="lazy">
       </figure>
 
       <figure class="screenshot-compact">
-        <img src="../assets/img/windows-server-2025/14-hostname-restart-required.png" alt="コンピューター名の変更を適用するには再起動が必要であることを示す画面" width="350" height="184" loading="lazy">
         <figcaption>コンピューター名の変更を適用するには再起動が必要であることを確認し、再起動は保留</figcaption>
+        <img src="../assets/img/windows-server-2025/14-hostname-restart-required.png" alt="コンピューター名の変更を適用するには再起動が必要であることを示す画面" width="350" height="184" loading="lazy">
       </figure>
 
       <h3 id="windows-update">5.2 Windows Update</h3>
@@ -683,8 +686,8 @@ if ($updates.Count -gt 0) {
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2025/35-windows-update-download-install.png" alt="Windows Updateでセキュリティ更新プログラムをダウンロードしてインストールする画面" width="785" height="582" loading="lazy">
         <figcaption><code class="ui-value">すべてダウンロードしてインストール</code>を選択し、検出された更新プログラムを適用</figcaption>
+        <img src="../assets/img/windows-server-2025/35-windows-update-download-install.png" alt="Windows Updateでセキュリティ更新プログラムをダウンロードしてインストールする画面" width="785" height="582" loading="lazy">
       </figure>
 
       <h3 id="final-restart">5.3 最終再起動と確認</h3>
@@ -700,6 +703,7 @@ if ($updates.Count -gt 0) {
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
+      <a href="#ami-selection">AMIの違い</a>
       <a href="#command-summary">PowerShell実行例</a>
       <a class="active" href="#launch">0. 起動時</a>
       <a href="#connect">1. 接続</a>
