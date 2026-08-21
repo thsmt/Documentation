@@ -335,7 +335,8 @@ main {
 }
 
 .aws-cli-guide > h2,
-.eventbridge-scheduler-guide > h2 {
+.eventbridge-scheduler-guide > h2,
+.amazon-workspaces-guide > h2 {
   margin-top: 68px;
   padding-top: 30px;
   border-top: 1px solid var(--line);
