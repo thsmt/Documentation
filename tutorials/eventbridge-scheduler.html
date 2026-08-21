@@ -352,7 +352,7 @@
 
       <h3 id="operations-metrics">CloudWatchで実行状況をモニタリング</h3>
       <ol>
-        <li>CloudWatchコンソールで<code class="ui-value">メトリクス</code> <code class="ui-value">すべてのメトリクス</code> <code class="ui-value">Scheduler</code>を開く</li>
+        <li>CloudWatchコンソールで<code class="ui-value">メトリクス</code> ＞ <code class="ui-value">すべてのメトリクス</code> ＞ <code class="ui-value">Scheduler</code>を開く</li>
         <li>Scheduleごとの運用では<code class="ui-value">Schedule Group Metrics</code>、リージョン全体の傾向では<code class="ui-value">Account Metrics</code>を選択</li>
         <li>Scheduleと同じリージョンを選択し、対象のSchedule Groupとメトリクスを選択</li>
         <li><code class="ui-value">グラフ化したメトリクス</code>で統計を<code>Sum</code>、期間をScheduleの実行間隔に合わせ、実行予定時刻の前後を表示</li>
@@ -375,8 +375,8 @@
       <h3 id="operations-notification">CloudWatchアラームとSNSで失敗を通知</h3>
       <p>失敗を人へ通知する場合は、SchedulerのエラーメトリクスをCloudWatchアラームで評価し、Amazon SNSトピックからメール、SMS、HTTPS、Lambdaなどの購読先へ配信する</p>
       <ol>
-        <li>CloudWatchの<code class="ui-value">すべてのメトリクス</code> <code class="ui-value">Scheduler</code> <code class="ui-value">Schedule Group Metrics</code>で対象グループの<code>TargetErrorCount</code>を選択</li>
-        <li><code class="ui-value">アクション</code> <code class="ui-value">アラームの作成</code>を開き、統計を<code>Sum</code>、しきい値を<code>1以上</code>に設定</li>
+        <li>CloudWatchの<code class="ui-value">すべてのメトリクス</code> ＞ <code class="ui-value">Scheduler</code> ＞ <code class="ui-value">Schedule Group Metrics</code>で対象グループの<code>TargetErrorCount</code>を選択</li>
+        <li><code class="ui-value">アクション</code> ＞ <code class="ui-value">アラームの作成</code>を開き、統計を<code>Sum</code>、しきい値を<code>1以上</code>に設定</li>
         <li>欠落データは<code class="ui-value">適正（しきい値を超えていない）</code>として扱い、通常時にデータがないことによる誤通知を防止</li>
         <li>通知先としてSNSトピックを選択または新規作成し、メール購読では受信した確認メールから購読を確定</li>
         <li><code>InvocationDroppedCount</code>と<code>InvocationsFailedToBeSentToDeadLetterCount</code>にも同じ流れでアラームを作成</li>

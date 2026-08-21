@@ -21,9 +21,9 @@
   --summary-accent: #6e7681;
   --summary-title: #fbbf24;
   --user-value: #ff9900;
-  --ui-value-bg: rgba(88, 166, 255, 0.14);
-  --ui-value-line: rgba(88, 166, 255, 0.48);
-  --ui-value-text: #79c0ff;
+  --ui-value-bg: rgba(139, 148, 158, 0.14);
+  --ui-value-line: rgba(139, 148, 158, 0.5);
+  --ui-value-text: #c9d1d9;
   --example-good: #3fb950;
   --example-bad: #f85149;
   --success-bg: rgba(63, 185, 80, 0.12);
@@ -59,9 +59,9 @@
   --summary-accent: #8c959f;
   --summary-title: #b45309;
   --user-value: #a84b00;
-  --ui-value-bg: #ddf4ff;
-  --ui-value-line: #54aeff;
-  --ui-value-text: #0550ae;
+  --ui-value-bg: #f6f8fa;
+  --ui-value-line: #afb8c1;
+  --ui-value-text: #24292f;
   --example-good: #1a7f37;
   --example-bad: #cf222e;
   --success-bg: #dafbe1;
@@ -451,6 +451,7 @@ code.ui-value {
 }
 
 code.ui-value {
+  margin-inline: 0.25em;
   background: var(--ui-value-bg);
   border-color: var(--ui-value-line);
   color: var(--ui-value-text);
