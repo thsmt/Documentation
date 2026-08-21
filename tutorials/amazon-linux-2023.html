@@ -83,14 +83,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>キーペア</td><td><code>ED25519</code> を利用する</td></tr>
+          <tr><td>キーペア</td><td><code>ED25519</code>を利用する</td></tr>
           <tr><td>接続方式</td><td>SSH、Session Manager、踏み台経由など、作業経路を事前に確認する</td></tr>
           <tr><td>バックアップ</td><td>設定変更前にAMI、EBS Snapshot、設定ファイル退避の要否を確認する</td></tr>
         </tbody>
       </table>
 
       <h2 id="step-02">2. SELinuxの状態確認</h2>
-      <p>Amazon Linux 2023ではSELinuxが初期状態で <code>Permissive</code> です。Red Hat Enterprise Linux 9のように <code>permissive</code> へ変更する手順は標準では不要</p>
+      <p>Amazon Linux 2023ではSELinuxが初期状態で<code>Permissive</code>に設定される<br>Red Hat Enterprise Linux 9のように<code>permissive</code>へ変更する手順は標準では不要</p>
       <p class="procedure-step"><strong>1. SELinuxの動作モード確認</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -104,7 +104,7 @@
       </div>
 
       <h2 id="step-04">3. ログインプロファイル設定</h2>
-      <p><code>export EDITOR=vi</code> をシェルで直接実行しただけでは、現在のシェルと子プロセスにしか反映されず、再起動後には残りません。ログイン後も継続して利用する設定は <code>/etc/profile.d/</code> に配置する</p>
+      <p><code>export EDITOR=vi</code>をシェルで直接実行した場合、設定は現在のシェルと子プロセスにだけ反映され、再起動後には残らない<br>ログイン後も継続して利用する設定は<code>/etc/profile.d/</code>に配置する</p>
       <p class="procedure-step"><strong>1. 履歴設定ファイルの作成</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -175,7 +175,7 @@ date</code></pre>
       </div>
 
       <h2 id="step-07">6. sshd_config修正</h2>
-      <p>SSHのrootログイン、タイムアウト、DNS逆引き、SFTPログ出力を確認・調整します。キーペアは起動時に <code>ED25519</code> で作成する前提</p>
+      <p>SSHのrootログイン、タイムアウト、DNS逆引き、SFTPログ出力を確認・調整する<br>キーペアは起動時に<code>ED25519</code>で作成する前提</p>
       <p class="procedure-step"><strong>1. sshd_configのバックアップ取得</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -207,7 +207,7 @@ systemctl status sshd</code></pre>
       </div>
 
       <h2 id="step-09">7. 追加ディスクのマウント</h2>
-      <p>追加EBSのデバイス名は、EC2の指定値とOS上の表示が異なることがあります。Nitroベースのインスタンスでは、通常 <code>/dev/nvme1n1</code> のようなNVMeデバイスとして認識される</p>
+      <p>追加EBSのデバイス名は、EC2の指定値とOS上の表示が異なる<br>Nitroベースのインスタンスでは、通常<code>/dev/nvme1n1</code>のようなNVMeデバイスとして認識される</p>
 
       <p class="procedure-step"><strong>1. デバイスとファイルシステムの確認</strong></p>
       <div class="code">
@@ -218,7 +218,7 @@ file -s /dev/&lt;DEVICE_NAME&gt;</code></pre>
 
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
-        <code>file -s</code> の結果が <code>data</code> の場合は、ファイルシステムがありません。既存のファイルシステムやデータがあるボリュームに <code>mkfs</code> を実行するとデータが失われるため、対象デバイスを必ず確認する
+        <code>file -s</code>の結果が<code>data</code>の場合は、ファイルシステムが存在しない<br>既存のファイルシステムやデータがあるボリュームに<code>mkfs</code>を実行するとデータが失われるため、対象デバイスを必ず確認する
       </div>
 
       <p class="procedure-step"><strong>2. ファイルシステムの作成</strong></p>
@@ -263,11 +263,11 @@ df -hT &lt;MOUNT_POINT&gt;</code></pre>
       </div>
 
       <h2 id="step-10">8. Amazon EFSのマウント</h2>
-      <p>Amazon EFSを利用する場合は、EFS用Security Group、マウントターゲット、マウント方式を確認します。不要な場合はこの手順をスキップする</p>
+      <p>Amazon EFSを利用する場合は、EFS用Security Group、マウントターゲット、マウント方式を確認する<br>利用しない場合はこの手順をスキップする</p>
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <p><code>amazon-efs-utils</code> はAmazon Linux 2023のリポジトリから導入できますが、すべてのAMIにインストール済みとは限りません。パッケージの有無を確認し、未導入の場合にインストールする</p>
-        <p>通常は、転送中の暗号化を利用できるEFSマウントヘルパーを使用します。IPアドレスを指定したNFSv4.1マウントは、疎通確認やマウントターゲットを明示する要件がある場合に利用する</p>
+        <p><code>amazon-efs-utils</code>はAmazon Linux 2023のリポジトリから導入できるが、すべてのAMIにインストール済みとは限らない<br>パッケージの有無を確認し、未導入の場合にインストールする</p>
+        <p>通常は、転送中の暗号化を利用できるEFSマウントヘルパーを使用する<br>IPアドレスを指定したNFSv4.1マウントは、疎通確認やマウントターゲットを明示する要件がある場合に利用する</p>
       </div>
 
       <p class="procedure-step"><strong>1. EFSマウントヘルパーの確認と導入</strong></p>
@@ -276,7 +276,7 @@ df -hT &lt;MOUNT_POINT&gt;</code></pre>
         <pre><code>rpm -q amazon-efs-utils || dnf install -y amazon-efs-utils</code></pre>
       </div>
 
-      <p>EFS用Security Groupでは、対象EC2のSecurity GroupまたはプライベートIPから <code>2049/tcp</code> を許可する</p>
+      <p>EFS用Security Groupでは、対象EC2のSecurity GroupまたはプライベートIPから<code>2049/tcp</code>を許可する</p>
 
       <p class="procedure-step"><strong>2. マウントポイントの作成とTLSマウント</strong></p>
       <div class="code">
@@ -382,7 +382,7 @@ dnf search postgresql</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. Web・メール・DBクライアントの導入</strong></p>
-      <p>MySQL互換のクライアント用途では、Amazon Linux 2023の標準リポジトリ上にあるMariaDB系パッケージを確認して導入します。PostgreSQLも同様に、利用するメジャーバージョンを確認してから導入する</p>
+      <p>MySQL互換のクライアント用途では、Amazon Linux 2023の標準リポジトリ上にあるMariaDB系パッケージを確認して導入する<br>PostgreSQLも同様に、利用するメジャーバージョンを確認してから導入する</p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf install -y httpd httpd-devel httpd-tools mod_ssl
@@ -394,7 +394,7 @@ dnf install -y postgresql15</code></pre>
       <div class="callout">
         <strong>ℹ️ 情報</strong>
         <p>外部リポジトリを追加する前に、標準リポジトリで提供されるパッケージとサポート方針を確認する</p>
-        <p>DBサーバー本体を構築する場合は、<code>mariadb105-server</code> や <code>postgresql15-server</code> など、環境で利用するバージョンに合わせて別途検証する</p>
+        <p>DBサーバー本体を構築する場合は、<code>mariadb105-server</code>や<code>postgresql15-server</code>など、環境で利用するバージョンに合わせて別途検証する</p>
       </div>
 
       <h2 id="step-13">11. Postfix設定</h2>
@@ -443,7 +443,7 @@ bash-completion net-tools bind-utils sysstat lsof tar zip unzip logrotate</code>
         <thead><tr><th>パッケージ</th><th>主な用途</th></tr></thead>
         <tbody>
           <tr><td><code>vim-enhanced</code></td><td>設定ファイル編集</td></tr>
-          <tr><td><code>telnet</code></td><td>TCPポートの到達性確認。対話ログインには使用しない</td></tr>
+          <tr><td><code>telnet</code></td><td>TCPポートの到達性確認<br>対話ログインには使用しない</td></tr>
           <tr><td><code>lftp</code></td><td>FTP/SFTPによるファイル転送と接続確認</td></tr>
           <tr><td><code>mlocate</code></td><td><code>locate</code>によるファイルパス検索</td></tr>
           <tr><td><code>libyaml</code></td><td>YAMLを扱うツールの依存ライブラリ</td></tr>
@@ -452,7 +452,7 @@ bash-completion net-tools bind-utils sysstat lsof tar zip unzip logrotate</code>
           <tr><td><code>tcpdump</code></td><td>パケットキャプチャ</td></tr>
           <tr><td><code>tmux</code></td><td>SSH切断後も作業を継続できる端末多重化</td></tr>
           <tr><td><code>bash-completion</code></td><td>コマンドとオプションのタブ補完</td></tr>
-          <tr><td><code>net-tools</code></td><td>旧来の<code>netstat</code>・<code>ifconfig</code>。通常は<code>ss</code>・<code>ip</code>を優先する</td></tr>
+          <tr><td><code>net-tools</code></td><td>旧来の<code>netstat</code>・<code>ifconfig</code><br>通常は<code>ss</code>・<code>ip</code>を優先する</td></tr>
           <tr><td><code>bind-utils</code></td><td><code>dig</code>と<code>nslookup</code>によるDNS確認</td></tr>
           <tr><td><code>sysstat</code></td><td><code>sar</code>と<code>iostat</code>による性能情報取得</td></tr>
           <tr><td><code>lsof</code></td><td>プロセスが開いているファイルとポートの確認</td></tr>
@@ -468,7 +468,7 @@ bash-completion net-tools bind-utils sysstat lsof tar zip unzip logrotate</code>
       </div>
 
       <h2 id="step-17">14. rsyslog設定</h2>
-      <p>Amazon Linux 2023は <code>systemd-journald</code> が標準です。従来の <code>/var/log/messages</code>、<code>/var/log/secure</code>、<code>/var/log/cron</code>、SFTPログファイルを使う運用では <code>rsyslog</code> を追加導入する</p>
+      <p>Amazon Linux 2023は<code>systemd-journald</code>が標準となる<br>従来の<code>/var/log/messages</code>、<code>/var/log/secure</code>、<code>/var/log/cron</code>、SFTPログファイルを使う運用では<code>rsyslog</code>を追加導入する</p>
       <p class="procedure-step"><strong>1. rsyslogのインストールと起動</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
