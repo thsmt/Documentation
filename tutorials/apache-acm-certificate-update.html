@@ -96,8 +96,8 @@
       <p>ブラウザで次のURLへアクセス</p>
       <div class="code"><div class="code-header"><span>URL</span><button class="copy" type="button">Copy</button></div><pre><code>https://www.zexample.com/</code></pre></div>
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/browser-self-signed-certificate-before.png" alt="更新前のwww.zexample.com自己署名証明書の詳細" width="1718" height="1391" loading="lazy">
         <figcaption>更新前の自己署名証明書。発行先と発行元が同一で、有効期限は2026年8月31日18時17分17秒JST</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/browser-self-signed-certificate-before.png" alt="更新前のwww.zexample.com自己署名証明書の詳細" width="1718" height="1391" loading="lazy">
       </figure>
 
       <p>Apacheが参照している証明書と秘密鍵のパス確認</p>
@@ -150,13 +150,13 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
       </table>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/acm-public-certificate-request.png" alt="www.zexample.comのACMパブリック証明書リクエスト設定" width="1441" height="1092" loading="lazy">
         <figcaption><code>www.zexample.com</code>、エクスポート有効、DNS検証、RSA 2048を指定した証明書リクエスト画面</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/acm-public-certificate-request.png" alt="www.zexample.comのACMパブリック証明書リクエスト設定" width="1441" height="1092" loading="lazy">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/acm-certificate-issued-redacted.png" alt="www.zexample.comのACM証明書発行完了画面" width="2201" height="714" loading="lazy">
         <figcaption><code>www.zexample.com</code>の証明書が発行済みとなり、更新の適格性が対象であることを確認</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/acm-certificate-issued-redacted.png" alt="www.zexample.comのACM証明書発行完了画面" width="2201" height="714" loading="lazy">
       </figure>
 
       <div class="callout">
@@ -169,14 +169,14 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
       <p>ACMの証明書エクスポート画面で、ユーザーが任意のパスフレーズを入力し、確認欄へ同じ値を入力</p>
       <p>パスフレーズはエクスポートされる秘密鍵の暗号化と後の復号で使用するため、安全な方法で保管</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/acm-export-passphrase-redacted.png" alt="ACM証明書エクスポート時のパスフレーズ入力画面" width="1919" height="820" loading="lazy">
         <figcaption>任意のパスフレーズと確認用の同じ値を入力。公開用画像では識別子、シリアル番号、入力値をマスク</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/acm-export-passphrase-redacted.png" alt="ACM証明書エクスポート時のパスフレーズ入力画面" width="1919" height="820" loading="lazy">
       </figure>
 
       <p><code class="ui-value">PEMエンコーディングを生成</code>を選択後、証明書本文、証明書チェーン、暗号化された秘密鍵を個別にダウンロード、または<code class="ui-value">すべてダウンロード</code>を選択</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/acm-export-download-redacted.png" alt="ACMから証明書本文、証明書チェーン、暗号化秘密鍵をダウンロードする画面" width="1750" height="899" loading="lazy">
         <figcaption>証明書本文、証明書チェーン、暗号化された秘密鍵のダウンロード。公開用画像では識別子、シリアル番号、PEM本文をマスク</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/acm-export-download-redacted.png" alt="ACMから証明書本文、証明書チェーン、暗号化秘密鍵をダウンロードする画面" width="1750" height="899" loading="lazy">
       </figure>
 
       <p>ダウンロードした証明書本文、証明書チェーン、暗号化秘密鍵の保存</p>
@@ -260,7 +260,8 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       <p>サーバー証明書のIssuer DNと証明書チェーン先頭のSubject DNで同じハッシュ値を確認</p>
 
       <h2 id="fullchain">7. 証明書チェーンの配置方式を確認</h2>
-      <p>ACMから出力されるサーバー証明書、証明書チェーン、秘密鍵は別々のデータ<br>サーバー証明書と証明書チェーンを結合するかは、Apacheの設定方式に合わせて決定する</p>
+      <p>ACMから出力されるサーバー証明書、証明書チェーン、秘密鍵は別々のデータ<br>ApacheのVirtualHost設定ファイル（例：<code>/etc/httpd/conf.d/ssl.conf</code>）で、各ファイルをどのディレクティブから参照しているかを確認する</p>
+      <p><code>SSLCertificateFile</code>へサーバー証明書、<code>SSLCertificateChainFile</code>へ中間証明書、<code>SSLCertificateKeyFile</code>へ秘密鍵をそれぞれ指定している構成では、fullchainへの結合は不要<br><code>SSLCertificateFile</code>だけでサーバー証明書と中間証明書を読み込む構成では、両方を結合したfullchainを作成する</p>
       <table>
         <thead><tr><th>配置方式</th><th>Apache設定</th><th>fullchainの作成</th></tr></thead>
         <tbody>
@@ -357,8 +358,8 @@ Verify return code: 0 (ok)</code></pre></div>
       <p>ブラウザで次のURLへアクセス</p>
       <div class="code"><div class="code-header"><span>URL</span><button class="copy" type="button">Copy</button></div><pre><code>https://www.zexample.com/</code></pre></div>
       <figure class="screenshot-wide">
-        <img src="../assets/img/apache-acm-certificate-update/browser-acm-certificate-after.png" alt="更新後のwww.zexample.com ACM証明書の詳細" width="1720" height="1392" loading="lazy">
         <figcaption>更新後のACM証明書。発行者は<code>Amazon RSA 2048 M01</code>、有効期間は2026年8月15日9時00分00秒から2027年3月1日8時59分59秒まで</figcaption>
+        <img src="../assets/img/apache-acm-certificate-update/browser-acm-certificate-after.png" alt="更新後のwww.zexample.com ACM証明書の詳細" width="1720" height="1392" loading="lazy">
       </figure>
     </main>
 

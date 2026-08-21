@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amazon RDS Blue/Green Deployments | Documentation</title>
-  <meta name="description" content="Amazon RDS Blue/Green Deploymentsの仕組み、インプレース更新との差分、制約、切替、監視、切り戻し計画、実践手順を整理する">
+  <meta name="description" content="Amazon RDS Blue/Green Deploymentsの仕組み、インプレース更新との差分、制約、接続影響、実践手順を整理する">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -64,14 +64,14 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content amazon-rds-blue-green-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
       <h1>Amazon RDS Blue/Green Deployments</h1>
-      <p class="lead">Amazon RDSの本番更新を、同期したステージング環境で検証してから短時間で切り替えるための運用パターン。インプレース更新との判断、制約、接続影響、監視、復旧計画、実践手順を整理する</p>
+      <p class="lead">Amazon RDSの本番更新を、同期したステージング環境で検証してから短時間で切り替えるための運用パターン<br>インプレース更新との判断、制約、接続影響、実践手順を整理する</p>
 
       <div class="callout">
         <strong>ℹ️ このページの対象</strong>
@@ -112,11 +112,9 @@
         <p>Greenへ接続するとサーバーはPostgreSQL 18.4、<code>default_transaction_read_only</code>は<code>on</code>、<code>TimeZone</code>は<code>Asia/Tokyo</code>。Blueへ追加した<code>order_id = 100001</code>がGreenでも参照でき、Blueの論理レプリケーションスロット3本はすべて<code>active = true</code>、遅延は<code>0 byte</code>だった</p>
         <p>スイッチオーバーは未実行。切替後の識別子とエンドポイントの動きはAWS公式仕様に基づく想定であり、実行後に実測結果を追記する</p>
       </div>
-      <p><em>＊画像挿入：Blue/Green Deployment作成後の一覧（AWSアカウントID・ユーザー名・固有エンドポイントをマスキング）＊</em></p>
-
       <h2 id="summary">結論と使いどころ</h2>
-      <p>Blue/Green Deploymentsは、本番のBlue環境を複製したGreen環境へ変更を先行適用し、レプリケーション追随と検証を完了してから切り替える方式。メジャーバージョン更新、パラメータ変更、インスタンスクラス変更、ストレージ構成変更などで、作業時間を本番停止時間から切り離せる</p>
-      <p>切替時はRDSが書き込み停止、接続切断、Greenへの追随待ち、DB識別子とエンドポイント名の付け替えを実行する。アプリケーションの接続先名は原則として維持されるが、既存コネクションは切断されるため、接続再試行とコネクションプールの振る舞いが成功条件になる</p>
+      <p>Blue/Green Deploymentsは、本番のBlue環境を複製したGreen環境へ変更を先行適用し、レプリケーション追随と検証を完了してから切り替える方式<br>メジャーバージョン更新、パラメータ変更、インスタンスクラス変更、ストレージ構成変更などで、作業時間を本番停止時間から切り離せる</p>
+      <p>切替時はRDSが書き込み停止、接続切断、Greenへの追随待ち、DB識別子とエンドポイント名の付け替えを実行する<br>アプリケーションの接続先名は原則として維持されるが、既存コネクションは切断されるため、接続再試行とコネクションプールの振る舞いが成功条件になる</p>
 
       <table>
         <thead><tr><th>適する変更</th><th>Blue/Greenを優先する理由</th><th>事前に確認すること</th></tr></thead>
@@ -190,7 +188,7 @@
           <tr><td>論理レプリケーション</td><td>対象のPostgreSQLバージョンからメジャー更新を指定</td><td>DDL/DCL、ラージオブジェクト、主キーのない表、シーケンス、マテリアライズドビュー、WAL容量を個別に評価</td></tr>
         </tbody>
       </table>
-      <p>論理レプリケーションでは、Blueで実行したDDLはGreenへ複製されない。BlueにDDL変更を検出すると<code>Replication degraded</code>となり、Greenを含むDeploymentの作り直しが必要になる。主キーのない表は<code>UPDATE</code>/<code>DELETE</code>を扱えないため、主キー追加または性能影響を評価したうえで<code>REPLICA IDENTITY FULL</code>を検討</p>
+      <p>論理レプリケーションでは、Blueで実行したDDLはGreenへ複製されない<br>BlueにDDL変更を検出すると<code>Replication degraded</code>となり、Greenを含むDeploymentの作り直しが必要になる<br>主キーのない表は<code>UPDATE</code>/<code>DELETE</code>を扱えないため、主キー追加または性能影響を評価したうえで<code>REPLICA IDENTITY FULL</code>を検討</p>
 
       <h2 id="prerequisites">対応条件・制約・依存関係</h2>
       <table class="table-scroll-wide">
@@ -220,6 +218,14 @@
 
       <h3>1. 作業前の棚卸しとベースライン取得</h3>
       <p>対象DB、エンジンとバージョン、トポロジー、保留中の変更、バックアップ、監視、外部連携、接続方式を記録。AWS CLIは意図したアカウントとリージョンを明示し、出力は変更記録に保管</p>
+      <figure>
+        <figcaption>作業前にRDSコンソールのデータベース一覧を開き、対象Blue DBの識別子、ステータス、エンジン、AZ、インスタンスクラスを確認</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/05-before-db-list.png" alt="Blue Green Deployment作成前のRDSデータベース一覧" width="1718" height="277" loading="lazy">
+      </figure>
+      <figure>
+        <figcaption>対象Blue DBを開き、エンジンバージョン、DBパラメータグループ、インスタンスクラス、ストレージ、削除保護などの現在値を確認</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/01-blue-db-settings.png" alt="Blue DBの設定確認画面" width="1718" height="1304" loading="lazy">
+      </figure>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
@@ -254,7 +260,7 @@
 
       <h3>3. エンジン固有の前提を確認</h3>
       <p>MySQL/MariaDBでは自動バックアップを有効化。PostgreSQLでメジャーバージョン更新を行う場合は、適用されるレプリケーション方式を確認し、論理レプリケーションの前提パラメータ、主キー、WAL保持容量を確認</p>
-      <p>PostgreSQLの論理レプリケーションを使う場合は、BlueへカスタムDBパラメータグループを関連付け、<code>rds.logical_replication = 1</code>を設定して再起動する。DBインスタンスとパラメータグループが同期していない状態ではDeploymentを作成できない。今回のBlueでは<code>poc-pg13</code>を使用し、設定が<code>on</code>であることを確認</p>
+      <p>PostgreSQLの論理レプリケーションを使う場合は、BlueへカスタムDBパラメータグループを関連付け、<code>rds.logical_replication = 1</code>を設定して再起動する<br>DBインスタンスとパラメータグループが同期していない状態ではDeploymentを作成できない<br>今回のBlueでは<code>poc-pg13</code>を使用し、設定が<code>on</code>であることを確認</p>
       <div class="code">
         <div class="code-header"><span>PostgreSQL</span><button class="copy" type="button">Copy</button></div>
         <pre><code>SHOW rds.logical_replication;</code></pre>
@@ -279,6 +285,10 @@ ORDER BY 1, 2;</code></pre>
 
       <h3>4. Blue/Green Deploymentを作成</h3>
       <p>RDSコンソールの<code class="ui-value">Databases</code>でBlueのプライマリを選択し、<code class="ui-value">Actions</code> ＞ <code class="ui-value">Create blue/green deployment</code>を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
+      <figure>
+        <figcaption>対象Blue DBの<code class="ui-value">アクション</code>を開き、<code class="ui-value">ブルー/グリーンデプロイの作成</code>を選択</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/02-create-menu.png" alt="Blue Green Deployment作成メニューの選択" width="1716" height="514" loading="lazy">
+      </figure>
       <table>
         <thead><tr><th>コンソール項目</th><th>今回の指定値</th></tr></thead>
         <tbody>
@@ -289,7 +299,18 @@ ORDER BY 1, 2;</code></pre>
           <tr><td>インスタンス / ストレージ</td><td><code>db.t3.micro</code> / gp2 20 GiB</td></tr>
         </tbody>
       </table>
-      <p><em>＊画像挿入：Blue/Green Deployment作成画面の見直しと確認（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
+      <figure>
+        <figcaption>Greenの目標エンジンバージョン、インスタンスクラス、ストレージ種別、ストレージ容量を指定</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/03-create-engine-storage.png" alt="Greenのエンジンとストレージ設定" width="1718" height="1304" loading="lazy">
+      </figure>
+      <figure>
+        <figcaption>Greenへ適用するDBパラメータグループを選択し、BlueとGreenの設定差分を確認</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/04-create-parameter-group.png" alt="GreenのDBパラメータグループ設定" width="1718" height="1304" loading="lazy">
+      </figure>
+      <figure>
+        <figcaption><code class="ui-value">見直しと確認</code>でBlueとGreenのエンジンバージョン、DBパラメータグループ、インスタンスクラス、ストレージを照合し、<code class="ui-value">作成</code>を選択</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/06-create-review.png" alt="Blue Green Deployment作成前の見直しと確認" width="1718" height="1304" loading="lazy">
+      </figure>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds create-blue-green-deployment \
@@ -303,6 +324,10 @@ ORDER BY 1, 2;</code></pre>
       <h3>5. Greenの作成完了と同期状態を確認</h3>
       <p>作成直後は、スナップショットから復元したGreenのストレージで遅延ロードが進む。十分なI/O性能が必要な試験では、ストレージ初期化の進捗も確認してから測定を開始</p>
       <p>今回の作成完了後は、Blueの<code>poc-pg-db</code>がPostgreSQL 13.23のまま本番として稼働し、別DBインスタンス<code>poc-pg-db-green-&lt;RANDOM&gt;</code>がPostgreSQL 18.4として<code class="ui-value">Available</code>になった。この時点でエンジン更新済みのGreenが存在し、切替時に旧Blueを更新する構成ではない</p>
+      <figure>
+        <figcaption>RDSコンソールのデータベース一覧で、Deployment配下のBlueとGreenがともに<code class="ui-value">利用可能</code>であることを確認</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/07-after-create-db-list.png" alt="Blue Green Deployment作成後のRDSデータベース一覧" width="1716" height="336" loading="lazy">
+      </figure>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-blue-green-deployments \
@@ -317,8 +342,6 @@ ORDER BY 1, 2;</code></pre>
   --query "DBInstances[0].{Status:DBInstanceStatus,StorageOperation:StorageOperationStatus,StorageProgress:StorageOperationPercentProgress,Endpoint:Endpoint.Address,EngineVersion:EngineVersion}" \
   --output json</code></pre>
       </div>
-      <p><em>＊画像挿入：Deployment配下にBlueとGreenが<code class="ui-value">Available</code>で表示された一覧（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
-
       <h3>6. Greenで受入試験を実施</h3>
       <p>Green固有のエンドポイントを用い、アプリケーションの起動、読み取り画面、バッチのドライラン、主要SQL、実行計画、接続数、CPU、メモリ、待機イベント、エラー率を確認。データ変更を伴う試験はレプリケーション競合を起こすため、実施範囲と後始末をDBAと合意してから実施</p>
       <div class="code">
@@ -360,7 +383,7 @@ ORDER BY 1, 2;</code></pre>
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump --version</code></pre>
       </div>
-      <p>両方が18.4になった後、同じ<code>pg_dump 18.4</code>でBlueのPostgreSQL 13.23とGreenの18.4に対するスキーマダンプが成功した。コマンドが何も表示せずシェルへ戻れば、標準出力を<code>/dev/null</code>へ捨てているため正常。入力するパスワードはOSのrootではなく、RDSユーザー<code>pocadmin</code>のパスワード</p>
+      <p>両方が18.4になった後、同じ<code>pg_dump 18.4</code>でBlueのPostgreSQL 13.23とGreenの18.4に対するスキーマダンプが成功した<br>コマンドが何も表示せずシェルへ戻れば、標準出力を<code>/dev/null</code>へ捨てているため正常<br>入力するパスワードはOSのrootではなく、RDSユーザー<code>pocadmin</code>のパスワード</p>
       <div class="code">
         <div class="code-header"><span>RHEL 9.8 / Blue</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump "host=&lt;BLUE_ENDPOINT&gt; port=5432 dbname=pocdb user=pocadmin sslmode=require" --schema-only &gt; /dev/null</code></pre>
@@ -371,7 +394,7 @@ ORDER BY 1, 2;</code></pre>
       </div>
 
       <h3>8. 切替直前のレプリケーション確認と中止判断</h3>
-      <p>切替直前に、書き込み負荷と長時間トランザクションを低くし、レプリケーション遅延をほぼゼロに近づける。MySQL/MariaDBはGreenの<code>ReplicaLag</code>、PostgreSQLの論理レプリケーションはBlueの<code>OldestReplicationSlotLag</code>を確認。<code>DatabaseConnections</code>とPerformance Insightsの<code>DBLoad</code>も確認</p>
+      <p>切替直前に、書き込み負荷と長時間トランザクションを低くし、レプリケーション遅延をほぼゼロに近づける<br>MySQL/MariaDBはGreenの<code>ReplicaLag</code>、PostgreSQLの論理レプリケーションはBlueの<code>OldestReplicationSlotLag</code>を確認<br><code>DatabaseConnections</code>とPerformance Insightsの<code>DBLoad</code>も確認</p>
       <p>今回の検証ではDeployment作成後にBlueへ1件追加し、同じ行がGreenへ複製されることを確認。切替前までBlueが書き込み元、Greenが同期先として動作していることを実データで確認した</p>
       <div class="code">
         <div class="code-header"><span>PostgreSQL / Blue</span><button class="copy" type="button">Copy</button></div>
@@ -392,7 +415,7 @@ FROM pg_catalog.pg_replication_slots
 WHERE slot_type = 'logical';</code></pre>
       </div>
       <p>実測ではデータベースごとの論理レプリケーションスロット3本がすべて<code>active = true</code>で、<code>confirmed_flush_lsn</code>と<code>pg_current_wal_lsn()</code>が一致し、<code>lag_bytes = 0</code>だった。長時間トランザクション、Greenのヘルス異常、互換性未解決、連携先未更新のいずれかがあれば切替を中止し、Greenを修正またはDeploymentを作り直す</p>
-      <p>PostgreSQLの論理レプリケーションは統計情報を複製しないため、AWSは切替前にGreenで<code>ANALYZE</code>を実行するよう推奨している。セッション単位で読み取り専用を解除して実行し、作業後はセッションを終了。拡張機能はインストール済みバージョンを確認し、新エンジンに対応する更新が必要なものだけ<code>ALTER EXTENSION ... UPDATE</code>を実行</p>
+      <p>PostgreSQLの論理レプリケーションは統計情報を複製しないため、AWSは切替前にGreenで<code>ANALYZE</code>を実行するよう推奨している<br>セッション単位で読み取り専用を解除して実行し、作業後はセッションを終了<br>拡張機能はインストール済みバージョンを確認し、新エンジンに対応する更新が必要なものだけ<code>ALTER EXTENSION ... UPDATE</code>を実行</p>
       <div class="code">
         <div class="code-header"><span>PostgreSQL / Green</span><button class="copy" type="button">Copy</button></div>
         <pre><code>SET default_transaction_read_only = off;
@@ -416,9 +439,16 @@ SET default_transaction_read_only = on;</code></pre>
       </div>
 
       <h3>9. スイッチオーバーを実行</h3>
-      <p>RDSコンソールでBlue/Green Deploymentを選択し、<code class="ui-value">Actions</code> ＞ <code class="ui-value">Switch over</code>を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
+      <p>RDSコンソールでBlue/Green Deploymentを選択し、<code class="ui-value">Actions</code> ＞ <code class="ui-value">Switch over</code>を選択<br>対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行<br>AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
       <p>今回の画面では、BlueのPostgreSQL 13.23とGreenの18.4、DBパラメータグループ<code>poc-pg13</code>と<code>poc-pg18</code>が並んで表示される。ここで<code class="ui-value">Switch over</code>を押しても旧Blueのエンジン更新は始まらず、ガードレール、書き込み停止、接続切断、最終同期、識別子とエンドポイント名の付け替えが開始される</p>
-      <p><em>＊画像挿入：スイッチオーバー概要とタイムアウト設定（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
+      <figure>
+        <figcaption>Deploymentを選択して<code class="ui-value">アクション</code>を開き、<code class="ui-value">切り替え</code>を選択</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/08-switchover-menu.png" alt="Blue Green Deploymentの切り替えメニュー" width="1716" height="336" loading="lazy">
+      </figure>
+      <figure>
+        <figcaption>BlueとGreenの設定、レプリケーション状態、スイッチオーバーのタイムアウトを確認し、<code class="ui-value">切り替え</code>を選択</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/09-switchover-review.png" alt="Blue Green Deploymentのスイッチオーバー設定確認" width="1718" height="1304" loading="lazy">
+      </figure>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds switchover-blue-green-deployment \
@@ -428,7 +458,14 @@ SET default_transaction_read_only = on;</code></pre>
 
       <h3>10. 切替後の受入確認と旧Blueの保護</h3>
       <p>新本番のDB識別子とエンドポイントが従来どおりであること、アプリが再接続して書き込みを再開したこと、エラー率と遅延が許容範囲であることを確認。旧Blueは<code>-old&lt;n&gt;</code>が付いた読み取り専用のリソースとして残るため、削除判断が完了するまで書き込みを有効化しない</p>
-      <p><em>＊画像挿入：切替後にPostgreSQL 18.4が<code>poc-pg-db</code>を引き継ぎ、旧Blueが<code>poc-pg-db-old&lt;n&gt;</code>になった一覧（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
+      <figure>
+        <figcaption>スイッチオーバー完了後、PostgreSQL 18.4のGreenが従来のDB識別子<code>poc-pg-db</code>を引き継ぎ、旧Blueが<code>poc-pg-db-old1</code>として残っていることを確認</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/10-after-switchover-db-list.png" alt="スイッチオーバー完了後のRDSデータベース一覧" width="1716" height="403" loading="lazy">
+      </figure>
+      <figure>
+        <figcaption>旧Blueの<code>poc-pg-db-old1</code>を選択し、削除前の確認対象として識別</figcaption>
+        <img src="../assets/img/amazon-rds-blue-green/11-old-blue-selected.png" alt="スイッチオーバー後に残った旧Blue DBの選択" width="1716" height="403" loading="lazy">
+      </figure>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-blue-green-deployments \
