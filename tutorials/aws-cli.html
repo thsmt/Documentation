@@ -73,7 +73,7 @@
       <h1>AWS CLI 特殊対応</h1>
       <div class="page-summary">
         <strong>⚡ このページの要約</strong>
-        <p class="lead">AWSマネジメントコンソールでは変更・切り戻し・復旧できない設定について、AWS CLIを使用した対応方法をまとめる<br>GUIに操作項目がない場合や、保留中の変更を打ち消す必要がある場合の確認手順と実行コマンドを整理する</p>
+        <p class="lead">コンソール操作だけでは対応できない設定変更・復旧作業を、AWS CLIコマンド付きでまとめたリファレンス<br>各項目は「事前確認→実行→事後確認」の順で構成する</p>
       </div>
 
       <h2 id="rds-pending-maintenance">Amazon RDS 保留中の変更の取り消し</h2>
@@ -87,19 +87,19 @@
         </tbody>
       </table>
 
-      <h3>1. 対象DBインスタンスの現在のエンジンバージョンと、保留中の変更を確認</h3>
+      <p>対象DBインスタンスの現在のエンジンバージョンと、保留中の変更を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json</code></pre>
       </div>
 
-      <h3>2. 保留中のエンジンバージョン変更を取り消すため、現在稼働中のエンジンバージョンを再指定</h3>
+      <p>保留中のエンジンバージョン変更を取り消すため、現在稼働中のエンジンバージョンを再指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds modify-db-instance --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --engine-version &lt;CURRENT_ENGINE_VERSION&gt; --apply-immediately</code></pre>
       </div>
 
-      <h3>3. 変更後に、<code>PendingModifiedValues</code>が<mark><code>{}</code></mark>になっていることを確認</h3>
+      <p>変更後に、<code>PendingModifiedValues</code> が <code>{}</code> になっていることを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances --db-instance-identifier &lt;DB_INSTANCE_IDENTIFIER&gt; --query "DBInstances[0].{DBInstanceIdentifier:DBInstanceIdentifier,EngineVersion:EngineVersion,PendingModifiedValues:PendingModifiedValues}" --output json</code></pre>
@@ -110,8 +110,8 @@
         <p>検証では、Amazon RDS for PostgreSQLの保留中のエンジンバージョン変更を、現在稼働中の <code>17.8</code> を再指定して取り消した</p>
 
         <figure>
-          <img src="../assets/amazon-rds-pending-change-before.png" alt="Amazon RDS console showing a pending engine version change before cancellation">
           <figcaption>取消前: <code class="ui-value">メンテナンスとバックアップ</code>で、エンジンバージョン変更が保留中になっている状態</figcaption>
+          <img src="../assets/amazon-rds-pending-change-before.png" alt="Amazon RDS console showing a pending engine version change before cancellation">
         </figure>
 
         <div class="code">
@@ -136,8 +136,8 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </div>
 
         <figure>
-          <img src="../assets/amazon-rds-pending-change-after.png" alt="Amazon RDS console showing no pending engine version change after cancellation">
           <figcaption>取消後: <code class="ui-value">保留中の変更</code>が空になり、メンテナンスの保留が残っていない状態</figcaption>
+          <img src="../assets/amazon-rds-pending-change-after.png" alt="Amazon RDS console showing no pending engine version change after cancellation">
         </figure>
       </details>
 
@@ -159,25 +159,25 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 現在のBlockDeviceMappingと、終了時削除属性を確認</h3>
+      <p>現在のBlockDeviceMappingと、終了時削除属性を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt; --query "Reservations[0].Instances[0].BlockDeviceMappings[*].{DeviceName:DeviceName,VolumeId:Ebs.VolumeId,DeleteOnTermination:Ebs.DeleteOnTermination}" --output table</code></pre>
       </div>
 
-      <h3>2. 対象EBSボリュームを、EC2終了時に削除される設定へ変更</h3>
+      <p>対象EBSボリュームを、EC2終了時に削除される設定へ変更する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-instance-attribute --instance-id &lt;INSTANCE_ID&gt; --block-device-mappings '[{"DeviceName":"&lt;DEVICE_NAME&gt;","Ebs":{"DeleteOnTermination":true}}]'</code></pre>
       </div>
 
-      <h3>3. データ保持が必要なボリュームの場合は、終了時に削除されない設定へ復元</h3>
+      <p>データ保持が必要なボリュームの場合は、終了時に削除されない設定へ戻す</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-instance-attribute --instance-id &lt;INSTANCE_ID&gt; --block-device-mappings '[{"DeviceName":"&lt;DEVICE_NAME&gt;","Ebs":{"DeleteOnTermination":false}}]'</code></pre>
       </div>
 
-      <h3>4. 変更後に、対象DeviceNameの<code>DeleteOnTermination</code>が想定した値になっていることを確認</h3>
+      <p>変更後に、対象DeviceNameの <code>DeleteOnTermination</code> が想定した値になっていることを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-instances --instance-ids &lt;INSTANCE_ID&gt; --query "Reservations[0].Instances[0].BlockDeviceMappings[*].{DeviceName:DeviceName,VolumeId:Ebs.VolumeId,DeleteOnTermination:Ebs.DeleteOnTermination}" --output table</code></pre>
@@ -200,13 +200,13 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 解放済みのElastic IPを同じアドレスで再取得</h3>
+      <p>解放済みのElastic IPを同じアドレスで再取得する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 allocate-address --domain vpc --address &lt;PUBLIC_IP&gt; --region &lt;REGION&gt;</code></pre>
       </div>
 
-      <h3>2. 払い出されたAllocation IDを指定し、再取得したElastic IPをEC2インスタンスへ関連付け</h3>
+      <p>再取得したElastic IPをEC2インスタンスへ関連付ける場合は、払い出されたAllocation IDを指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 associate-address --allocation-id &lt;ALLOCATION_ID&gt; --instance-id &lt;INSTANCE_ID&gt; --region &lt;REGION&gt;</code></pre>
@@ -230,25 +230,25 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 作業前に、対象バケットのバージョニング状態を確認</h3>
+      <p>作業前に、対象バケットのバージョニング状態を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws s3api get-bucket-versioning --bucket &lt;BUCKET_NAME&gt;</code></pre>
       </div>
 
-      <h3>2. 指定Prefix配下で、最新バージョンがDelete Markerになっているオブジェクトを確認</h3>
+      <p>指定Prefix配下で、最新バージョンがDelete Markerになっているオブジェクトを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws s3api list-object-versions --bucket &lt;BUCKET_NAME&gt; --prefix "&lt;PREFIX&gt;/" --query 'DeleteMarkers[?IsLatest==`true`].[Key,VersionId,LastModified]' --output table</code></pre>
       </div>
 
-      <h3>3. 対象オブジェクトのDelete MarkerをVersion ID付きで削除し、直前のオブジェクトバージョンを表示可能な状態へ復元</h3>
+      <p>対象オブジェクトのDelete MarkerをVersion ID付きで削除し、直前のオブジェクトバージョンを見える状態に戻す</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws s3api delete-object --bucket &lt;BUCKET_NAME&gt; --key "&lt;OBJECT_KEY&gt;" --version-id &lt;DELETE_MARKER_VERSION_ID&gt;</code></pre>
       </div>
 
-      <h3>4. 復元後に、対象オブジェクトが参照できることを確認</h3>
+      <p>復元後に、対象オブジェクトが参照できることを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws s3api head-object --bucket &lt;BUCKET_NAME&gt; --key "&lt;OBJECT_KEY&gt;"</code></pre>
@@ -269,19 +269,19 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. ユーザーに割り当てられていない仮想MFAデバイスを確認</h3>
+      <p>ユーザーに割り当てられていない仮想MFAデバイスを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-virtual-mfa-devices --assignment-status Unassigned --query "VirtualMFADevices[*].SerialNumber" --output table</code></pre>
       </div>
 
-      <h3>2. 不要な未割当て仮想MFAデバイスを削除</h3>
+      <p>不要な未割当て仮想MFAデバイスを削除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam delete-virtual-mfa-device --serial-number &lt;VIRTUAL_MFA_DEVICE_ARN&gt;</code></pre>
       </div>
 
-      <h3>3. 削除後に、未割当て仮想MFAデバイス一覧から消えていることを確認</h3>
+      <p>削除後に、未割当て仮想MFAデバイス一覧から消えていることを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-virtual-mfa-devices --assignment-status Unassigned --query "VirtualMFADevices[*].SerialNumber" --output table</code></pre>
@@ -305,25 +305,25 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 対象Auto Scaling GroupのLifecycle Hookを確認</h3>
+      <p>対象Auto Scaling GroupのLifecycle Hookを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws autoscaling describe-lifecycle-hooks --auto-scaling-group-name &lt;AUTO_SCALING_GROUP_NAME&gt;</code></pre>
       </div>
 
-      <h3>2. 作業時間が不足する場合は、ライフサイクルアクションのハートビートを送信して待機時間を延長</h3>
+      <p>作業時間が不足する場合は、ライフサイクルアクションのハートビートを送信して待機時間を延長する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws autoscaling record-lifecycle-action-heartbeat --lifecycle-hook-name &lt;LIFECYCLE_HOOK_NAME&gt; --auto-scaling-group-name &lt;AUTO_SCALING_GROUP_NAME&gt; --instance-id &lt;INSTANCE_ID&gt;</code></pre>
       </div>
 
-      <h3>3. 作業完了後、インスタンスの起動または終了処理を続行</h3>
+      <p>作業完了後、インスタンスの起動または終了処理を続行する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws autoscaling complete-lifecycle-action --lifecycle-action-result CONTINUE --lifecycle-hook-name &lt;LIFECYCLE_HOOK_NAME&gt; --auto-scaling-group-name &lt;AUTO_SCALING_GROUP_NAME&gt; --instance-id &lt;INSTANCE_ID&gt;</code></pre>
       </div>
 
-      <h3>4. 作業を中止する場合は、設計に応じて<code>ABANDON</code>を指定</h3>
+      <p>作業を中止する場合は、設計に応じて <code>ABANDON</code> を指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws autoscaling complete-lifecycle-action --lifecycle-action-result ABANDON --lifecycle-hook-name &lt;LIFECYCLE_HOOK_NAME&gt; --auto-scaling-group-name &lt;AUTO_SCALING_GROUP_NAME&gt; --instance-id &lt;INSTANCE_ID&gt;</code></pre>
@@ -345,19 +345,19 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 作業前に、ロググループへKMSキーが関連付け済みか確認</h3>
+      <p>作業前に、ロググループへKMSキーが関連付け済みか確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws logs describe-log-groups --log-group-name-prefix "&lt;LOG_GROUP_NAME&gt;" --query "logGroups[*].{LogGroupName:logGroupName,KmsKeyId:kmsKeyId}" --output table</code></pre>
       </div>
 
-      <h3>2. 既存ロググループへKMSキーを関連付け</h3>
+      <p>既存ロググループへKMSキーを関連付ける</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws logs associate-kms-key --log-group-name "&lt;LOG_GROUP_NAME&gt;" --kms-key-id "&lt;KMS_KEY_ARN&gt;"</code></pre>
       </div>
 
-      <h3>3. 関連付けを解除する場合は、ロググループ名を指定して解除</h3>
+      <p>関連付けを解除する場合は、ロググループ名を指定して解除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws logs disassociate-kms-key --log-group-name "&lt;LOG_GROUP_NAME&gt;"</code></pre>
@@ -379,13 +379,13 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
         </tbody>
       </table>
 
-      <h3>1. 保護対象のLogical IDを確認</h3>
+      <p>保護対象のLogical IDを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws cloudformation describe-stack-resources --stack-name &lt;STACK_NAME&gt; --query "StackResources[*].[LogicalResourceId,ResourceType,PhysicalResourceId]" --output table</code></pre>
       </div>
 
-      <h3>2. 特定リソースの更新を拒否するStack Policyを作成</h3>
+      <p>特定リソースの更新を拒否するStack Policyを作成する</p>
       <div class="code">
         <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
         <pre><code>{
@@ -406,13 +406,13 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
 }</code></pre>
       </div>
 
-      <h3>3. 既存スタックへStack Policyを設定</h3>
+      <p>既存スタックへStack Policyを設定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws cloudformation set-stack-policy --stack-name &lt;STACK_NAME&gt; --stack-policy-body file://stack-policy.json</code></pre>
       </div>
 
-      <h3>4. 設定済みのStack Policyを確認</h3>
+      <p>設定済みのStack Policyを確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws cloudformation get-stack-policy --stack-name &lt;STACK_NAME&gt;</code></pre>
@@ -427,13 +427,13 @@ aws rds describe-db-instances --db-instance-identifier database-1 --query "DBIns
       <p>Compute Optimizerからアカウントをオプトアウトする場合は、AWS CLIでEnrollment statusをInactiveに更新する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/compute-optimizer/latest/ug/account-opt-out.html">AWS Compute Optimizer User Guide</a></p>
 
-      <h3>1. 現在のCompute Optimizer登録状態を確認</h3>
+      <p>現在のCompute Optimizer登録状態を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws compute-optimizer get-enrollment-status</code></pre>
       </div>
 
-      <h3>2. Compute Optimizerからアカウントをオプトアウト</h3>
+      <p>Compute Optimizerからアカウントをオプトアウトする</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws compute-optimizer update-enrollment-status --status Inactive</code></pre>
