@@ -126,8 +126,8 @@ const highlightUserValues = () => {
   });
 };
 
-const addAwsCliLineNumbers = () => {
-  document.querySelectorAll(".aws-cli-guide .code pre code").forEach((code) => {
+const addCodeLineNumbers = () => {
+  document.querySelectorAll("main.content .code pre code").forEach((code) => {
     if (code.classList.contains("line-numbered")) return;
 
     const text = code.textContent.replace(/\r\n?/g, "\n");
@@ -144,7 +144,7 @@ const addAwsCliLineNumbers = () => {
   });
 };
 
-addAwsCliLineNumbers();
+addCodeLineNumbers();
 
 if (document.body.dataset.userValueHighlighting !== "off") {
   highlightUserValues();

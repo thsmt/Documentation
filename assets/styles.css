@@ -859,19 +859,19 @@ pre {
   overflow-x: auto;
 }
 
-.aws-cli-guide .code pre {
+.code pre {
   padding: 18px 0;
   background: #0d1117;
   color: #e6edf3;
 }
 
-.aws-cli-guide .code pre code.line-numbered {
+.code pre code.line-numbered {
   display: block;
   min-width: max-content;
   counter-reset: code-line;
 }
 
-.aws-cli-guide .code-line {
+.code-line {
   position: relative;
   display: block;
   min-height: 1.5em;
@@ -879,7 +879,7 @@ pre {
   line-height: 1.5;
 }
 
-.aws-cli-guide .code-line::before {
+.code-line::before {
   position: absolute;
   top: 0;
   left: 0;
@@ -893,7 +893,7 @@ pre {
   user-select: none;
 }
 
-.aws-cli-guide .code .user-value {
+.code .user-value {
   color: #ff9900;
 }
 
