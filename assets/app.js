@@ -42,6 +42,41 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
+const movePageTocToSidebar = () => {
+  const sidebar = document.querySelector("#site-sidebar");
+  const activePageLink = sidebar?.querySelector("a.active");
+  const sourceToc = document.querySelector(".toc");
+  const pageLinks = Array.from(sourceToc?.querySelectorAll(":scope > a") || []);
+
+  if (!sidebar || !activePageLink || !sourceToc || pageLinks.length === 0) return;
+
+  const menu = document.createElement("details");
+  const summary = document.createElement("summary");
+  const subnav = document.createElement("nav");
+  const pageName = activePageLink.textContent.trim();
+
+  menu.className = "sidebar-page-menu";
+  summary.textContent = pageName;
+  summary.setAttribute("aria-label", `${pageName}のページ内見出しを開閉`);
+  summary.setAttribute("aria-current", "page");
+  subnav.className = "sidebar-subnav";
+  subnav.setAttribute("aria-label", `${pageName}のページ内見出し`);
+
+  pageLinks.forEach((link) => {
+    subnav.append(link.cloneNode(true));
+  });
+
+  menu.append(summary, subnav);
+  activePageLink.replaceWith(menu);
+  sourceToc.remove();
+
+  if (window.location.hash && Array.from(subnav.querySelectorAll("a")).some((link) => link.hash === window.location.hash)) {
+    menu.open = true;
+  }
+};
+
+movePageTocToSidebar();
+
 const enhancePageSummaries = () => {
   document.querySelectorAll("main.content > p.lead").forEach((lead) => {
     const summary = document.createElement("div");

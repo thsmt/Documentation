@@ -76,22 +76,19 @@
       <h2 id="vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ALB構築フロー</h2>
       <p>AWS CLIでネットワークから仮想サーバー、ロードバランサーまでを順に構築する</p>
 
-      <table>
-        <thead><tr><th>手順</th><th>対象</th><th>主なAWS CLI操作</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>VPC</td><td><code>create-vpc</code>、<code>modify-vpc-attribute</code></td></tr>
-          <tr><td>2</td><td>サブネット</td><td><code>create-subnet</code></td></tr>
-          <tr><td>3</td><td>ルートテーブル</td><td><code>create-route-table</code>、<code>associate-route-table</code></td></tr>
-          <tr><td>4</td><td>インターネットゲートウェイ</td><td><code>create-internet-gateway</code>、<code>attach-internet-gateway</code></td></tr>
-          <tr><td>5</td><td>デフォルトルート</td><td><code>create-route</code></td></tr>
-          <tr><td>6</td><td>キーペア</td><td><code>create-key-pair</code>、<code>import-key-pair</code></td></tr>
-          <tr><td>7</td><td>Security Group</td><td><code>create-security-group</code>、<code>authorize-security-group-ingress</code></td></tr>
-          <tr><td>8</td><td>EC2</td><td><code>run-instances</code>、<code>create-tags</code></td></tr>
-          <tr><td>9</td><td>AMI</td><td><code>create-image</code>、<code>describe-images</code></td></tr>
-          <tr><td>10</td><td>Elastic IP</td><td><code>allocate-address</code>、<code>associate-address</code></td></tr>
-          <tr><td>11</td><td>Application Load Balancer</td><td><code>create-load-balancer</code>、<code>create-target-group</code>、<code>register-targets</code>、<code>create-listener</code></td></tr>
-        </tbody>
-      </table>
+      <ol class="step-list">
+        <li><strong>VPC</strong><span><code>create-vpc</code>、<code>modify-vpc-attribute</code></span></li>
+        <li><strong>サブネット</strong><span><code>create-subnet</code></span></li>
+        <li><strong>ルートテーブル</strong><span><code>create-route-table</code>、<code>associate-route-table</code></span></li>
+        <li><strong>インターネットゲートウェイ</strong><span><code>create-internet-gateway</code>、<code>attach-internet-gateway</code></span></li>
+        <li><strong>デフォルトルート</strong><span><code>create-route</code></span></li>
+        <li><strong>キーペア</strong><span><code>create-key-pair</code>、<code>import-key-pair</code></span></li>
+        <li><strong>Security Group</strong><span><code>create-security-group</code>、<code>authorize-security-group-ingress</code></span></li>
+        <li><strong>EC2</strong><span><code>run-instances</code>、<code>create-tags</code></span></li>
+        <li><strong>AMI</strong><span><code>create-image</code>、<code>describe-images</code></span></li>
+        <li><strong>Elastic IP</strong><span><code>allocate-address</code>、<code>associate-address</code></span></li>
+        <li><strong>Application Load Balancer</strong><span><code>create-load-balancer</code>、<code>create-target-group</code>、<code>register-targets</code>、<code>create-listener</code></span></li>
+      </ol>
 
       <h3 id="build-vpc">1. VPCの作成</h3>
       <p>CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>
@@ -546,13 +543,13 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
-      <p>ケース②：特定のCIDRからHTTP（80/tcp）への接続を、説明付きで許可する<br>説明は<code>--ip-permissions</code>の<code>IpRanges</code>へ指定する</p>
+      <p>ケース②：特定のCIDRからHTTP（80/tcp）への接続を、説明付きで許可する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=&lt;CIDR&gt;,Description="&lt;DESCRIPTION&gt;"}]'</code></pre>
       </div>
 
-      <p>ケース③：特定のCIDRから全プロトコル・全ポートへの接続を一時的に許可する<br>検証や一時作業以外では使用せず、作業後に削除する</p>
+      <p>ケース③：特定のCIDRから全プロトコル・全ポートへの接続を一時的に許可する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
@@ -576,56 +573,61 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
-      <h2 id="prefix-list">Prefix List作成・IP登録</h2>
-      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加せず、Customer-managed Prefix ListへまとめてSecurity Groupから参照する<br>変更対象をPrefix Listへ集約することで、接続元IPの追加と削除を管理しやすくする</p>
+      <h2 id="prefix-list">Prefix Listの作成・IP登録</h2>
+      <p>複数の接続元CIDRをCustomer-managed Prefix Listへ集約し、Security Groupから1つの参照として利用する<br>接続元の追加・削除をPrefix List側で管理できるため、同じCIDR一覧を複数のSecurity Groupで利用する構成に適している</p>
       <p>出典：<a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a></p>
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
-        <p>Security Groupの画面上は、1つのPrefix List参照として整理できる<br>Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われる<br>最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計する</p>
+        <p>Security GroupからPrefix Listを1件参照する場合も、クォータではPrefix Listの最大エントリ数分のルールとして扱われる<br><code>&lt;MAX_ENTRIES&gt;</code>は将来の追加分を考慮しつつ、必要以上に大きく設定しない</p>
       </div>
+
+      <h3>入力値</h3>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;PREFIX_LIST_NAME&gt;</code></td><td>作成または更新するPrefix List名</td></tr>
           <tr><td><code>&lt;MAX_ENTRIES&gt;</code></td><td>Prefix Listに登録できる最大エントリ数<br>例: <code>10</code></td></tr>
           <tr><td><code>&lt;CIDR_1&gt;</code></td><td>登録する接続元CIDR<br>例: <code>203.0.113.10/32</code></td></tr>
-          <tr><td><code>&lt;CIDR_2&gt;</code></td><td>追加で登録する接続元CIDR<br>不要な場合はコマンドから削除する</td></tr>
-          <tr><td><code>&lt;CIDR_3&gt;</code></td><td>既存Prefix Listへ後から追加する接続元CIDR</td></tr>
+          <tr><td><code>&lt;CIDR_2&gt;</code></td><td>作成時に追加で登録する接続元CIDR<br>1件だけ登録する場合は指定不要</td></tr>
+          <tr><td><code>&lt;CIDR_3&gt;</code></td><td>作成後に追加する接続元CIDR</td></tr>
           <tr><td><code>&lt;DESCRIPTION_1&gt;</code></td><td>登録CIDRの説明<br>例: <code>office-a</code></td></tr>
-          <tr><td><code>&lt;DESCRIPTION_2&gt;</code></td><td>追加CIDRの説明</td></tr>
-          <tr><td><code>&lt;DESCRIPTION_3&gt;</code></td><td>後から追加するCIDRの説明</td></tr>
+          <tr><td><code>&lt;DESCRIPTION_2&gt;</code></td><td><code>&lt;CIDR_2&gt;</code>の説明</td></tr>
+          <tr><td><code>&lt;DESCRIPTION_3&gt;</code></td><td><code>&lt;CIDR_3&gt;</code>の説明</td></tr>
           <tr><td><code>&lt;PREFIX_LIST_ID&gt;</code></td><td>作成後に払い出されるPrefix List ID</td></tr>
-          <tr><td><code>&lt;CURRENT_VERSION&gt;</code></td><td>Prefix List更新時に指定する現在のバージョン</td></tr>
+          <tr><td><code>&lt;CURRENT_VERSION&gt;</code></td><td>更新前に確認した現在のバージョン</td></tr>
           <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>Prefix Listを参照させるSecurity Group ID</td></tr>
           <tr><td><code>&lt;PORT&gt;</code></td><td>許可するポート番号<br>例: <code>443</code></td></tr>
         </tbody>
       </table>
 
-      <p>Prefix Listを作成して初期CIDRを登録する<br>登録するIPアドレスが複数ある場合は、<code>Cidr=...</code>の指定を追加する</p>
+      <h3>Prefix Listの作成</h3>
+      <p>Prefix Listを作成し、初期CIDRを登録する<br>接続元を1件だけ登録する場合は、<code>Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code>をコマンドから削除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-managed-prefix-list --prefix-list-name &lt;PREFIX_LIST_NAME&gt; --address-family IPv4 --max-entries &lt;MAX_ENTRIES&gt; --entries Cidr=&lt;CIDR_1&gt;,Description="&lt;DESCRIPTION_1&gt;" Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code></pre>
       </div>
 
-      <p>作成したPrefix ListのID、現在のバージョン、最大エントリ数を確認する</p>
+      <h3>Prefix Listの確認・更新</h3>
+      <p>作成したPrefix ListのID、現在のバージョン、最大エントリ数、状態を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=&lt;PREFIX_LIST_NAME&gt; --query "PrefixLists[*].[PrefixListId,PrefixListName,Version,MaxEntries,State]" --output table</code></pre>
       </div>
 
-      <p>既存のPrefix Listへ接続元CIDRを追加する<br>更新時は、直前に確認した<code>Version</code>を<code>&lt;CURRENT_VERSION&gt;</code>に指定する</p>
+      <p>既存のPrefix Listへ接続元CIDRを追加する<br>直前に確認した<code>Version</code>を<code>&lt;CURRENT_VERSION&gt;</code>へ指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-managed-prefix-list --prefix-list-id &lt;PREFIX_LIST_ID&gt; --current-version &lt;CURRENT_VERSION&gt; --add-entries Cidr=&lt;CIDR_3&gt;,Description="&lt;DESCRIPTION_3&gt;"</code></pre>
       </div>
 
-      <p>Prefix Listに登録されているCIDRを確認する</p>
+      <p>更新後に、Prefix Listへ登録されているCIDRと説明を確認する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 get-managed-prefix-list-entries --prefix-list-id &lt;PREFIX_LIST_ID&gt; --query "Entries[*].[Cidr,Description]" --output table</code></pre>
       </div>
 
-      <p>Security GroupのインバウンドルールからPrefix Listを参照する<br>例では、Prefix Listに登録した接続元CIDR群から<code>&lt;PORT&gt;</code>へのTCP通信を許可する</p>
+      <h3>Security Groupからの参照</h3>
+      <p>Security GroupのインバウンドルールからPrefix Listを参照する<br>Prefix Listへ登録した接続元CIDR群から<code>&lt;PORT&gt;</code>へのTCP通信を許可する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions IpProtocol=tcp,FromPort=&lt;PORT&gt;,ToPort=&lt;PORT&gt;,PrefixListIds=[{PrefixListId=&lt;PREFIX_LIST_ID&gt;}]</code></pre>
@@ -692,7 +694,7 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </div>
 
       <h2 id="ebs-expand">EC2 / EBS ボリューム拡張</h2>
-      <p>ファイルシステムの空き容量が不足した場合は、Elastic Volumesを使用してEBSボリュームをオンラインで拡張する<br>作業前にスナップショットを取得して必要なサイズを確定し、変更後にOS側のパーティションとファイルシステムを拡張する<br>OS側の拡張手順は<a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a>を参照する</p>
+      <p>ファイルシステムの空き容量が不足した場合は、Elastic Volumesを使用してEBSボリュームをオンラインで拡張する<br>作業前にスナップショットを取得して必要なサイズを確定し、変更後にOS側のパーティションとファイルシステムを拡張する</p>
       <p>出典：<a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modify-volume.html">Modify an Amazon EBS volume using Elastic Volumes operations</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
@@ -780,7 +782,7 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       <a href="#iam">IAM</a>
       <a href="#iam-offboarding">IAMユーザー利用停止</a>
       <a href="#security-group">Security Group</a>
-      <a href="#prefix-list">Prefix List作成</a>
+      <a href="#prefix-list">Prefix Listの作成</a>
       <a href="#sns">SNS</a>
       <a href="#ebs-expand">EBS ボリューム拡張</a>
       <a href="#waf-ip-set">AWS WAF IPセット</a>

@@ -67,7 +67,7 @@
         <span>トピック</span>
       </nav>
       <h1>EventBridge Scheduler</h1>
-      <p class="lead">Amazon EventBridge Schedulerとは、270を超えるAWSサービスと6,000を超えるAPI操作を対象に、数百万件のタスクを管理できるサーバーレススケジューラである。cron式、rate式、単発実行に対応し、柔軟な時間枠、再試行、失敗イベントの保持期間を設定できる。インフラの用意や複数サービスとの統合を必要とせず、ターゲットの可用性を考慮しながら大規模なタスクを確実に配信する</p>
+      <p class="lead">EventBridge SchedulerによるEC2・RDS・WorkSpacesなどの自動停止・起動の構築手順（IAMポリシー、実行ロール、Schedule作成）をまとめる<br>作成後の監視・通知・トラブルシュートに必要なCloudWatch、SNS、DLQ、CloudTrailの確認方法を整理する</p>
 
       <h2 id="services">自動停止・起動を適用できる主なサービス</h2>
       <p>対象可否は「サービス名」ではなく「そのAPI操作がUniversal targetで利用可能か」「リソースが状態遷移をサポートするか」「実行ロールに権限があるか」で判断する</p>
