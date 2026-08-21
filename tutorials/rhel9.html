@@ -61,14 +61,17 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content rhel9-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
       <h1>Red Hat Enterprise Linux 9</h1>
-      <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 9を初期構築し、SELinux、パッケージ、ログ、時刻同期、セキュリティ設定を確認する手順を整理する</p>
+      <div class="page-summary">
+        <strong>⚡ このページの要約</strong>
+        <p class="lead">Amazon EC2上でRed Hat Enterprise Linux 9を初期構築し、OS、ストレージ、ミドルウェア、ログの設定手順をまとめる<br>SELinux、サブスクリプション、cloud-init、SSHを含む初期設定と確認方法を整理する</p>
+      </div>
 
       <h2 id="step-01">1. 起動時の確認</h2>
       <p>Amazon EC2はLinuxインスタンスでRSAとED25519をサポートしています。この手順の対象環境では、組織の暗号鍵ポリシーでRSAキーペアを許可していないため、<code>ED25519</code>キーペアを使用する</p>
@@ -149,8 +152,20 @@ enabled=0</code></pre>
         <p>BYOS、RHEL Gold Image、Red Hat Satellite、Red Hat CDNへ登録してサブスクリプションを管理する環境では、登録状態とリポジトリ制御に使用するため無効化しない</p>
       </div>
 
-      <h2 id="step-04">4. ログインプロファイル設定</h2>
-      <p>操作履歴に時刻を残し、調査時に作業順序を追いやすくするため、<code>/etc/profile</code> と新規ユーザー用の雛形を変更する</p>
+      <h2 id="step-04">4. シェルのログインプロファイル設定</h2>
+      <p>操作履歴に時刻を残し、調査時に作業順序を追いやすくするため、Bashのログイン時に読み込まれる<code>/etc/profile</code>と、新規ユーザー用の雛形<code>/etc/skel/.bash_profile</code>を設定する</p>
+      <div class="callout">
+        <strong>ℹ️ 設定する場合と設定しない場合の違い</strong>
+        <p>この設定はSSHログインの可否を変更するものではなく、ログイン後のシェル環境と操作履歴の表示方法を統一するための任意設定</p>
+      </div>
+      <table>
+        <thead><tr><th>対象</th><th>設定する場合</th><th>設定しない場合</th></tr></thead>
+        <tbody>
+          <tr><td><code>/etc/profile</code></td><td>次回ログイン時から既存ユーザーを含むログインシェルへ、履歴保存件数、履歴時刻表示、umaskなどを共通適用</td><td>RHEL 9の既定値を使用するため、履歴の保存件数やumaskは既定のまま。コマンド実行時刻は<code>history</code>で表示されない</td></tr>
+          <tr><td><code>/etc/skel/.bash_profile</code></td><td>設定変更後に作成する新規ユーザーへ、PATH、履歴時刻表示、時刻付きプロンプトを引き継ぐ</td><td>新規ユーザーはRHEL 9既定の<code>.bash_profile</code>を使用する</td></tr>
+          <tr><td>既存ユーザーの<code>~/.bash_profile</code></td><td>必要なユーザーごとに個別変更した場合だけ、ユーザー固有のプロンプト設定などを反映</td><td><code>/etc/skel</code>を変更しても、作成済みユーザーのファイルは変更されない</td></tr>
+        </tbody>
+      </table>
       <p class="procedure-step"><strong>1. <code>/etc/profile</code>のバックアップ取得</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
@@ -341,23 +356,35 @@ Subsystem sftp /usr/libexec/openssh/sftp-server -f LOCAL3 -l VERBOSE</code></pre
         <pre><code>systemctl restart sshd.service</code></pre>
       </div>
 
-      <p><code>PermitRootLogin prohibit-password</code> と <code>without-password</code> の扱いは 出典：<a href="https://qiita.com/ine1127/items/b50b9a8f831736cf14ea">PermitRootLoginの解説</a></p>
+      <p><code>PermitRootLogin prohibit-password</code>と<code>without-password</code>の扱いは</p>
+      <p>出典：<a href="https://qiita.com/ine1127/items/b50b9a8f831736cf14ea">PermitRootLoginの解説</a></p>
 
-      <h2 id="step-08">8. cloud-init設定の確認・必要時変更</h2>
-      <p>cloud-initはEC2の初回起動時に、インスタンスメタデータとユーザーデータを基に、既定ユーザー、SSH鍵、ホスト名、パッケージ導入などを反映します。既定動作で要件を満たす場合は変更不要</p>
+      <h2 id="step-08">8. cloud-initの既定動作を確認</h2>
+      <p>cloud-initはEC2の初回起動時に、インスタンスメタデータとユーザーデータを基に、既定ユーザーの作成、SSH公開鍵の配置、rootログイン制御、ホスト名、ルートボリューム拡張、パッケージ導入、ユーザーデータを反映する</p>
+      <div class="callout">
+        <strong>ℹ️ この確認を行う目的</strong>
+        <p>AWS提供のRHEL 9 AMIを既定の<code>cloud-user</code>、SSH鍵認証、rootログイン無効、ルートボリューム自動拡張のまま使用する場合は、状態確認だけでよく<code>cloud.cfg</code>の変更は不要</p>
+        <p>既定ユーザー名、ユーザーやグループの追加、SSH認証方式、初回起動時の処理順序を変更する場合や、設定済みのカスタムAMIを作成する場合だけ変更を検討する</p>
+      </div>
       <div class="callout callout-warning">
         <strong>⚠️ 注意</strong>
         <p><code>cloud.cfg</code>の変更は、以後の初回起動処理やAMIから複製したインスタンスの動作に影響する</p>
         <p>既定ユーザー、rootログイン、SSH鍵、ユーザーデータの実行順序を要件として変更する場合だけ、変更前後の差分を確認して実施する</p>
       </div>
-      <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
+      <p class="procedure-step"><strong>1. cloud-initの完了状態を確認</strong></p>
+      <div class="code">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>cloud-init status --long</code></pre>
+      </div>
+
+      <p class="procedure-step"><strong>2. 変更が必要な場合だけ設定ファイルのバックアップを取得</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/cloud-init
 cp -pi /etc/cloud/cloud.cfg /root/config-backup/cloud-init/cloud.cfg.bak</code></pre>
       </div>
 
-      <p class="procedure-step"><strong>2. 設定ファイルの編集</strong></p>
+      <p class="procedure-step"><strong>3. 設定ファイルの編集</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/cloud/cloud.cfg</code></pre>
@@ -432,7 +459,7 @@ system_info:
         </div>
       </details>
 
-      <p class="procedure-step"><strong>3. 変更差分の確認</strong></p>
+      <p class="procedure-step"><strong>4. 変更差分の確認</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>diff -u /root/config-backup/cloud-init/cloud.cfg.bak /etc/cloud/cloud.cfg</code></pre>
@@ -573,13 +600,36 @@ swapon /.swapfile</code></pre>
       </div>
 
       <h2 id="step-11">11. ミドルウェアの導入</h2>
-      <p class="procedure-step"><strong>1. 導入するバージョンをApplication Streamsで確認し、OS標準リポジトリを優先します。標準リポジトリで要件を満たせない場合だけ、提供元と保守期限を確認したうえで外部リポジトリを追加</strong></p>
+      <p>Webサーバー、プログラミング言語、データベース、アプリケーションランタイムなど、サーバーの用途に応じたミドルウェアを導入する</p>
+      <p>Apache HTTP Serverは通常のRPMパッケージとして確認する<br>PHP、PostgreSQL、MariaDB、NGINX、Node.js、Redisなどは、利用可能なApplication Streamsとバージョンを対象環境で確認する</p>
+      <table>
+        <thead><tr><th>用途</th><th>ミドルウェア例</th><th>確認コマンド</th></tr></thead>
+        <tbody>
+          <tr><td>Webサーバー</td><td>Apache HTTP Server</td><td><code>dnf info httpd</code></td></tr>
+          <tr><td>Webサーバー</td><td>NGINX</td><td><code>dnf module list nginx</code></td></tr>
+          <tr><td>Webアプリケーション</td><td>PHP</td><td><code>dnf module list php</code></td></tr>
+          <tr><td>データベース</td><td>PostgreSQL</td><td><code>dnf module list postgresql</code></td></tr>
+          <tr><td>データベース</td><td>MariaDB</td><td><code>dnf module list mariadb</code></td></tr>
+          <tr><td>アプリケーションランタイム</td><td>Node.js</td><td><code>dnf module list nodejs</code></td></tr>
+          <tr><td>インメモリデータストア</td><td>Redis</td><td><code>dnf module list redis</code></td></tr>
+        </tbody>
+      </table>
+
+      <p class="procedure-step"><strong>1. 導入候補と利用可能なバージョンの確認</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>dnf module list &lt;MIDDLEWARE_NAME&gt;</code></pre>
+        <pre><code>dnf info httpd
+dnf module list php
+dnf module list nginx
+dnf module list postgresql
+dnf module list mariadb
+dnf module list nodejs
+dnf module list redis</code></pre>
       </div>
 
-      <p class="procedure-step"><strong>2. PostgreSQLの例</strong></p>
+      <p>OS標準リポジトリを優先し、要件を満たせない場合だけ、提供元、対応するRHEL 9のマイナーバージョン、保守期限を確認したうえで外部リポジトリを追加する</p>
+
+      <p class="procedure-step"><strong>2. PostgreSQL 15クライアントを導入する例</strong></p>
       <div class="code">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf module list postgresql
@@ -587,8 +637,6 @@ dnf module enable postgresql:15
 dnf module list postgresql
 dnf module install postgresql/client</code></pre>
       </div>
-
-      <p>パッケージライフサイクルは 出典：<a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_application-streams_considerations-in-adopting-rhel-9">Application Streams</a>。Red Hat Enterprise Linux 9で削除・変更されたモジュールは 出典：<a href="https://access.redhat.com/documentation/ja-jp/red_hat_enterprise_linux/9/html-single/considerations_in_adopting_rhel_9/index">Red Hat Enterprise Linux 9導入時の考慮事項</a></p>
 
       <h2 id="step-12">12. Postfix設定</h2>
       <p class="procedure-step"><strong>1. PostfixとSASL認証パッケージのインストール</strong></p>

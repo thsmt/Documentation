@@ -343,7 +343,9 @@ main {
 .amazon-workspaces-guide > h2,
 .amazon-ses-guide > h2,
 .amazon-ses-monitoring-guide > h2,
-.amazon-rds-blue-green-guide > h2 {
+.amazon-rds-blue-green-guide > h2,
+.amazon-linux-2023-guide > h2,
+.rhel9-guide > h2 {
   margin-top: 68px;
   padding-top: 30px;
   border-top: 1px solid var(--line);
