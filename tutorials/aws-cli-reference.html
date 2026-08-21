@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AWS CLI コマンドリファレンス | Documentation</title>
-  <meta name="description" content="AWS CLIによるVPC、EC2、ELBの構築フローと、日常運用コマンドを整理するリファレンス。">
+  <meta name="description" content="AWS CLIによるVPC、EC2、ALBの構築フローと、日常運用コマンドを整理するリファレンス">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
@@ -71,9 +71,9 @@
       </nav>
 
       <h1>AWS CLI コマンドリファレンス</h1>
-      <p class="lead">AWS CLIでVPCからEC2、ELBまでを構築する流れと、IAM、Security Group、Prefix List、SNSなどの日常運用コマンドを整理する</p>
+      <p class="lead">AWS CLIでVPCからEC2、Application Load Balancerまでを構築する流れと、IAM、Security Group、Prefix List、SNSなどの日常運用コマンドを整理する</p>
 
-      <h2 id="vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ELB構築フロー</h2>
+      <h2 id="vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ALB構築フロー</h2>
       <p>AWS CLIでネットワークから仮想サーバー、ロードバランサーまでを順に構築する</p>
 
       <table>
@@ -89,14 +89,9 @@
           <tr><td>8</td><td>EC2</td><td><code>run-instances</code>、<code>create-tags</code></td></tr>
           <tr><td>9</td><td>AMI</td><td><code>create-image</code>、<code>describe-images</code></td></tr>
           <tr><td>10</td><td>Elastic IP</td><td><code>allocate-address</code>、<code>associate-address</code></td></tr>
-          <tr><td>11</td><td>Classic Load Balancer</td><td><code>create-load-balancer</code>、<code>register-instances-with-load-balancer</code></td></tr>
+          <tr><td>11</td><td>Application Load Balancer</td><td><code>create-load-balancer</code>、<code>create-target-group</code>、<code>register-targets</code>、<code>create-listener</code></td></tr>
         </tbody>
       </table>
-
-      <div class="callout">
-        <strong>ℹ️ 置換する値</strong>
-        <p><code>&lt;VPC_ID&gt;</code>、<code>&lt;SUBNET_ID&gt;</code>、<code>&lt;SECURITY_GROUP_ID&gt;</code>、<code>&lt;INSTANCE_ID&gt;</code>などは、直前のコマンドで取得した実際のリソースIDへ置き換える</p>
-      </div>
 
       <h3 id="build-vpc">1. VPCの作成</h3>
       <p>CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>
@@ -250,30 +245,54 @@ aws ec2 associate-address \
 aws ec2 describe-addresses</code></pre>
       </div>
 
-      <h3 id="build-elb">11. Classic Load Balancerの作成とEC2インスタンスの登録</h3>
-      <p>Classic Load Balancerを作成し、2台のEC2インスタンスを登録する</p>
+      <h3 id="build-elb">11. Application Load Balancerの作成とEC2インスタンスの登録</h3>
+      <p>2つのアベイラビリティーゾーンへインターネット向けApplication Load Balancerを作成し、実行結果のARNを控える</p>
       <div class="code">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws elb create-load-balancer \
-  --load-balancer-name External-Web \
-  --listeners "Protocol=HTTP,LoadBalancerPort=80,InstanceProtocol=HTTP,InstancePort=80" \
+        <pre><code>aws elbv2 create-load-balancer \
+  --name External-Web \
+  --type application \
+  --scheme internet-facing \
+  --ip-address-type ipv4 \
   --tags Key=Name,Value=External-Web \
   --subnets &lt;SUBNET_ID_1&gt; &lt;SUBNET_ID_2&gt; \
-  --security-groups &lt;ELB_SECURITY_GROUP_ID&gt;</code></pre>
+  --security-groups &lt;ALB_SECURITY_GROUP_ID&gt; \
+  --query 'LoadBalancers[0].LoadBalancerArn' \
+  --output text</code></pre>
       </div>
 
+      <p>HTTPの80番ポートを使用するインスタンスターゲットグループを作成し、実行結果のARNを控える</p>
       <div class="code">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws elb register-instances-with-load-balancer \
-  --load-balancer-name External-Web \
-  --instances &lt;INSTANCE_ID_1&gt; &lt;INSTANCE_ID_2&gt;</code></pre>
+        <pre><code>aws elbv2 create-target-group \
+  --name External-Web-TG \
+  --protocol HTTP \
+  --port 80 \
+  --vpc-id &lt;VPC_ID&gt; \
+  --target-type instance \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text</code></pre>
       </div>
 
-      <div class="callout">
-        <strong>ℹ️ ロードバランサーのコマンド体系</strong>
-        <p><code>aws elb</code> はClassic Load Balancerを操作する</p>
-        <p>Application Load BalancerとNetwork Load Balancerは <code>aws elbv2</code> を使用する</p>
+      <p>2台のEC2インスタンスをターゲットグループへ登録する</p>
+      <div class="code">
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws elbv2 register-targets \
+  --target-group-arn &lt;TARGET_GROUP_ARN&gt; \
+  --targets Id=&lt;INSTANCE_ID_1&gt; Id=&lt;INSTANCE_ID_2&gt;</code></pre>
       </div>
+
+      <p>Application Load BalancerにHTTPリスナーを作成し、受信した通信をターゲットグループへ転送する</p>
+      <div class="code">
+        <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws elbv2 create-listener \
+  --load-balancer-arn &lt;LOAD_BALANCER_ARN&gt; \
+  --protocol HTTP \
+  --port 80 \
+  --default-actions Type=forward,TargetGroupArn=&lt;TARGET_GROUP_ARN&gt;</code></pre>
+      </div>
+
+      <p>出典：<a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-application-load-balancer.html">Create an Application Load Balancer</a></p>
 
       <h2 id="setup">AWS CLIの初期設定</h2>
       <h3 id="install">インストール</h3>
@@ -329,18 +348,32 @@ aws --version</code></pre>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <code>--profile</code> は、複数のAWSアカウントやIAMユーザーを名前付きプロファイルで切り替える場合だけ指定します。このページでは、デフォルト認証情報を使う前提で記載する
+        <p><code>--profile</code>は、複数のAWSアカウントやIAMユーザーを名前付きプロファイルで切り替える場合だけ指定する<br>このページでは、デフォルト認証情報を使う前提で記載する</p>
       </div>
 
-      <h3 id="region">リージョン確認</h3>
-      <p>作業前に対象リージョンを明示します。東京リージョンで作業する場合は <code>ap-northeast-1</code> を指定する</p>
+      <h3 id="region">リージョンの設定と確認</h3>
+      <p>以降のコマンドを実行するAWSリージョンを、名前付きプロファイルまたはデフォルト設定へ登録する</p>
+      <table class="parameter-table">
+        <thead><tr><th>値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;REGION&gt;</code></td><td>作業対象のAWSリージョン<br>例: <code>ap-northeast-1</code></td></tr>
+        </tbody>
+      </table>
+      <p>作業対象のリージョンを設定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws configure set region ap-northeast-1</code></pre>
+        <pre><code>aws configure set region &lt;REGION&gt;</code></pre>
       </div>
 
-      <h2 id="iam">AWS Identity and Access Management (IAM)</h2>
-      <p>人のログイン用途はAWS IAM Identity Centerの利用を優先します。ここでは、個別要件でIAMユーザー、IAMグループ、IAMポリシー、アクセスキー、コンソールログインプロファイルをCLIで扱う場合の基本操作を整理します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-group.html">create-group</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/attach-group-policy.html">attach-group-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-policy.html">create-policy</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-login-profile.html">create-login-profile</a></p>
+      <p>設定したリージョンを確認する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws configure get region</code></pre>
+      </div>
+
+      <h2 id="iam">Identity and Access Management (IAM)</h2>
+      <p>人がAWSへログインする用途では、AWS IAM Identity Centerによる一時的な認証情報の利用を優先する<br>このセクションでは、個別要件によりIAMユーザー、IAMグループ、IAMポリシー、アクセスキー、コンソールログインをAWS CLIで管理する場合の基本操作を整理する</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html">Create an IAM user in your AWS account</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -348,7 +381,6 @@ aws --version</code></pre>
           <tr><td><code>&lt;GROUP_NAME&gt;</code></td><td>ユーザーを所属させるIAMグループ名</td></tr>
           <tr><td><code>&lt;POLICY_NAME&gt;</code></td><td>作成するカスタマー管理ポリシー名</td></tr>
           <tr><td><code>&lt;CUSTOM_POLICY_ARN&gt;</code></td><td>作成済みカスタマー管理ポリシーのARN</td></tr>
-          <tr><td><code>&lt;TEMPORARY_PASSWORD&gt;</code></td><td>初回ログイン用の一時パスワード</td></tr>
         </tbody>
       </table>
 
@@ -370,7 +402,7 @@ aws --version</code></pre>
         <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
-      <p>AWS管理ポリシーをIAMグループにアタッチします。例では読み取り専用の <code>ReadOnlyAccess</code> を使用する</p>
+      <p>AWS管理ポリシーをIAMグループにアタッチする<br>例では読み取り専用の<code>ReadOnlyAccess</code>を使用する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam attach-group-policy --group-name &lt;GROUP_NAME&gt; --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess</code></pre>
@@ -425,31 +457,80 @@ aws --version</code></pre>
 
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
-        <p>CLIでアクセスキーを発行した場合、マネジメントコンソールのようなCSVファイルは自動ダウンロードされない</p>
-        <p><code>AccessKeyId</code> と <code>SecretAccessKey</code> はコマンド実行結果に一度だけ表示されます。必要な場合は、安全な場所へ即時保管する</p>
+        <p>AWS CLIでアクセスキーを発行しても、CSVファイルは自動ダウンロードされない<br><code>AccessKeyId</code>と<code>SecretAccessKey</code>は実行結果に表示される<br><code>SecretAccessKey</code>は作成時にだけ取得できるため、必要な場合は安全な場所へ即時保管する</p>
       </div>
+      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a></p>
 
-      <p>IAMユーザーへコンソールログイン用のログインプロファイルを作成する</p>
+      <p>CloudShellで一時パスワードを自動生成する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam create-login-profile --user-name &lt;USER_NAME&gt; --password "&lt;TEMPORARY_PASSWORD&gt;" --password-reset-required</code></pre>
+        <pre><code>TEMPORARY_PASSWORD="$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | head -c 20)Aa1-"</code></pre>
+      </div>
+
+      <p>生成した一時パスワードを使用して、IAMユーザーへコンソールログイン用のログインプロファイルを作成する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws iam create-login-profile --user-name &lt;USER_NAME&gt; --password "$TEMPORARY_PASSWORD" --password-reset-required</code></pre>
+      </div>
+
+      <p>AWSアカウントIDを取得する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"</code></pre>
+      </div>
+
+      <p>コンソールサインインURL、IAMユーザー名、一時パスワードを画面へ一度だけ表示する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>printf 'URL: https://%s.signin.aws.amazon.com/console/\nUser: %s\nPassword: %s\n' "$ACCOUNT_ID" '&lt;USER_NAME&gt;' "$TEMPORARY_PASSWORD"</code></pre>
+      </div>
+
+      <p>利用者へ安全に共有した後、一時パスワードをシェル変数から削除する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>unset TEMPORARY_PASSWORD</code></pre>
       </div>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <p>CLIでコンソールログインを有効化する場合は、<code>create-login-profile</code> でパスワードを指定する</p>
-        <p>GUIのように自動生成パスワードをCSVでダウンロードする流れではありません。実運用では、パスワードをコマンド履歴へ残さない運用、初回変更必須、利用期限の管理をセットで扱う</p>
+        <p>AWS CLIの<code>create-login-profile</code>は一時パスワードを自動生成しないため、CloudShellなど実行環境側で生成して指定する<br><code>create-login-profile</code>の実行結果には、IAMユーザー名、作成日時、初回変更の要否が表示され、指定したパスワードとコンソールサインインURLは表示されない<br>マネジメントコンソールのような認証情報CSVは作成されないため、必要な情報を安全な経路で利用者へ共有する</p>
+      </div>
+      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-login-profile.html">create-login-profile</a><br>出典：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_sign-in.html">How IAM users sign in to AWS</a></p>
+
+      <h3 id="iam-offboarding">IAMユーザーの利用停止・削除</h3>
+      <p>異動、退職、アカウント整理に伴いIAMユーザーを停止する場合は、削除前にアクセスキーとコンソールログインを無効化し、依存する処理への影響を確認する<br>人のログイン用途ではAWS IAM Identity Centerを優先し、IAMユーザーはサービス要件がある場合に限定する</p>
+      <table class="parameter-table">
+        <thead><tr><th>値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td><code>&lt;USER_NAME&gt;</code></td><td>利用停止または削除するIAMユーザー名</td></tr>
+          <tr><td><code>&lt;ACCESS_KEY_ID&gt;</code></td><td>無効化するアクセスキーID</td></tr>
+        </tbody>
+      </table>
+
+      <p>アクセスキーを確認して無効化する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws iam list-access-keys --user-name &lt;USER_NAME&gt;
+aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCESS_KEY_ID&gt; --status Inactive</code></pre>
       </div>
 
+      <p>コンソールログインを停止する</p>
+      <div class="code">
+        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>aws iam delete-login-profile --user-name &lt;USER_NAME&gt;</code></pre>
+      </div>
+
+      <p>IAMユーザーを完全に削除する場合は、アクセスキー、グループ所属、MFAデバイス、ポリシーなどの依存関係を先に解除してから<code>delete-user</code>を実行する</p>
+
       <h2 id="security-group">Security Group ルール追加・削除</h2>
-      <p>Security Group変更は影響範囲が広いため、対象SG、方向、プロトコル、ポート、送信元/宛先、説明欄を事前に確定する</p>
-      <p>AWS CLIのSecurity Groupルールで全プロトコルを指定する場合は、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">公式リファレンス</a>に合わせて <code>--protocol -1</code> を使用する</p>
+      <p>Security Groupルールを変更する前に、対象Security Group、方向、プロトコル、ポート、送信元または送信先、説明を確定する<br>すべてのプロトコルを指定する場合は、<code>--protocol -1</code>を使用する</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">authorize-security-group-ingress</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>変更対象のSecurity Group ID</td></tr>
-          <tr><td><code>&lt;CIDR&gt;</code></td><td>許可または削除する送信元CIDR。例: <code>203.0.113.10/32</code></td></tr>
-          <tr><td><code>&lt;DESCRIPTION&gt;</code></td><td>Security Groupルールの説明。例: <code>office-a temporary access</code></td></tr>
+          <tr><td><code>&lt;CIDR&gt;</code></td><td>許可または削除する送信元CIDR<br>例: <code>203.0.113.10/32</code></td></tr>
+          <tr><td><code>&lt;DESCRIPTION&gt;</code></td><td>Security Groupルールの説明<br>例: <code>office-a temporary access</code></td></tr>
         </tbody>
       </table>
 
@@ -459,19 +540,19 @@ aws --version</code></pre>
         <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt;</code></pre>
       </div>
 
-      <p>HTTPの80/tcpだけを許可する例</p>
+      <p>ケース①：特定のCIDRからHTTP（80/tcp）への接続だけを許可する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
-      <p>説明欄を付けて80/tcpを許可する例です。ルールの説明はトップレベルの <code>--description</code> ではなく、<code>--ip-permissions</code> の <code>IpRanges</code> 側に指定する</p>
+      <p>ケース②：特定のCIDRからHTTP（80/tcp）への接続を、説明付きで許可する<br>説明は<code>--ip-permissions</code>の<code>IpRanges</code>へ指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=&lt;CIDR&gt;,Description="&lt;DESCRIPTION&gt;"}]'</code></pre>
       </div>
 
-      <p>全プロトコル・全ポートを許可する例です。検証や一時作業以外では原則として避け、作業後に必ず削除する</p>
+      <p>ケース③：特定のCIDRから全プロトコル・全ポートへの接続を一時的に許可する<br>検証や一時作業以外では使用せず、作業後に削除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
@@ -483,43 +564,44 @@ aws --version</code></pre>
         <pre><code>aws ec2 describe-security-group-rules --filters Name=group-id,Values=&lt;SECURITY_GROUP_ID&gt; --query "SecurityGroupRules[*].[SecurityGroupRuleId,IsEgress,IpProtocol,FromPort,ToPort,CidrIpv4,Description]" --output table</code></pre>
       </div>
 
-      <p>80/tcpの許可ルールを削除する例</p>
+      <p>ケース①で追加したHTTP（80/tcp）の許可ルールを削除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
-      <p>全プロトコル・全ポートの許可ルールを削除する例</p>
+      <p>ケース③で追加した全プロトコル・全ポートの許可ルールを削除する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <h2 id="prefix-list">Prefix List作成・IP登録</h2>
-      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加するのではなく、Customer-managed Prefix ListにまとめてからSecurity Groupで参照します。変更対象をPrefix List側に寄せられるため、接続元IPの追加・削除を運用しやすくなります。AWS公式手順：<a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/create-managed-prefix-list.html">create-managed-prefix-list</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-managed-prefix-list.html">modify-managed-prefix-list</a>、AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html">authorize-security-group-ingress</a></p>
+      <p>接続元IPが複数ある場合は、Security GroupへCIDRを1件ずつ直接追加せず、Customer-managed Prefix ListへまとめてSecurity Groupから参照する<br>変更対象をPrefix Listへ集約することで、接続元IPの追加と削除を管理しやすくする</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">Managed prefix lists</a></p>
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
-        Security Groupの画面上は1つのPrefix List参照として整理できます。ただし、Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われます。最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計する
+        <p>Security Groupの画面上は、1つのPrefix List参照として整理できる<br>Customer-managed Prefix ListをSecurity Groupで参照する場合、クォータ上はPrefix Listの最大エントリ数分として扱われる<br>最大エントリ数は余裕を持たせすぎず、運用に必要な範囲で設計する</p>
       </div>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;PREFIX_LIST_NAME&gt;</code></td><td>作成または更新するPrefix List名</td></tr>
-          <tr><td><code>&lt;MAX_ENTRIES&gt;</code></td><td>Prefix Listに登録できる最大エントリ数。例: <code>10</code></td></tr>
-          <tr><td><code>&lt;CIDR_1&gt;</code></td><td>登録する接続元CIDR。例: <code>203.0.113.10/32</code></td></tr>
-          <tr><td><code>&lt;CIDR_2&gt;</code></td><td>追加で登録する接続元CIDR。不要な場合はコマンドから削除する</td></tr>
+          <tr><td><code>&lt;MAX_ENTRIES&gt;</code></td><td>Prefix Listに登録できる最大エントリ数<br>例: <code>10</code></td></tr>
+          <tr><td><code>&lt;CIDR_1&gt;</code></td><td>登録する接続元CIDR<br>例: <code>203.0.113.10/32</code></td></tr>
+          <tr><td><code>&lt;CIDR_2&gt;</code></td><td>追加で登録する接続元CIDR<br>不要な場合はコマンドから削除する</td></tr>
           <tr><td><code>&lt;CIDR_3&gt;</code></td><td>既存Prefix Listへ後から追加する接続元CIDR</td></tr>
-          <tr><td><code>&lt;DESCRIPTION_1&gt;</code></td><td>登録CIDRの説明。例: <code>office-a</code></td></tr>
+          <tr><td><code>&lt;DESCRIPTION_1&gt;</code></td><td>登録CIDRの説明<br>例: <code>office-a</code></td></tr>
           <tr><td><code>&lt;DESCRIPTION_2&gt;</code></td><td>追加CIDRの説明</td></tr>
           <tr><td><code>&lt;DESCRIPTION_3&gt;</code></td><td>後から追加するCIDRの説明</td></tr>
           <tr><td><code>&lt;PREFIX_LIST_ID&gt;</code></td><td>作成後に払い出されるPrefix List ID</td></tr>
           <tr><td><code>&lt;CURRENT_VERSION&gt;</code></td><td>Prefix List更新時に指定する現在のバージョン</td></tr>
           <tr><td><code>&lt;SECURITY_GROUP_ID&gt;</code></td><td>Prefix Listを参照させるSecurity Group ID</td></tr>
-          <tr><td><code>&lt;PORT&gt;</code></td><td>許可するポート番号。例: <code>443</code></td></tr>
+          <tr><td><code>&lt;PORT&gt;</code></td><td>許可するポート番号<br>例: <code>443</code></td></tr>
         </tbody>
       </table>
 
-      <p>Prefix Listを作成し、初期CIDRを登録します。登録するIPアドレスが複数ある場合は、<code>Cidr=...</code> の指定を追加する</p>
+      <p>Prefix Listを作成して初期CIDRを登録する<br>登録するIPアドレスが複数ある場合は、<code>Cidr=...</code>の指定を追加する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-managed-prefix-list --prefix-list-name &lt;PREFIX_LIST_NAME&gt; --address-family IPv4 --max-entries &lt;MAX_ENTRIES&gt; --entries Cidr=&lt;CIDR_1&gt;,Description="&lt;DESCRIPTION_1&gt;" Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code></pre>
@@ -531,7 +613,7 @@ aws --version</code></pre>
         <pre><code>aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=&lt;PREFIX_LIST_NAME&gt; --query "PrefixLists[*].[PrefixListId,PrefixListName,Version,MaxEntries,State]" --output table</code></pre>
       </div>
 
-      <p>既存のPrefix Listへ接続元CIDRを追加します。更新時は、直前に確認した <code>Version</code> を <code>&lt;CURRENT_VERSION&gt;</code> に指定する</p>
+      <p>既存のPrefix Listへ接続元CIDRを追加する<br>更新時は、直前に確認した<code>Version</code>を<code>&lt;CURRENT_VERSION&gt;</code>に指定する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-managed-prefix-list --prefix-list-id &lt;PREFIX_LIST_ID&gt; --current-version &lt;CURRENT_VERSION&gt; --add-entries Cidr=&lt;CIDR_3&gt;,Description="&lt;DESCRIPTION_3&gt;"</code></pre>
@@ -543,21 +625,22 @@ aws --version</code></pre>
         <pre><code>aws ec2 get-managed-prefix-list-entries --prefix-list-id &lt;PREFIX_LIST_ID&gt; --query "Entries[*].[Cidr,Description]" --output table</code></pre>
       </div>
 
-      <p>Security GroupのインバウンドルールでPrefix Listを参照します。例では、Prefix Listに登録した接続元CIDR群から <code>&lt;PORT&gt;</code> へのTCP通信を許可する</p>
+      <p>Security GroupのインバウンドルールからPrefix Listを参照する<br>例では、Prefix Listに登録した接続元CIDR群から<code>&lt;PORT&gt;</code>へのTCP通信を許可する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions IpProtocol=tcp,FromPort=&lt;PORT&gt;,ToPort=&lt;PORT&gt;,PrefixListIds=[{PrefixListId=&lt;PREFIX_LIST_ID&gt;}]</code></pre>
       </div>
 
       <h2 id="sns">SNS Topic・Subscription作成</h2>
-      <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テスト、設定確認、不要時の解除までを一連の手順として扱います。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/sns/subscribe.html">subscribe</a></p>
+      <p>通知先を作成する場合は、Topic、Subscription、確認メールの承認、通知テスト、設定確認、不要時の解除までを一連の手順として扱う</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/sns/subscribe.html">subscribe</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;TOPIC_NAME&gt;</code></td><td>作成するSNS Topic名</td></tr>
           <tr><td><code>&lt;TOPIC_ARN&gt;</code></td><td>作成済みSNS TopicのARN</td></tr>
           <tr><td><code>&lt;MAIL_ADDRESS&gt;</code></td><td>通知先メールアドレス</td></tr>
-          <tr><td><code>&lt;SUBSCRIPTION_ARN&gt;</code></td><td>SubscriptionのARN。承認前は <code>PendingConfirmation</code> になる</td></tr>
+          <tr><td><code>&lt;SUBSCRIPTION_ARN&gt;</code></td><td>SubscriptionのARN<br>承認前は<code>PendingConfirmation</code>になる</td></tr>
         </tbody>
       </table>
 
@@ -581,8 +664,7 @@ aws --version</code></pre>
 
       <div class="callout">
         <strong>ℹ️ 情報</strong>
-        <p><code>email</code> プロトコルのSubscriptionは、通知先に届く確認メールを承認するまで配信されない</p>
-        <p>承認前はSubscription ARNが <code>PendingConfirmation</code> と表示される</p>
+        <p><code>email</code>プロトコルのSubscriptionは、通知先に届く確認メールを承認するまで配信されない<br>承認前はSubscription ARNが<code>PendingConfirmation</code>と表示される</p>
       </div>
 
       <p>Topicに紐づくSubscriptionを確認する</p>
@@ -610,12 +692,13 @@ aws --version</code></pre>
       </div>
 
       <h2 id="ebs-expand">EC2 / EBS ボリューム拡張</h2>
-      <p>ファイルシステムの空き容量が不足した場合に、EBSボリュームの容量をオンラインで拡張します。EBSは縮小できないため、作業前にスナップショットを取得し、必要なサイズを確定します。OS側のパーティション・ファイルシステム拡張は <a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a></p>
+      <p>ファイルシステムの空き容量が不足した場合は、Elastic Volumesを使用してEBSボリュームをオンラインで拡張する<br>作業前にスナップショットを取得して必要なサイズを確定し、変更後にOS側のパーティションとファイルシステムを拡張する<br>OS側の拡張手順は<a href="rhel9.html#step-09">Red Hat Enterprise Linux 9</a>を参照する</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modify-volume.html">Modify an Amazon EBS volume using Elastic Volumes operations</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
           <tr><td><code>&lt;VOLUME_ID&gt;</code></td><td>拡張するEBSボリュームID</td></tr>
-          <tr><td><code>&lt;TARGET_SIZE_GIB&gt;</code></td><td>拡張後のサイズ（GiB）。現在のサイズ以上を指定</td></tr>
+          <tr><td><code>&lt;TARGET_SIZE_GIB&gt;</code></td><td>拡張後のサイズ（GiB）<br>現在のサイズ以上を指定</td></tr>
         </tbody>
       </table>
 
@@ -625,7 +708,7 @@ aws --version</code></pre>
         <pre><code>aws ec2 create-snapshot --volume-id &lt;VOLUME_ID&gt; --description "pre-resize backup"</code></pre>
       </div>
 
-      <p>権限と入力値の事前確認。<code>DryRunOperation</code> が返る場合は、実行権限がある</p>
+      <p>権限と入力値を事前確認する<br><code>DryRunOperation</code>が返る場合は実行権限がある</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt; --dry-run</code></pre>
@@ -637,7 +720,7 @@ aws --version</code></pre>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt;</code></pre>
       </div>
 
-      <p>変更状況の確認。OS側の拡張は、状態が <code>optimizing</code> または <code>completed</code> になってから実施する</p>
+      <p>変更状況を確認する<br>OS側の拡張は、状態が<code>optimizing</code>または<code>completed</code>になってから実施する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-volumes-modifications --volume-ids &lt;VOLUME_ID&gt; --query "VolumesModifications[*].[VolumeId,ModificationState,OriginalSize,TargetSize,Progress]" --output table</code></pre>
@@ -645,12 +728,13 @@ aws --version</code></pre>
 
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
-        <p>EBSボリュームは拡張できますが、縮小はできない</p>
-        <p>ファイルシステムの種類とデバイス名をOS上で確認してから拡張します。誤ったデバイスに対してファイルシステム作成コマンドを実行しないでください</p>
+        <p>Amazon EBSの仕様では、ボリュームサイズを拡張できるが、縮小はサポートされていない<br>OS側の拡張前に、対象デバイス名、パーティション、ファイルシステムの種類を確認する<br>既存データを保持するボリュームを再フォーマットするとデータが削除されるため、ファイルシステム作成コマンドを実行しない</p>
       </div>
+      <p>出典：<a href="https://docs.aws.amazon.com/ebs/latest/userguide/recognize-expanded-volume-linux.html">Extend the file system after resizing an Amazon EBS volume</a><br>出典：<a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-using-volumes.html">Make an Amazon EBS volume available for use</a></p>
 
       <h2 id="waf-ip-set">AWS WAF IPセットの更新</h2>
-      <p>接続元IPアドレスの追加・削除が発生する場合は、Web ACLに関連付けたIPセットを更新します。変更前に現在のアドレスとロックトークンを取得し、全アドレスを含む一覧を指定して更新します。AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a></p>
+      <p>接続元IPアドレスの追加または削除が発生する場合は、Web ACLに関連付けたIPセットを更新する<br>変更前に現在のアドレスとロックトークンを取得し、更新後も保持するすべてのアドレスを指定する</p>
+      <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/wafv2/update-ip-set.html">update-ip-set</a></p>
       <table class="parameter-table">
         <thead><tr><th>値</th><th>説明</th></tr></thead>
         <tbody>
@@ -661,13 +745,13 @@ aws --version</code></pre>
         </tbody>
       </table>
 
-      <p>現在のアドレスとロックトークンの取得。CloudFrontスコープの場合は <code>--region us-east-1</code> を追加する</p>
+      <p>現在のアドレスとロックトークンを取得する<br>CloudFrontスコープの場合は<code>--region us-east-1</code>を追加する</p>
       <div class="code">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws wafv2 get-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt;</code></pre>
       </div>
 
-      <p>更新後アドレス一覧の作成。既存アドレスを残す場合は、必ず同じファイルに含める</p>
+      <p>更新後のアドレス一覧を作成する<br>既存アドレスを残す場合は、必ず同じファイルへ含める</p>
       <div class="code">
         <div class="code-header"><span>json</span><button class="copy" type="button">Copy</button></div>
         <pre><code>[
@@ -684,47 +768,22 @@ aws --version</code></pre>
 
       <div class="notice notice-warning">
         <strong>⚠️ 注意</strong>
-        <p><code>update-ip-set</code> は指定したアドレス一覧でIPセット全体を置き換える</p>
-        <p>既存アドレスをJSONファイルから省くと、そのアドレスは削除されます。更新競合時は新しいロックトークンを取得し直して内容を再確認する</p>
+        <p><code>update-ip-set</code>は指定したアドレス一覧でIPセット全体を置き換える<br>既存アドレスをJSONファイルから省くと、そのアドレスは削除される<br>更新競合時は新しいロックトークンを取得し直して内容を再確認する</p>
       </div>
 
-      <h2 id="iam-offboarding">IAMユーザーの利用停止・削除</h2>
-      <p>異動・退職・アカウント整理では、いきなりユーザーを削除せず、アクセスキーとコンソールログインを無効化して影響を確認します。人のログイン用途はAWS IAM Identity Centerを優先し、IAMユーザーはサービス要件がある場合に限定する</p>
-      <table class="parameter-table">
-        <thead><tr><th>値</th><th>説明</th></tr></thead>
-        <tbody>
-          <tr><td><code>&lt;USER_NAME&gt;</code></td><td>利用停止または削除するIAMユーザー名</td></tr>
-          <tr><td><code>&lt;ACCESS_KEY_ID&gt;</code></td><td>無効化するアクセスキーID</td></tr>
-        </tbody>
-      </table>
-
-      <p>アクセスキーの確認と無効化</p>
-      <div class="code">
-        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam list-access-keys --user-name &lt;USER_NAME&gt;
-aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCESS_KEY_ID&gt; --status Inactive</code></pre>
-      </div>
-
-      <p>コンソールログインの停止</p>
-      <div class="code">
-        <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>aws iam delete-login-profile --user-name &lt;USER_NAME&gt;</code></pre>
-      </div>
-
-      <p>完全削除する場合は、アクセスキー、グループ所属、MFAデバイス、ポリシーなどの依存関係を先に解除してから <code>delete-user</code> を実行する</p>
     </main>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#vpc-ec2-elb-build-flow">VPC／EC2／ELB 構築フロー</a>
+      <a class="active" href="#vpc-ec2-elb-build-flow">VPC／EC2／ALB 構築フロー</a>
       <a href="#setup">AWS CLI初期設定</a>
       <a href="#iam">IAM</a>
+      <a href="#iam-offboarding">IAMユーザー利用停止</a>
       <a href="#security-group">Security Group</a>
       <a href="#prefix-list">Prefix List作成</a>
       <a href="#sns">SNS</a>
       <a href="#ebs-expand">EBS ボリューム拡張</a>
       <a href="#waf-ip-set">AWS WAF IPセット</a>
-      <a href="#iam-offboarding">IAMユーザー利用停止</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>
