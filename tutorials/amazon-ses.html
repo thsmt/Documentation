@@ -298,7 +298,7 @@ postqueue -p</code></pre>
       <div class="callout callout-info">
         <strong>ℹ️ MX障害時の動作</strong>
         <p>カスタムMAIL FROMのMXレコードをSESが確認できない場合に、送信を止めるか、SES管理ドメインへ切り替えて継続するかを選択する</p>
-        <table>
+        <table class="table-surface">
           <thead><tr><th>確認項目</th><th>メッセージを拒否</th><th>デフォルトのMAIL FROMを使用</th></tr></thead>
           <tbody>
             <tr><td>MXレコードが正常</td><td><code class="user-value">&lt;MAIL_FROM_DOMAIN&gt;</code>を使用して送信</td><td><code class="user-value">&lt;MAIL_FROM_DOMAIN&gt;</code>を使用して送信</td></tr>
@@ -318,7 +318,53 @@ postqueue -p</code></pre>
       </ol>
 
       <h2 id="dns">DNSレコード登録</h2>
-      <p>SESが提示するMXレコードとSPF用TXTレコードを、MAIL FROMサブドメインへ登録する<br>Route 53への自動発行を利用できる場合はコンソールから発行し、外部DNSでは表示値を手動登録する</p>
+      <p>カスタムMAIL FROMで使用するMXレコードとSPF用TXTレコードを、Route 53の対象ホストゾーンへ登録する<br>Amazon SESの<code class="ui-value">DNSレコードのRoute 53への発行</code>を利用した場合は自動登録されるため、同じレコードを重複して作成しない</p>
+
+      <h3>1. 登録するレコード</h3>
+      <p><code>&lt;MAIL_FROM_SUBDOMAIN&gt;</code>には<code class="user-value">bounce</code>のようなMAIL FROM用サブドメインを指定する<br>東京リージョンでは、次の2レコードを同じ名前で登録する</p>
+      <table>
+        <thead>
+          <tr><th>レコード名</th><th>タイプ</th><th>値</th><th>TTL</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="user-value">&lt;MAIL_FROM_SUBDOMAIN&gt;</code></td>
+            <td>MX</td>
+            <td><code>10 feedback-smtp.ap-northeast-1.amazonses.com</code></td>
+            <td><code>300</code></td>
+          </tr>
+          <tr>
+            <td><code class="user-value">&lt;MAIL_FROM_SUBDOMAIN&gt;</code></td>
+            <td>TXT</td>
+            <td><code>"v=spf1 include:amazonses.com ~all"</code></td>
+            <td><code>300</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warning">
+        <strong>⚠️ MXレコードは1件だけ登録</strong>
+        <p>カスタムMAIL FROM用サブドメインには、Amazon SESが提示するMXレコードを1件だけ登録する<br>同じサブドメインへ複数のMXレコードを登録すると、カスタムMAIL FROMの設定に失敗する</p>
+      </div>
+
+      <h3>2. Route 53へ登録</h3>
+      <ol>
+        <li>Route 53コンソールで<code class="ui-value">ホストゾーン</code>を開き、送信ドメインのホストゾーンを選択</li>
+        <li><code class="ui-value">レコードを作成</code>を選択</li>
+        <li>レコード名へ<code class="user-value">&lt;MAIL_FROM_SUBDOMAIN&gt;</code>、レコードタイプへ<code class="ui-value">MX</code>を指定</li>
+        <li>値へ<code>10 feedback-smtp.ap-northeast-1.amazonses.com</code>、TTLへ<code class="ui-value">300</code>を指定</li>
+        <li><code class="ui-value">別のレコードを追加</code>を選択し、同じレコード名でタイプ<code class="ui-value">TXT</code>を指定</li>
+        <li>値へ<code>"v=spf1 include:amazonses.com ~all"</code>、TTLへ<code class="ui-value">300</code>を指定</li>
+        <li><code class="ui-value">レコードを作成</code>を選択し、MXとTXTの2レコードが表示されることを確認</li>
+        <li>Amazon SESコンソールへ戻り、カスタムMAIL FROMのステータスが<code class="ui-value">成功</code>になることを確認</li>
+      </ol>
+
+      <div class="callout callout-info">
+        <strong>ℹ️ 登録後のSES関連レコード</strong>
+        <p>送信ドメインのホストゾーンには、Easy DKIMのCNAMEレコード3件、DMARCのTXTレコード、カスタムMAIL FROMのMXレコードとSPF用TXTレコードが登録される<br>ホストゾーンのNSとSOA、ACM検証用CNAMEなど、Amazon SES以外で使用しているレコードは変更しない</p>
+      </div>
+
+      <p>出典：<a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
       <h2 id="dns-check">DNS反映確認</h2>
       <div class="code">

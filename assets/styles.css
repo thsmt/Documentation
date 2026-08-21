@@ -80,11 +80,13 @@
 
 html {
   overflow-x: hidden;
+  scroll-padding-top: 88px;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
+  padding-top: 64px;
   overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
@@ -103,9 +105,11 @@ a:hover {
 
 .topbar,
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 10;
+  right: 0;
+  left: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1016,6 +1020,11 @@ td {
   color: var(--text);
 }
 
+.table-surface,
+.table-surface td {
+  background: var(--panel);
+}
+
 details.example-details.execution-example {
   margin-top: -12px;
   margin-bottom: 22px;
@@ -1149,6 +1158,14 @@ figure > figcaption:first-child {
 }
 
 @media (max-width: 640px) {
+  html {
+    scroll-padding-top: 152px;
+  }
+
+  body {
+    padding-top: 128px;
+  }
+
   .topbar,
   .site-header {
     align-items: flex-start;
