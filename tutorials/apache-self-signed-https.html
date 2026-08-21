@@ -283,7 +283,7 @@ drwxr-xr-x. 6 root root 143 Jul 15 09:44 ..
           <tr><td>公開CA</td><td>CA側でFQDNを指定し、必要に応じてCSRを提出</td><td>サーバー証明書と中間証明書</td><td>一般ブラウザから信頼される公開サービス</td></tr>
         </tbody>
       </table>
-      <p>CAへのCSR提出方法に共通コマンドはない。利用する認証局の管理画面で<code class="ui-value">サーバー証明書</code> <code class="ui-value">CSR貼り付け</code>などを選び、<code>-----BEGIN CERTIFICATE REQUEST-----</code>から<code>-----END CERTIFICATE REQUEST-----</code>までを提出する。秘密鍵ファイルは送信しない</p>
+      <p>CAへのCSR提出方法に共通コマンドはない。利用する認証局の管理画面で<code class="ui-value">サーバー証明書</code> ＞ <code class="ui-value">CSR貼り付け</code>などを選び、<code>-----BEGIN CERTIFICATE REQUEST-----</code>から<code>-----END CERTIFICATE REQUEST-----</code>までを提出する。秘密鍵ファイルは送信しない</p>
       <p>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/securing_networks/creating-and-managing-tls-keys-and-certificates_securing-networks">Red Hat - Creating and managing TLS keys and certificates</a></p>
 
       <h2 id="self-signed">自己署名証明書の発行</h2>
@@ -371,7 +371,7 @@ notAfter=Aug 31 09:17:17 2026 GMT</code></pre></div>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>SHA2-256(stdin)= fc5b04008ec2f3266554b9c8d87dddedd61ac1a71833f6fd15a39ebddec9c8cb</code></pre></div>
       </details>
       <div class="callout">
-        <strong>EC鍵におけるハッシュ値の扱い</strong>
+        <strong>ℹ️ EC鍵におけるハッシュ値の扱い</strong>
         <p><code>openssl rsa -modulus</code>と<code>openssl x509 -modulus</code>の比較はRSA鍵向けであり、EC鍵には使用しない。<code>-subject_hash</code>と<code>-issuer_hash</code>は証明書をSubject名またはIssuer名で検索するための索引値で、鍵と証明書の整合性を示すハッシュではない</p>
       </div>
 
@@ -464,7 +464,7 @@ restorecon -v /var/www/www.zexample.com/public_html/index.html</code></pre></div
         <figcaption>ブラウザで確認した自己署名証明書の発行先、発行元、有効期間。発行先と発行元が同一であり、有効期限は2026年8月31日18時17分17秒</figcaption>
       </figure>
       <div class="callout">
-        <strong>自己署名証明書でブラウザ警告が表示される理由</strong>
+        <strong>ℹ️ 自己署名証明書でブラウザ警告が表示される理由</strong>
         <p>TLSによる暗号化通信は成立していますが、証明書がブラウザの信頼済みルートCAへ連鎖しないため、接続先の身元を既定では信頼できない。検証では警告を確認したうえで閲覧し、公開サービスでは信頼されたCAが発行した証明書を使用する</p>
       </div>
 

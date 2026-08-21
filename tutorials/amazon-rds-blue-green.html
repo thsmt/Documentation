@@ -278,7 +278,7 @@ ORDER BY 1, 2;</code></pre>
       </div>
 
       <h3>4. Blue/Green Deploymentを作成</h3>
-      <p>RDSコンソールの<code class="ui-value">Databases</code>でBlueのプライマリを選択し、<code class="ui-value">Actions</code>から<code class="ui-value">Create blue/green deployment</code>を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
+      <p>RDSコンソールの<code class="ui-value">Databases</code>でBlueのプライマリを選択し、<code class="ui-value">Actions</code> ＞ <code class="ui-value">Create blue/green deployment</code>を選択。BlueのDB識別子、Greenの目標エンジンバージョン、パラメータグループ、必要に応じたインスタンスクラスとストレージ設定を確認して作成</p>
       <table>
         <thead><tr><th>コンソール項目</th><th>今回の指定値</th></tr></thead>
         <tbody>
@@ -416,7 +416,7 @@ SET default_transaction_read_only = on;</code></pre>
       </div>
 
       <h3>9. スイッチオーバーを実行</h3>
-      <p>RDSコンソールでBlue/Green Deploymentを選択し、<code class="ui-value">Actions</code>から<code class="ui-value">Switch over</code>を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
+      <p>RDSコンソールでBlue/Green Deploymentを選択し、<code class="ui-value">Actions</code> ＞ <code class="ui-value">Switch over</code>を選択。対象リソースを確認し、許容停止時間に合わせてタイムアウトを設定して実行。AWS CLIでは秒数でタイムアウトを指定でき、既定値は300秒</p>
       <p>今回の画面では、BlueのPostgreSQL 13.23とGreenの18.4、DBパラメータグループ<code>poc-pg13</code>と<code>poc-pg18</code>が並んで表示される。ここで<code class="ui-value">Switch over</code>を押しても旧Blueのエンジン更新は始まらず、ガードレール、書き込み停止、接続切断、最終同期、識別子とエンドポイント名の付け替えが開始される</p>
       <p><em>＊画像挿入：スイッチオーバー概要とタイムアウト設定（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
       <div class="code">

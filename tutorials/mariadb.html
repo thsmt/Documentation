@@ -167,7 +167,7 @@
         </section>
       </div>
       <div class="callout">
-        <strong>初期セキュリティ確認</strong>
+        <strong>ℹ️ 初期セキュリティ確認</strong>
         <p>RHEL 8のMariaDB 10.3では<code>mysql_secure_installation</code>を実行。MariaDB 10.5以降はrootのUNIXソケット認証などが既定で設定されるため、このスクリプトを前提にせず各項目を個別に確認</p>
       </div>
       <p>MariaDB 10.3における対話式の初期セキュリティ設定</p>
@@ -257,13 +257,13 @@ ssl
 ssl-ca = /etc/pki/tls/certs/ca.crt.pem
 ssl-verify-server-cert</code></pre></div>
       <div class="callout callout-warning">
-        <strong>TLS証明書のホスト名</strong>
+        <strong>⚠️ TLS証明書のホスト名</strong>
         <p>サーバー証明書のSANと接続時の<code>&lt;DB_FQDN&gt;</code>を一致させ、クライアント側にも検証に使用するCA証明書を安全に配置</p>
       </div>
 
       <p class="procedure-step"><strong>3.6 設定反映と確認</strong></p>
       <div class="callout callout-warning">
-        <strong>MariaDB 10.3のTLS制約</strong>
+        <strong>⚠️ MariaDB 10.3のTLS制約</strong>
         <p><code>require_secure_transport</code>と<code>tls_version</code>はMariaDB 10.3で使用できないため、10.3ではリモートユーザーへ<code>REQUIRE SSL</code>を指定して暗号化接続を必須化</p>
       </div>
       <p>MariaDBサービスの再起動</p>
@@ -302,7 +302,7 @@ ssl-verify-server-cert</code></pre></div>
       <p>MariaDBの待受確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo ss -lntp | grep ':&lt;DB_PORT&gt;'</code></pre></div>
       <div class="callout callout-warning">
-        <strong>公開範囲の制限</strong>
+        <strong>⚠️ 公開範囲の制限</strong>
         <p><code>bind-address = 0.0.0.0</code>や全インターネット向けの3306番公開を避け、DBサーバーのプライベートIP、アプリケーションサーバーのCIDR、Security Group、firewalldを一致</p>
       </div>
 
@@ -366,7 +366,7 @@ ssl-verify-server-cert</code></pre></div>
         </section>
       </div>
       <div class="callout callout-warning">
-        <strong>メジャーストリーム変更</strong>
+        <strong>⚠️ メジャーストリーム変更</strong>
         <p>通常の<code>dnf upgrade</code>は別のMariaDBストリームへ自動移行しない</p>
         <p>サーバーパッケージが同居するホストでモジュールを切り替えるとDB本体も変更対象になるため、クライアント更新として実行せず、バックアップ、互換性確認、MariaDBの移行手順を適用</p>
       </div>
@@ -390,7 +390,7 @@ ssl-verify-server-cert</code></pre></div>
         </section>
       </div>
       <div class="callout">
-        <strong>論理バックアップの範囲</strong>
+        <strong>ℹ️ 論理バックアップの範囲</strong>
         <p>アプリケーションDBだけのダンプにはMariaDBユーザーやサーバー設定を含まないため、必要な権限定義、<code>/etc/my.cnf</code>、<code>/etc/my.cnf.d/</code>も別途保全</p>
       </div>
       <p class="procedure-step"><strong>7.3 SQLダンプからの復元</strong></p>
@@ -435,7 +435,7 @@ ssl-verify-server-cert</code></pre></div>
       <p>MariaDBサービスの起動</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl start mariadb.service</code></pre></div>
       <div class="callout callout-warning">
-        <strong>復元テスト</strong>
+        <strong>⚠️ 復元テスト</strong>
         <p>物理バックアップ先は空または未作成であることを確認。復元先の<code>/var/lib/mysql.before-restore</code>が既に存在する場合は上書きせず、別名へ退避</p>
         <p>バックアップ成功だけで完了とせず、隔離環境で復元、テーブル件数、文字セット、アプリケーション接続を定期的に確認</p>
       </div>
@@ -469,7 +469,7 @@ wsrep_provider_options = "socket.ssl_key=/etc/pki/tls/private/&lt;NODE_FQDN&gt;.
 binlog_format = ROW
 default_storage_engine = InnoDB</code></pre></div>
       <div class="callout">
-        <strong>Galeraレプリケーション通信のTLS</strong>
+        <strong>ℹ️ Galeraレプリケーション通信のTLS</strong>
         <p><code>wsrep_provider_options</code>はGalera Providerによるレプリケーション通信を暗号化する。全ノードで共通のCA証明書を使用し、各ノード証明書のSANをノード名と一致させ、拡張キー用途にサーバー認証とクライアント認証を含める</p>
         <p>既定のrsync方式によるSST通信はこの設定の対象外となるため、ノード間ネットワークを分離するか、採用するSST方式で別途暗号化を設定</p>
       </div>
@@ -490,7 +490,7 @@ default_storage_engine = InnoDB</code></pre></div>
       <p>firewalld設定の再読み込み</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --reload</code></pre></div>
       <div class="callout callout-warning">
-        <strong>Galeraのブートストラップ</strong>
+        <strong>⚠️ Galeraのブートストラップ</strong>
         <p>全ノード間通信、TLS、設定したDBポート、4567/TCP・UDP、4568/TCP、4444/TCPを設計し、新規クラスタまたは全停止からの復旧時に選定した1ノードだけでブートストラップを実行</p>
       </div>
       <p class="procedure-step"><strong>8.4 最初のノードのブートストラップ</strong></p>

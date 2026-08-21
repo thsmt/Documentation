@@ -74,7 +74,7 @@
       <p class="lead">RHEL 8 / 9でPostgreSQLのバージョン選択、インストール、認証設定、ロール管理、クライアント更新、バックアップを行う手順</p>
 
       <div class="callout callout-warning">
-        <strong>メジャーバージョンの選択</strong>
+        <strong>⚠️ メジャーバージョンの選択</strong>
         <p>PostgreSQLモジュールは同一システムで同時に1ストリームだけを選択できる</p>
         <p>バージョン無指定で導入される版がサポート中の推奨版とは限らないため、導入前に利用可能なストリームとApplication Streamsのライフサイクルを確認</p>
       </div>
@@ -228,7 +228,7 @@ log_connections = on</code></pre></div>
       <p>既定でPUBLICへ付与されるデータベース接続権限の削除</p>
       <div class="code"><div class="code-header"><span>SQL</span><button class="copy" type="button">Copy</button></div><pre><code>REVOKE CONNECT ON DATABASE &lt;APP_DATABASE&gt; FROM PUBLIC;</code></pre></div>
       <div class="callout">
-        <strong>権限の範囲</strong>
+        <strong>ℹ️ 権限の範囲</strong>
         <p>データベース所有者の<code>&lt;APP_ROLE&gt;</code>は接続とオブジェクト管理を行える。所有者とログインロールを分離する場合は、ログインロールへ<code>CONNECT</code>を明示的に付与</p>
         <p>データベースへの<code>CONNECT</code>権限は、スキーマ、テーブル、シーケンスの操作権限を自動付与しないため、オブジェクト所有者とアプリケーション要件に合わせて最小権限を追加</p>
       </div>
@@ -251,7 +251,7 @@ log_connections = on</code></pre></div>
       <p>psql 16以降でシステムロールを含めた確認</p>
       <div class="code"><div class="code-header"><span>psql 16+</span><button class="copy" type="button">Copy</button></div><pre><code>\drgS</code></pre></div>
       <div class="callout">
-        <strong>\drgの構文</strong>
+        <strong>ℹ️ \drgの構文</strong>
         <p>変更点はPostgreSQL 15ではなくpsql 16で導入され、<code>\du</code>自体は16以降もロール一覧用として継続</p>
         <p><code>\drg*</code>や<code>\drg+</code>は正式な修飾形ではない。全件は<code>\drg</code>、システムロール込みは<code>\drgS</code>を使用し、<code>*</code>を使う場合は空白に続くロールパターンとして指定</p>
       </div>
@@ -284,7 +284,7 @@ log_connections = on</code></pre></div>
       <p>リモートPostgreSQLへの接続確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>psql --host=&lt;DB_HOST&gt; --port=&lt;DB_PORT&gt; --username=&lt;APP_ROLE&gt; --dbname=&lt;APP_DATABASE&gt;</code></pre></div>
       <div class="callout callout-warning">
-        <strong>クライアントのメジャー版変更</strong>
+        <strong>⚠️ クライアントのメジャー版変更</strong>
         <p>通常の<code>dnf upgrade</code>は別のPostgreSQLストリームへ自動移行しない</p>
         <p>クライアント専用ホストでは対象ストリームのclientプロファイルへ切り替えられるが、同一ホストにサーバーパッケージやPGDATAがある場合はDB本体のメジャーアップグレード手順を適用</p>
       </div>
@@ -304,7 +304,7 @@ log_connections = on</code></pre></div>
       <p class="procedure-step"><strong>8.6 カスタム形式バックアップの復元</strong></p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo -u postgres pg_restore --dbname=&lt;RESTORE_DATABASE&gt; /var/lib/pgsql/backups/&lt;APP_DATABASE&gt;.dump</code></pre></div>
       <div class="callout callout-warning">
-        <strong>バックアップの範囲</strong>
+        <strong>⚠️ バックアップの範囲</strong>
         <p>単一DBの<code>pg_dump</code>にはロールや表領域などのグローバルオブジェクトが含まれないため、<code>pg_dumpall --globals-only</code>と設定ファイルも別途保全</p>
         <p>復元先でデータ件数、所有者、権限、拡張、アプリケーション接続を確認</p>
       </div>

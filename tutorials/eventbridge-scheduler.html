@@ -261,7 +261,7 @@
       <p>Amazon EC2のAPI一覧で<code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">StopInstances</code>を選択する。停止処理用のScheduleでは、起動用の<code class="ui-value">StartInstances</code>を選択しない</p>
       <figure class="screenshot-wide">
         <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-api-redacted.png" alt="Amazon EC2のAPI一覧でStopInstancesを検索して選択する画面" width="1717" height="555" loading="lazy">
-        <figcaption><code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">Amazon EC2</code>の<code class="ui-value">StopInstances</code>を選択</figcaption>
+        <figcaption><code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">Amazon EC2</code> ＞ <code class="ui-value">StopInstances</code>を選択</figcaption>
       </figure>
       <h4>5. 停止対象のインスタンスIDを入力</h4>
       <p>Targetの入力欄に、停止対象の<code>InstanceIds</code>配列を指定する。IDはEC2コンソールからコピーし、停止対象以外のインスタンスを含めない</p>
@@ -343,7 +343,7 @@
 
       <h3 id="operations-console">Schedulerコンソールで設定を確認</h3>
       <ol>
-        <li>AWSマネジメントコンソールでAmazon EventBridgeを開き、ナビゲーションから<code class="ui-value">Scheduler</code> <code class="ui-value">スケジュール</code>を選択</li>
+        <li>AWSマネジメントコンソールでAmazon EventBridgeを開き、ナビゲーションから<code class="ui-value">Scheduler</code> ＞ <code class="ui-value">スケジュール</code>を選択</li>
         <li>Scheduleを作成したリージョンへ切り替え、ScheduleグループとSchedule名で対象を検索</li>
         <li>Scheduleの状態、スケジュール式、タイムゾーン、Flexible time window、Target ARN、Input、実行ロール、再試行、DLQ、暗号化設定を確認</li>
         <li>時刻を変更する場合は<code class="ui-value">編集</code>を開き、今後10回の実行日時プレビューが意図した業務時刻になることを確認して保存</li>
@@ -396,7 +396,7 @@
       <h3 id="operations-dlq">SQS DLQで失敗理由を確認</h3>
       <ol>
         <li><code>TargetErrorCount</code>または<code>InvocationDroppedCount</code>が増加したら、Amazon SQSコンソールでScheduleに設定したDLQを開く</li>
-        <li><code class="ui-value">メッセージを送受信</code> <code class="ui-value">メッセージをポーリング</code>を選択し、受信したメッセージの<code class="ui-value">メッセージ属性</code>を開く</li>
+        <li><code class="ui-value">メッセージを送受信</code> ＞ <code class="ui-value">メッセージをポーリング</code>を選択し、受信したメッセージの<code class="ui-value">メッセージ属性</code>を開く</li>
         <li><code>SCHEDULE_ARN</code>または<code>TARGET_ARN</code>で対象を特定し、<code>ERROR_CODE</code>、<code>ERROR_MESSAGE</code>、<code>EXHAUSTED_RETRY_CONDITION</code>を確認</li>
         <li>EC2、RDS、WorkSpacesなどTargetサービスのコンソールを開き、対象リソースの状態遷移とイベントを確認</li>
         <li>失敗メトリクスが増えてもDLQが空の場合は、SchedulerからSQSへの送信権限、DLQ ARN、KMSキーポリシーを確認</li>

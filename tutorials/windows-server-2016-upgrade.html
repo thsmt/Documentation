@@ -134,7 +134,7 @@
       </table>
 
       <div class="callout">
-        <strong>Windows Server 2025で拡張されたアップグレード範囲</strong>
+        <strong>ℹ️ Windows Server 2025で拡張されたアップグレード範囲</strong>
         Windows Server 2025以降では、非クラスター構成について一度に最大4バージョンのインプレースアップグレードがサポートされる。Windows Server 2012 R2以降から2025へ直接移行できるため、Windows Server 2016から2025への経路も正式なサポート対象になる
       </div>
 
@@ -280,7 +280,7 @@
       <h3 id="pre-backup">6.1 バックアップAMIの取得</h3>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li><code class="ui-value">アクション</code>から<code class="ui-value">イメージとテンプレート</code>、<code class="ui-value">イメージを作成</code>を選択</li>
+        <li><code class="ui-value">アクション</code> ＞ <code class="ui-value">イメージとテンプレート</code> ＞ <code class="ui-value">イメージを作成</code>を選択</li>
         <li>イメージ名に用途と日付がわかる名前を入力。本検証では<code>Windows Server 2016_20260811</code>を使用</li>
         <li>イメージを作成し、発行されたAMI IDを作業記録へ保存</li>
         <li>AMIのステータスが<code class="ui-value">利用可能</code>になることを確認</li>
@@ -487,7 +487,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       <h3 id="media-search">7.1 パブリックスナップショットの検索</h3>
       <p>AWSはWindows Serverインストールメディアを言語別のパブリックスナップショットとして提供している。ISOのダウンロードとアップロードは不要</p>
       <ol>
-        <li>Amazon EC2コンソールで<code class="ui-value">Elastic Block Store</code>の<code class="ui-value">スナップショット</code>を選択</li>
+        <li>Amazon EC2コンソールで<code class="ui-value">Elastic Block Store</code> ＞ <code class="ui-value">スナップショット</code>を選択</li>
         <li>フィルターを<code class="ui-value">パブリックスナップショット</code>へ変更</li>
         <li>検索バーで<code class="ui-value">所有者のエイリアス</code>、<code class="ui-value">=</code>、<code class="ui-value">amazon</code>を指定</li>
         <li>続けて<code class="ui-value">説明</code>に<code>Windows 2025 Japanese Installation Media</code>を入力して検索</li>
@@ -506,7 +506,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="media-volume">7.2 ボリュームの作成</h3>
       <ol>
-        <li>該当スナップショットを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">スナップショットからボリュームを作成</code>を選択</li>
+        <li>該当スナップショットを選択し、<code class="ui-value">アクション</code> ＞ <code class="ui-value">スナップショットからボリュームを作成</code>を選択</li>
         <li>アベイラビリティーゾーンを対象インスタンスと同じAZへ変更</li>
         <li>他の設定は既定のままボリュームを作成</li>
       </ol>
@@ -523,7 +523,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="media-attach">7.3 アタッチとオンライン化</h3>
       <ol>
-        <li>作成したボリュームを選択し、<code class="ui-value">アクション</code>から<code class="ui-value">ボリュームのアタッチ</code>を選択</li>
+        <li>作成したボリュームを選択し、<code class="ui-value">アクション</code> ＞ <code class="ui-value">ボリュームのアタッチ</code>を選択</li>
         <li>対象インスタンスとデバイス名(例: <code>xvdf</code>)を指定してアタッチ</li>
         <li>RDP接続に戻り、<code class="ui-value">ディスクの管理</code>で該当ディスクを右クリックして<code class="ui-value">オンライン</code>を選択</li>
         <li>エクスプローラーでドライブ(例: <code>D:</code>)としてメディアの内容が見えることを確認</li>
@@ -592,7 +592,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       <p>セットアップ開始から数分でRDPセッションが切断され、以降はOSへ接続できない。進行状況はコンソール画面のキャプチャで確認する</p>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li><code class="ui-value">アクション</code>から<code class="ui-value">モニタリングとトラブルシューティング</code>、<code class="ui-value">インスタンスのスクリーンショットを取得</code>を選択</li>
+        <li><code class="ui-value">アクション</code> ＞ <code class="ui-value">モニタリングとトラブルシューティング</code> ＞ <code class="ui-value">インスタンスのスクリーンショットを取得</code>を選択</li>
         <li><code class="ui-value">更新プログラムを構成しています</code>などの表示と進捗率を確認</li>
         <li>スクリーンショットを更新しながら完了まで待機。CPUとディスクのCloudWatchメトリクスでも進行を確認</li>
       </ol>

@@ -75,7 +75,7 @@
 
       <h2 id="ses-identity">Amazon SES作成</h2>
       <ol>
-        <li>Amazon SESコンソールの<code class="ui-value">ID</code>から<code class="ui-value">IDの作成</code>を選択</li>
+        <li>Amazon SESコンソールの<code class="ui-value">ID</code> ＞ <code class="ui-value">IDの作成</code>を選択</li>
         <li>IDタイプは<code class="ui-value">ドメイン</code>を選択し、送信元として使用するドメインを入力</li>
         <li>Easy DKIMを選択し、DKIM署名を有効化</li>
         <li><code class="ui-value">DNSレコードのRoute 53への発行</code>を有効にしてIDを作成</li>
@@ -94,7 +94,7 @@
 
       <ol>
         <li>Amazon SESコンソールの<code class="ui-value">SMTP設定</code>を選択</li>
-        <li><code class="ui-value">IAM SMTP認証情報</code>の<code class="ui-value">IAM認証情報を作成する</code>を選択</li>
+        <li><code class="ui-value">IAM SMTP認証情報</code> ＞ <code class="ui-value">IAM認証情報を作成する</code>を選択</li>
         <li>用途を識別できるIAMユーザー名を入力。例: <code>ses-smtp-user</code></li>
         <li>ユーザーを作成し、生成されたSMTPユーザー名とSMTPパスワードを保存</li>
       </ol>
@@ -308,7 +308,7 @@ postqueue -p</code></pre>
 
       <ol>
         <li>Amazon SESコンソールで対象IDを開く</li>
-        <li><code class="ui-value">カスタムMAIL FROMドメイン</code>の<code class="ui-value">編集</code>を選択</li>
+        <li><code class="ui-value">カスタムMAIL FROMドメイン</code> ＞ <code class="ui-value">編集</code>を選択</li>
         <li>MAIL FROM用サブドメインを入力。例: <code>bounce.zexample.com</code></li>
         <li>MX障害時の動作を選択して保存</li>
       </ol>
@@ -334,7 +334,7 @@ dig TXT bounce.zexample.com +short</code></pre>
       <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
       <div class="callout">
-        <strong>📨 送信後の配信監視</strong>
+        <strong>ℹ️ 送信後の配信監視</strong>
         <p>SMTPリレーの構築後は、Configuration Setを使用して配信、バウンス、苦情などのイベントを収集する。SNS、EventBridge、CloudWatch、サプレッションリスト、VDMの設定は<a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>で扱う</p>
       </div>
 

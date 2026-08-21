@@ -144,8 +144,8 @@ TLSPSKIdentity=&lt;ZABBIX_PSK_IDENTITY&gt;
 TLSPSKFile=/etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
           </div>
 
-          <div class="callout">
-            <strong>🔐 PSK値の扱い</strong>
+          <div class="callout callout-warning">
+            <strong>⚠️ PSK値の扱い</strong>
             <p>Zabbix画面に登録するPSK valueは、作成した <code>/etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code> の値を使用します。作業記録やチケット本文に平文で残さないようにする</p>
           </div>
 
@@ -215,7 +215,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       </div>
 
       <div class="callout">
-        <strong>📍 通信要件</strong>
+        <strong>ℹ️ 通信要件</strong>
         パッシブチェックではZabbix ServerからAgentの10050/tcpへ到達できる必要があります。アクティブチェックではAgentからZabbix Serverへ接続します。Security Group、OS Firewall、Network ACL、経路をあわせて確認する
       </div>
 
@@ -223,7 +223,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <p>Zabbix管理画面で、監視対象をまとめるホストグループを作成する</p>
       <ol>
         <li>Zabbix管理画面にサインイン</li>
-        <li><code class="ui-value">設定</code>から<code class="ui-value">ホストグループ</code>を開く</li>
+        <li><code class="ui-value">設定</code> ＞ <code class="ui-value">ホストグループ</code>を開く</li>
         <li><code class="ui-value">ホストグループを作成</code>を選択</li>
         <li>グループ名に、環境や案件を識別できる名称を入力</li>
         <li>作成後、ホストグループ一覧に表示されることを確認</li>
@@ -240,7 +240,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="maintenance">4. メンテナンス設定</h2>
       <p>構築中や運用開始前に不要な通知が出ないよう、対象ホストグループにメンテナンス期間を設定する</p>
       <ol>
-        <li><code class="ui-value">設定</code>から<code class="ui-value">メンテナンス</code>を開く</li>
+        <li><code class="ui-value">設定</code> ＞ <code class="ui-value">メンテナンス</code>を開く</li>
         <li><code class="ui-value">メンテナンス期間の作成</code>を選択</li>
         <li>名前に作業内容、日付、作業者がわかる名称を入力</li>
         <li>開始日時と終了日時を設定</li>
@@ -259,7 +259,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="host-registration">5. ホスト登録</h2>
       <p>Agent導入後、Zabbix管理画面で監視対象ホストを登録する</p>
       <ol>
-        <li><code class="ui-value">設定</code>から<code class="ui-value">ホスト</code>を開く</li>
+        <li><code class="ui-value">設定</code> ＞ <code class="ui-value">ホスト</code>を開く</li>
         <li><code class="ui-value">ホストの作成</code>を選択</li>
         <li><code class="ui-value">Host name</code>に<code>&lt;HOSTNAME&gt;</code>を入力</li>
         <li>Templatesに対象OS向けのアクティブエージェント用テンプレートを追加します。例: <code>基本監視 Linux (Activeエージェント2)</code>、<code>基本監視 Windows (Activeエージェント2)</code></li>
@@ -272,7 +272,7 @@ ls -l /etc/zabbix/zabbix_agent2.d/zabbix_agent2.psk</code></pre>
       <h2 id="latest-data">6. 最新データ確認</h2>
       <p>ホスト登録後、最新データが取得されるまで1から5分程度待ってから確認する</p>
       <ol>
-        <li><code class="ui-value">監視データ</code>から<code class="ui-value">最新データ</code>を開く</li>
+        <li><code class="ui-value">監視データ</code> ＞ <code class="ui-value">最新データ</code>を開く</li>
         <li><code class="ui-value">Host</code>に<code>&lt;HOSTNAME&gt;</code>を指定してフィルタ</li>
         <li>Agent Ping、CPU使用率、Disk使用量などのアイテムが表示されることを確認</li>
         <li>Latest checkの時刻が更新され、値が取得されていることを確認</li>

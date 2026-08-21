@@ -101,7 +101,7 @@
       <h3 id="windows-password">1.1 Administratorパスワード取得</h3>
       <ol>
         <li>Amazon EC2コンソールで対象インスタンスを選択</li>
-        <li><code class="ui-value">アクション</code>から<code class="ui-value">セキュリティ</code>、<code class="ui-value">Windowsパスワードを取得</code>を選択</li>
+        <li><code class="ui-value">アクション</code> ＞ <code class="ui-value">セキュリティ</code> ＞ <code class="ui-value">Windowsパスワードを取得</code>を選択</li>
         <li>起動時に指定したRSAキーペアの秘密鍵をアップロード</li>
         <li><code class="ui-value">パスワードを復号化</code>を選択</li>
         <li>表示されたAdministratorパスワードを認証情報管理ルールに従って保管</li>
@@ -120,7 +120,7 @@
       <h3 id="connect-fleet-manager">1.3 Fleet Manager Remote Desktop接続</h3>
       <ol>
         <li>AWS Systems ManagerのFleet Managerで対象のマネージドノードを選択</li>
-        <li><code class="ui-value">ノードアクション</code>から<code class="ui-value">リモートデスクトップで接続</code>を選択</li>
+        <li><code class="ui-value">ノードアクション</code> ＞ <code class="ui-value">リモートデスクトップで接続</code>を選択</li>
         <li>ユーザー認証情報を使用する接続方式を選択</li>
         <li><code>Administrator</code>と復号したパスワードで接続</li>
       </ol>
@@ -136,7 +136,7 @@
       <h3 id="admin-user">2.1 管理用ローカルユーザー</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>compmgmt.msc</code>を実行</li>
-        <li><code class="ui-value">ローカル ユーザーとグループ</code>から<code class="ui-value">ユーザー</code>を開く</li>
+        <li><code class="ui-value">ローカル ユーザーとグループ</code> ＞ <code class="ui-value">ユーザー</code>を開く</li>
         <li><code class="ui-value">新しいユーザー</code>を選択</li>
         <li><code class="ui-value">ユーザー名</code>へ<code>&lt;ADMIN_USER&gt;</code>を入力</li>
         <li>パスワード運用要件に合わせて初回変更と有効期限を設定</li>
@@ -170,7 +170,7 @@
       <h3 id="file-extensions">3.1 ファイル名拡張子の表示</h3>
       <ol>
         <li>エクスプローラーを開く</li>
-        <li><code class="ui-value">表示</code>から<code class="ui-value">表示</code>を開く</li>
+        <li><code class="ui-value">表示</code> ＞ <code class="ui-value">表示</code>を開く</li>
         <li><code class="ui-value">ファイル名拡張子</code>を有効化</li>
       </ol>
       <p>実行ファイルや設定ファイルの種類を誤認しないよう、拡張子を常に表示する</p>
@@ -178,7 +178,7 @@
       <h3 id="hostname">3.2 コンピューター名設定</h3>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li><code class="ui-value">コンピューター名</code>タブから<code class="ui-value">変更</code>を選択</li>
+        <li><code class="ui-value">コンピューター名</code>タブ ＞ <code class="ui-value">変更</code>を選択</li>
         <li><code class="ui-value">コンピューター名</code>へ<code>&lt;HOSTNAME&gt;</code>を入力</li>
         <li>ドメイン参加が必要な場合は、名前解決と接続先Directory Serviceを確認して設定</li>
         <li>再起動要求を保留し、他の再起動を伴う設定とまとめて実施</li>
@@ -201,7 +201,7 @@
       <p>計画したメンテナンスウィンドウで更新を実施する運用に合わせ、自動更新を無効化する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li><code class="ui-value">コンピューターの構成</code>、<code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>、<code class="ui-value">Windows Update</code>の順に開く</li>
+        <li><code class="ui-value">コンピューターの構成</code> ＞ <code class="ui-value">管理用テンプレート</code> ＞ <code class="ui-value">Windowsコンポーネント</code> ＞ <code class="ui-value">Windows Update</code>の順に開く</li>
         <li><code class="ui-value">自動更新を構成する</code>を開く</li>
         <li><code class="ui-value">無効</code>を選択して保存</li>
       </ol>
@@ -225,7 +225,7 @@
       <h4 id="rdp-limit">3.5.2 RDPセッション制限</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li><code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>、<code class="ui-value">リモート デスクトップ サービス</code>、<code class="ui-value">リモート デスクトップ セッション ホスト</code>、<code class="ui-value">接続</code>の順に開く</li>
+        <li><code class="ui-value">管理用テンプレート</code> ＞ <code class="ui-value">Windowsコンポーネント</code> ＞ <code class="ui-value">リモート デスクトップ サービス</code> ＞ <code class="ui-value">リモート デスクトップ セッション ホスト</code> ＞ <code class="ui-value">接続</code>の順に開く</li>
         <li><code class="ui-value">接続数を制限する</code>を開き、運用要件に合わせて設定</li>
         <li>複数セッションが必要な場合のみ、<code class="ui-value">リモート デスクトップ サービス ユーザーに対してリモート デスクトップ サービス セッションを1つに制限する</code>を無効化</li>
       </ol>
@@ -234,8 +234,8 @@
       <p>RDPのネイティブ暗号化を利用する接続に対して、クライアントとサーバー間の暗号化レベルを<code>高</code>へ固定する</p>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>gpedit.msc</code>を実行</li>
-        <li><code class="ui-value">コンピューターの構成</code>、<code class="ui-value">管理用テンプレート</code>、<code class="ui-value">Windowsコンポーネント</code>の順に展開</li>
-        <li><code class="ui-value">リモート デスクトップ サービス</code>、<code class="ui-value">リモート デスクトップ セッション ホスト</code>、<code class="ui-value">セキュリティ</code>の順に展開</li>
+        <li><code class="ui-value">コンピューターの構成</code> ＞ <code class="ui-value">管理用テンプレート</code> ＞ <code class="ui-value">Windowsコンポーネント</code>の順に展開</li>
+        <li><code class="ui-value">リモート デスクトップ サービス</code> ＞ <code class="ui-value">リモート デスクトップ セッション ホスト</code> ＞ <code class="ui-value">セキュリティ</code>の順に展開</li>
         <li><code class="ui-value">クライアント接続の暗号化レベルを設定する</code>を開く</li>
         <li><code class="ui-value">有効</code>を選択し、暗号化レベルへ<code class="ui-value">高</code>を指定</li>
         <li><code>gpupdate /force</code>を実行</li>
@@ -488,8 +488,8 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
       <h4 id="pagefile-settings">5.2.2 ページファイル</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">パフォーマンス</code>から<code class="ui-value">設定</code>を選択</li>
-        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">仮想メモリ</code>から<code class="ui-value">変更</code>を選択</li>
+        <li><code class="ui-value">詳細設定</code>タブ ＞ <code class="ui-value">パフォーマンス</code> ＞ <code class="ui-value">設定</code>を選択</li>
+        <li><code class="ui-value">詳細設定</code>タブ ＞ <code class="ui-value">仮想メモリ</code> ＞ <code class="ui-value">変更</code>を選択</li>
         <li>原則として<code class="ui-value">すべてのドライブのページング ファイルのサイズを自動的に管理する</code>を有効化</li>
         <li>完全メモリダンプを取得する場合は、OSボリューム上にメモリ容量とダンプ方式に応じたページファイルを確保</li>
       </ol>
@@ -497,7 +497,7 @@ wevtutil sl Security /ms:268435456 /rt:false</code></pre>
       <h4 id="crash-dump-settings">5.2.3 クラッシュダンプ</h4>
       <ol>
         <li><kbd>Windows</kbd> + <kbd>R</kbd>を押し、<code>sysdm.cpl</code>を実行</li>
-        <li><code class="ui-value">詳細設定</code>タブの<code class="ui-value">起動と回復</code>から<code class="ui-value">設定</code>を選択</li>
+        <li><code class="ui-value">詳細設定</code>タブ ＞ <code class="ui-value">起動と回復</code> ＞ <code class="ui-value">設定</code>を選択</li>
         <li><code class="ui-value">デバッグ情報の書き込み</code>へ<code class="ui-value">自動メモリ ダンプ</code>を選択</li>
         <li><code class="ui-value">ダンプファイル</code>へ<code>%SystemRoot%\MEMORY.DMP</code>を指定</li>
         <li><code class="ui-value">既存のファイルに上書きする</code>を有効化</li>
