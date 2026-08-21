@@ -61,14 +61,17 @@
       <a href="glossary.html">用語集</a>
     </aside>
 
-    <main class="content">
+    <main class="content windows-server-2016-upgrade-guide">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
         <span>トピック</span>
       </nav>
 
 <h1>Windows Server 2016から2025へのインプレースアップグレード</h1>
-      <p class="lead">Amazon EC2上の日本語版Windows Server 2016を、AWS提供のWindows Server 2025インストールメディアで直接アップグレードする。検証環境、バックアップ、AWSドライバー、EBSメディア、実行中の監視、アップグレード後の確認を実機結果とともにまとめる</p>
+      <div class="page-summary">
+        <strong>⚡ このページの要約</strong>
+        <p class="lead">Amazon EC2上のWindows Server 2016を、AWS提供のインストールメディアを使用してWindows Server 2025へ直接アップグレードする実機検証手順をまとめる<br>バックアップAMI、AWSドライバー、EBSインストールメディア、実行中の監視、アップグレード後の確認を順に整理する</p>
+      </div>
 
       <h2 id="overview">1. インプレースアップグレードの概要</h2>
       <p>インプレースアップグレードは、設定、サーバーの役割、データを保持したまま、既存サーバーのOSを新しいバージョンのWindows Serverへ移行する方式。再構築や移行と比べて作業工数を抑えられる一方、失敗時の切り戻しが難しいため、事前バックアップと事後確認を含めた計画が前提になる</p>
@@ -98,10 +101,11 @@
 
       <div class="callout">
         <strong>ℹ️ Automationランブックとの使い分け</strong>
-        <code>AWSEC2-CloneInstanceAndUpgradeWindows</code>は、元インスタンスを複製した側でアップグレードし、検証用の新しいAMIを作成する方式。実行前にランブックの<code>TargetWindowsVersion</code>で対象バージョンを確認し、対象外の場合や既存インスタンスを更新する場合は本ページのインストールメディア方式を使用する
+        <p><code>AWSEC2-CloneInstanceAndUpgradeWindows</code>は、元インスタンスを複製した側でアップグレードし、検証用の新しいAMIを作成する方式。実行前にランブックの<code>TargetWindowsVersion</code>で対象バージョンを確認し、対象外の場合や既存インスタンスを更新する場合は本ページのインストールメディア方式を使用する</p>
       </div>
 
-      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverアップグレードを計画する</a> / AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/automated-upgrades.html">AWS公式: Automationランブックによるアップグレード</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverアップグレードを計画する</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/automated-upgrades.html">AWS公式: Automationランブックによるアップグレード</a></p>
 
       <h2 id="support">2. サポート期限とアップグレードパス</h2>
 
@@ -135,7 +139,7 @@
 
       <div class="callout">
         <strong>ℹ️ Windows Server 2025で拡張されたアップグレード範囲</strong>
-        Windows Server 2025以降では、非クラスター構成について一度に最大4バージョンのインプレースアップグレードがサポートされる。Windows Server 2012 R2以降から2025へ直接移行できるため、Windows Server 2016から2025への経路も正式なサポート対象になる
+        <p>Windows Server 2025以降では、非クラスター構成について一度に最大4バージョンのインプレースアップグレードがサポートされる。Windows Server 2012 R2以降から2025へ直接移行できるため、Windows Server 2016から2025への経路も正式なサポート対象になる</p>
       </div>
 
       <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverのアップグレードパスを計画する</a></p>
@@ -152,7 +156,9 @@
           <tr><td>事前作業が必要</td><td>NICチーミング、稼働アプリケーション、サーバーの役割と機能</td><td>NICチーミングは事前に無効化して完了後に再有効化する。アプリケーションと役割はWindows Server 2025への対応状況を個別に確認する</td></tr>
         </tbody>
       </table>
-      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverのアップグレード制限</a> / 出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/identity/ad-ds/deploy/upgrade-domain-controllers">Microsoft公式: ドメインコントローラーのアップグレード</a> / 出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/failover-clustering/cluster-operating-system-rolling-upgrade">Microsoft公式: クラスターOSのローリングアップグレード</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/install-upgrade-migrate">Microsoft公式: Windows Serverのアップグレード制限</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/identity/ad-ds/deploy/upgrade-domain-controllers">Microsoft公式: ドメインコントローラーのアップグレード</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/failover-clustering/cluster-operating-system-rolling-upgrade">Microsoft公式: クラスターOSのローリングアップグレード</a></p>
 
       <h2 id="aws-notes">4. Amazon EC2固有の注意点</h2>
       <p>オンプレミスの手順に加えて、EC2では次の点を考慮する</p>
@@ -171,7 +177,7 @@
           <tr><td>所要時間</td><td>役割とアプリケーションの数に依存し、AWSは40分から数時間かかる場合があると案内</td></tr>
         </tbody>
       </table>
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレードの実行</a></p>
 
       <h2 id="lab-setup">5. 今回の検証環境を構築する</h2>
 
@@ -202,31 +208,31 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ ルートボリューム容量</strong>
-        Windows Server 2025のシステム要件だけでなく、セットアップの一時ファイルと<code>Windows.old</code>を含めた空きが必要になる。本ページでは容量不足による中断を避けるため、検証用ルートボリュームを100 GiBとする。既存環境では実使用量を確認し、Cドライブに少なくとも32 GiB以上の空きを確保してから実施する
+        <p>Windows Server 2025のシステム要件だけでなく、セットアップの一時ファイルと<code>Windows.old</code>を含めた空きが必要になる。本ページでは容量不足による中断を避けるため、検証用ルートボリュームを100 GiBとする。既存環境では実使用量を確認し、Cドライブに少なくとも32 GiB以上の空きを確保してから実施する</p>
       </div>
 
       <h3 id="lab-ami">5.2 Windows Server 2016 AMIの確認</h3>
       <p>今回の検証では、東京リージョンで<code>ami-01582627fc1ac1ed5</code>を選択する。コンソール上でAMI名、アーキテクチャ、言語、所有者のエイリアス、検証済みプロバイダーの表示を確認し、同名の第三者AMIを選択しない</p>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/lab-01-ami-selection.png" width="1716" height="709" alt="Amazon EC2コンソールでWindows Server 2016日本語版AMIを検索した画面">
         <figcaption>東京リージョンでAMI ID <code>ami-01582627fc1ac1ed5</code>を検索し、Windows Server 2016日本語版と検証済みプロバイダーの表示を確認する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/lab-01-ami-selection.png" width="1716" height="709" alt="Amazon EC2コンソールでWindows Server 2016日本語版AMIを検索した画面">
       </figure>
 
       <div class="callout">
         <strong>ℹ️ AMI IDは固定値ではない</strong>
-        AMI IDはリージョンごとに異なり、AWS Windows AMIは定期的に更新される。本ページのAMI IDは2026/08/11時点の東京リージョンで選択した値であり、別のリージョンや後日の再検証ではSSMパブリックパラメータから最新値を取得する
+        <p>AMI IDはリージョンごとに異なり、AWS Windows AMIは定期的に更新される。本ページのAMI IDは2026/08/11時点の東京リージョンで選択した値であり、別のリージョンや後日の再検証ではSSMパブリックパラメータから最新値を取得する</p>
       </div>
 
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ssm get-parameter `
   --name "/aws/service/ami-windows-latest/Windows_Server-2016-Japanese-Full-Base" `
   --region ap-northeast-1 `
   --query "Parameter.Value" `
   --output text</code></pre>
       </div>
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/parameter-store-public-parameters-ami.html">AWS公式: AMIパブリックパラメータの呼び出し</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/parameter-store-public-parameters-ami.html">AWS公式: AMIパブリックパラメータの呼び出し</a></p>
 
       <h3 id="lab-launch">5.3 Windows Server 2016インスタンスの起動</h3>
       <ol>
@@ -241,36 +247,36 @@
 
       <div class="callout">
         <strong>ℹ️ 検証時のインスタンスサイズ</strong>
-        当初は<code>t3.small</code>(2 GiB)で起動したが、AWSがインプレースアップグレード時に推奨する4 GiB以上を満たすため、検証では<code>t3.large</code>(8 GiB)へ変更した。最低条件を満たす<code>t3.medium</code>(4 GiB)でも実施できるが、セットアップ中の余裕を確保する場合は一時的なサイズアップを検討する
+        <p>当初は<code>t3.small</code>(2 GiB)で起動したが、AWSがインプレースアップグレード時に推奨する4 GiB以上を満たすため、検証では<code>t3.large</code>(8 GiB)へ変更した。最低条件を満たす<code>t3.medium</code>(4 GiB)でも実施できるが、セットアップ中の余裕を確保する場合は一時的なサイズアップを検討する</p>
       </div>
 
       <h3 id="lab-connect">5.4 RDP接続とアップグレード前の記録</h3>
       <p>Administratorパスワードの取得とRDP接続の手順は<a href="windows-server-2025.html">Windows Server 2025</a>の「1. Windowsインスタンス接続」と同じ。接続後、アップグレード前の状態を記録し、サーバー外(手元の端末など)へ退避する</p>
       <p><code>Get-ComputerInfo</code>で製品名、ビルド、エディションを記録する。アップグレード先のエディションを選ぶ際と、完了後のバージョン比較に使用する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-ComputerInfo -Property WindowsProductName,WindowsBuildLabEx,WindowsEditionID | Out-File -FilePath .\computerinfo.txt</code></pre>
       </div>
       <p><code>systeminfo.exe</code>でOS、更新プログラム、起動時刻、メモリ、システムモデルなどの全体情報を記録する。アップグレード後に構成差分を確認するための基準になる</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systeminfo.exe | Out-File -FilePath .\systeminfo.txt</code></pre>
       </div>
       <p><code>ipconfig /all</code>でIPアドレス、サブネット、デフォルトゲートウェイ、DNS、DHCPの情報を記録する。アップグレード後にRDPやアプリケーション通信ができない場合の比較に使用する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>ipconfig /all | Out-File -FilePath .\ipconfig.txt</code></pre>
       </div>
       <p>自動起動に設定されたサービスと現在の状態を記録する。アップグレード後に同じ一覧を取得し、停止したサービスやスタートアップ設定の変化を確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-Service | Where-Object { $_.StartType -eq "Automatic" } | Out-File -FilePath .\services.txt</code></pre>
       </div>
       <p>4つのテキストファイルはコマンドを実行したディレクトリへ保存される。サーバー障害時にも参照できるようにサーバー外へコピーし、<code>winver</code>の画面も取得する</p>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/lab-02-windows-server-2016-before-upgrade.png" width="1545" height="1000" alt="アップグレード前のWindows Server 2016 Datacenterのサーバーマネージャー画面">
         <figcaption>アップグレード前はWindows Server 2016 Datacenterとして稼働している。完了後も同じインスタンスIDであることを比較する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/lab-02-windows-server-2016-before-upgrade.png" width="1545" height="1000" alt="アップグレード前のWindows Server 2016 Datacenterのサーバーマネージャー画面">
       </figure>
 
       <p>出典：<a href="https://learn.microsoft.com/ja-jp/windows-server/get-started/upgrade-in-place">Microsoft公式: Windows Serverのインプレースアップグレードを実行する</a></p>
@@ -288,12 +294,12 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ 再起動の有無</strong>
-        既定ではイメージ作成時にインスタンスが再起動される。<code class="ui-value">再起動しない</code>を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する
+        <p>既定ではイメージ作成時にインスタンスが再起動される。<code class="ui-value">再起動しない</code>を有効にするとファイルシステムの整合性が保証されないため、検証では既定(再起動あり)で取得する</p>
       </div>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/backup-01-create-ami.png" width="1718" height="1304" alt="Windows Server 2016のバックアップAMI作成画面">
         <figcaption>更新前のインスタンスからバックアップAMIを作成する。検証では整合性を優先し、再起動を許可した状態で取得した</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/backup-01-create-ami.png" width="1718" height="1304" alt="Windows Server 2016のバックアップAMI作成画面">
       </figure>
 
       <h3 id="pre-drivers">6.2 AWSドライバーの確認と更新</h3>
@@ -301,45 +307,45 @@
 
       <div class="callout callout-warning">
         <strong>⚠️ ドライバー更新前のバックアップ</strong>
-        AWS PV、ENA、NVMeはOSの起動、ストレージ、ネットワーク接続に関係する。6.1のバックアップAMIが<code class="ui-value">利用可能</code>になったことを確認してから更新する。PVドライバーのMSI実行後は自動的に再起動し、最大15分程度接続できなくなる場合がある
+        <p>AWS PV、ENA、NVMeはOSの起動、ストレージ、ネットワーク接続に関係する。6.1のバックアップAMIが<code class="ui-value">利用可能</code>になったことを確認してから更新する。PVドライバーのMSI実行後は自動的に再起動し、最大15分程度接続できなくなる場合がある</p>
       </div>
 
       <h4 id="pre-pv-driver">6.2.1 AWS PVドライバーの更新</h4>
       <p>更新前のバージョンはレジストリから確認する。キーが存在しない場合や、対象OSで利用できるバージョンより古い場合は、AWS公式パッケージを使用して更新する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver</code></pre>
       </div>
 
       <p>Windows Server 2016のWindows PowerShellでは、既定の通信プロトコルのままS3へ接続すると<code class="ui-value">SSL/TLSのセキュリティで保護されているチャネルを作成できませんでした</code>となり、ZIPを取得できない場合がある。その場合は、現在のPowerShellセッションでTLS 1.2を有効にしてから再実行する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12</code></pre>
       </div>
 
       <p>公式の<code>Latest</code> URLからPVドライバーをダウンロードする</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Invoke-WebRequest -UseBasicParsing -Uri "https://s3.amazonaws.com/ec2-windows-drivers-downloads/AWSPV/Latest/AWSPVDriver.zip" -OutFile "$env:USERPROFILE\pv_driver.zip"</code></pre>
       </div>
 
       <p>ダウンロードに失敗した状態で<code>Expand-Archive</code>を実行すると、ZIPが存在しないため別のエラーになる。ファイルの存在とサイズを確認してから展開する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-Item "$env:USERPROFILE\pv_driver.zip"</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Expand-Archive -LiteralPath "$env:USERPROFILE\pv_driver.zip" -DestinationPath "$env:USERPROFILE\pv_drivers" -Force</code></pre>
       </div>
 
       <p>展開後にMSIの場所を確認し、セットアップウィザードを起動する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>$msi = Get-ChildItem "$env:USERPROFILE\pv_drivers" -Filter "AWSPVDriverSetup.msi" -Recurse | Select-Object -First 1
 Start-Process -FilePath $msi.FullName</code></pre>
       </div>
@@ -347,29 +353,29 @@ Start-Process -FilePath $msi.FullName</code></pre>
       <p>セットアップウィザードでは、ライセンスに同意し、インストール先は既定値の<code>C:\Program Files\Amazon\XenTools\</code>を使用する。<code class="ui-value">Preparation for Upgrade</code>で自動再起動とバックアップに関する注意事項を確認してから<code class="ui-value">I'm Ready</code>を選択し、インストールを開始する</p>
 
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-01-welcome.png" width="498" height="411" alt="AWS PV Drivers Setup Wizardの開始画面">
         <figcaption>AWS PV Drivers Setup Wizardを開始する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-01-welcome.png" width="498" height="411" alt="AWS PV Drivers Setup Wizardの開始画面">
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-02-license.png" width="498" height="411" alt="AWS PV Driversのライセンス同意画面">
         <figcaption>ライセンス内容を確認し<code class="ui-value">I Agree</code>を選択する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-02-license.png" width="498" height="411" alt="AWS PV Driversのライセンス同意画面">
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-03-folder.png" width="498" height="411" alt="AWS PV Driversのインストール先選択画面">
         <figcaption>インストール先は既定のXenToolsフォルダーを使用する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-03-folder.png" width="498" height="411" alt="AWS PV Driversのインストール先選択画面">
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-04-preparation.png" width="498" height="411" alt="AWS PV Driversのアップグレード準備確認画面">
         <figcaption>自動再起動とバックアップの注意事項を確認し<code class="ui-value">I'm Ready</code>を選択する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-04-preparation.png" width="498" height="411" alt="AWS PV Driversのアップグレード準備確認画面">
       </figure>
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-05-confirm.png" width="498" height="411" alt="AWS PV Driversのインストール確認画面">
         <figcaption><code class="ui-value">Next</code>を選択するとドライバー更新と再起動が始まる</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/pv-driver-05-confirm.png" width="498" height="411" alt="AWS PV Driversのインストール確認画面">
       </figure>
 
       <p>再起動後、EC2のステータスチェックとSSMの接続状態が正常に戻ったことを確認してから再接続し、レジストリのバージョンを再確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-ItemProperty HKLM:\SOFTWARE\Amazon\PVDriver</code></pre>
       </div>
 
@@ -415,16 +421,16 @@ PSPath  : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Amazon
 
       <div class="callout">
         <strong>ℹ️ Latestパッケージとバージョン履歴の差</strong>
-        2026/08/11の実機検証では、AWS公式の<code>Latest</code> URLから取得したパッケージにより<code>8.6.1</code>へ更新された。一方、検証時点のAWS公式バージョン履歴には<code>8.6.0</code>まで掲載されていた。公開ページの表だけでなく、配布パッケージのreadmeと更新後のレジストリ値を作業記録に残す
+        <p>2026/08/11の実機検証では、AWS公式の<code>Latest</code> URLから取得したパッケージにより<code>8.6.1</code>へ更新された。一方、検証時点のAWS公式バージョン履歴には<code>8.6.0</code>まで掲載されていた。公開ページの表だけでなく、配布パッケージのreadmeと更新後のレジストリ値を作業記録に残す</p>
       </div>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">EC2 WindowsインスタンスでのPVドライバーのアップグレード</a></p>
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/xen-drivers-overview.html">Windowsインスタンス用PVドライバーとバージョン履歴</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/Upgrading_PV_drivers.html">EC2 WindowsインスタンスでのPVドライバーのアップグレード</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/xen-drivers-overview.html">Windowsインスタンス用PVドライバーとバージョン履歴</a></p>
 
       <h4 id="pre-ena-driver">6.2.2 ENAドライバーの確認</h4>
       <p>ENAドライバーは、Nitroベースインスタンスのネットワーク接続を担う。インプレースアップグレード前に現在のバージョンを確認し、AWS公式の対象OS向け最新バージョンより古い場合だけ更新する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-CimInstance Win32_PnPSignedDriver |
   Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" } |
   Select-Object DeviceName, DriverVersion, DriverDate</code></pre>
@@ -441,13 +447,13 @@ Elastic Network Adapter  2.11.0</code></pre>
         </div>
       </details>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">EC2 WindowsインスタンスへのENAドライバーのインストール</a></p>
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-driver-releases-windows.html">ENA Windowsドライバーのバージョン履歴</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-adapter-driver-install-upgrade-win.html">EC2 WindowsインスタンスへのENAドライバーのインストール</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ena-driver-releases-windows.html">ENA Windowsドライバーのバージョン履歴</a></p>
 
       <h4 id="pre-nvme-driver">6.2.3 NVMeドライバーの確認</h4>
       <p>NitroベースインスタンスではEBSボリュームがNVMeデバイスとして認識される。次のコマンドで確認し、OSアップグレード後も同じ要領で再確認する。2026/08/11時点のAWS公式最新パッケージは<code>1.8.2</code>であり、今回の実機ではドライバーバージョン<code>1.8.2.53</code>が導入されていたため、再インストールは実施していない</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-CimInstance Win32_PnPSignedDriver |
   Where-Object { $_.DeviceName -like "*NVMe*" } |
   Select-Object DeviceName, DriverVersion, DriverDate</code></pre>
@@ -463,12 +469,12 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
         </div>
       </details>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/nvme-driver-version-history.html">AWS NVMeドライバーのバージョン履歴</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/nvme-driver-version-history.html">AWS NVMeドライバーのバージョン履歴</a></p>
 
       <h3 id="pre-agent">6.3 SSM Agentの確認</h3>
       <p>SSM AgentはFleet ManagerやSession Managerから接続するために使用する。<code>Status</code>が<code>Running</code>であることを確認し、アップグレード後にも同じコマンドで再確認する</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-Service AmazonSSMAgent</code></pre>
       </div>
 
@@ -477,7 +483,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="pre-disk">6.5 空き容量の確認</h3>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-Volume -DriveLetter C | Select-Object DriveLetter, SizeRemaining, Size</code></pre>
       </div>
       <p>空き容量が不足する場合は、EBSボリュームの拡張とOS側のパーティション拡張を先に実施する</p>
@@ -495,13 +501,13 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/media-01-public-snapshot.png" width="1957" height="689" alt="Windows Server 2025 Japanese Installation Mediaのパブリックスナップショット検索結果">
         <figcaption>所有者のエイリアスを<code>amazon</code>、説明を<code>Windows 2025 Japanese Installation Media</code>で絞り込む</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/media-01-public-snapshot.png" width="1957" height="689" alt="Windows Server 2025 Japanese Installation Mediaのパブリックスナップショット検索結果">
       </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ メディアの言語一致</strong>
-        インストールメディアはOSの言語設定と一致させる。日本語AMIから構築したインスタンスにはJapanese、英語版にはEnglishのメディアを選択する。言語の異なるメディアではアップグレードできない
+        <p>インストールメディアはOSの言語設定と一致させる。日本語AMIから構築したインスタンスにはJapanese、英語版にはEnglishのメディアを選択する。言語の異なるメディアではアップグレードできない</p>
       </div>
 
       <h3 id="media-volume">7.2 ボリュームの作成</h3>
@@ -512,13 +518,13 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/media-02-volume-available.png" width="1710" height="339" alt="Windows Server 2025インストールメディアのスナップショットから作成したEBSボリューム">
         <figcaption>パブリックスナップショットから8 GiBのEBSボリュームを作成し、対象インスタンスと同じ<code>ap-northeast-1a</code>で<code class="ui-value">使用可能</code>になったことを確認する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/media-02-volume-available.png" width="1710" height="339" alt="Windows Server 2025インストールメディアのスナップショットから作成したEBSボリューム">
       </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ アベイラビリティーゾーンの一致</strong>
-        EBSボリュームは同じAZのインスタンスにしかアタッチできない。既定値のまま作成するとAZ不一致でアタッチに失敗しやすいため、作成時に必ず対象インスタンスのAZへ合わせる
+        <p>EBSボリュームは同じAZのインスタンスにしかアタッチできない。既定値のまま作成するとAZ不一致でアタッチに失敗しやすいため、作成時に必ず対象インスタンスのAZへ合わせる</p>
       </div>
 
       <h3 id="media-attach">7.3 アタッチとオンライン化</h3>
@@ -531,45 +537,45 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <div class="callout callout-warning">
         <strong>⚠️ ディスクの初期化はしない</strong>
-        <code class="ui-value">ディスクの管理</code>で初期化(フォーマット)を実行するとメディアの内容が消える。操作は<code class="ui-value">オンライン</code>への切り替えのみ
+        <p><code class="ui-value">ディスクの管理</code>で初期化(フォーマット)を実行するとメディアの内容が消える。操作は<code class="ui-value">オンライン</code>への切り替えのみ</p>
       </div>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/media-03-attach-xvdf.png" width="1716" height="614" alt="インストールメディア用EBSボリュームをxvdfとしてアタッチする画面">
         <figcaption>対象インスタンスを選択し、データボリュームの推奨範囲に含まれる<code>xvdf</code>を指定してアタッチする</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/media-03-attach-xvdf.png" width="1716" height="614" alt="インストールメディア用EBSボリュームをxvdfとしてアタッチする画面">
       </figure>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/media-04-windows-volume-online.png" width="1579" height="918" alt="Windows Server 2016のディスクの管理でWindows Server 2025インストールメディアを認識した画面">
         <figcaption>ディスクを初期化せずオンラインにすると、Windows Server 2025 Japaneseのメディアが<code>D:</code>ドライブとして認識される</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/media-04-windows-volume-online.png" width="1579" height="918" alt="Windows Server 2016のディスクの管理でWindows Server 2025インストールメディアを認識した画面">
       </figure>
 
-      <p>AWS公式手順：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレード</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/os-inplaceupgrade.html">AWS公式: EC2 Windowsインスタンスでのインプレースアップグレード</a></p>
 
       <h2 id="upgrade">8. インプレースアップグレードの実行</h2>
 
       <h3 id="upgrade-run">8.1 セットアップの起動</h3>
       <p>管理者としてPowerShellを開き、メディアのドライブへ移動してセットアップを実行。ドライブ文字は7.3で認識された値へ読み替える</p>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>D:</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>.\setup.exe /auto upgrade /dynamicupdate disable</code></pre>
       </div>
 
       <div class="callout">
         <strong>ℹ️ /dynamicupdate disable の理由</strong>
-        アップグレード中の更新プログラム適用は失敗の要因になるため、AWS公式手順ではDynamic Updateを無効化して実行する。無効化した分の更新はアップグレード完了後にWindows Updateで適用する
+        <p>アップグレード中の更新プログラム適用は失敗の要因になるため、AWS公式手順ではDynamic Updateを無効化して実行する。無効化した分の更新はアップグレード完了後にWindows Updateで適用する</p>
       </div>
 
       <h3 id="upgrade-edition">8.2 エディションの選択</h3>
       <p>アップグレード元のWindows Server 2016と同じエディション、同じインストールオプションを選択する。今回の環境では<code class="ui-value">Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)</code>を選択した</p>
 
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/upgrade-01-edition-selection.png" width="577" height="455" alt="Windows Server 2025 Datacenterのデスクトップエクスペリエンスを選択した画面">
         <figcaption>Windows Server 2025 Datacenter (デスクトップ エクスペリエンス)を選択する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-01-edition-selection.png" width="577" height="455" alt="Windows Server 2025 Datacenterのデスクトップエクスペリエンスを選択した画面">
       </figure>
 
       <ol>
@@ -579,13 +585,13 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       </ol>
 
       <figure class="screenshot-compact" style="max-width: 360px">
-        <img src="../assets/img/windows-server-2016-upgrade/upgrade-02-license-terms.png" width="577" height="455" alt="Windows Server 2025の適用される通知とライセンス条項の画面">
         <figcaption>通知とライセンス条項を確認し<code class="ui-value">同意する</code>を選択する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-02-license-terms.png" width="577" height="455" alt="Windows Server 2025の適用される通知とライセンス条項の画面">
       </figure>
 
       <div class="callout callout-warning">
         <strong>⚠️ エディションとインストールオプション</strong>
-        既存OSと同じエディション(本ページの例ではDatacenter)、同じインストールオプション(デスクトップエクスペリエンス)を選択する。Server Core版や下位エディションを選ぶとアップグレードを継続できない
+        <p>既存OSと同じエディション(本ページの例ではDatacenter)、同じインストールオプション(デスクトップエクスペリエンス)を選択する。Server Core版や下位エディションを選ぶとアップグレードを継続できない</p>
       </div>
 
       <h3 id="upgrade-monitor">8.3 進行状況の確認</h3>
@@ -599,12 +605,12 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <div class="callout callout-warning">
         <strong>⚠️ ステータスチェックの一時失敗</strong>
-        アップグレード中はインスタンスステータスチェックが一時的に失敗状態になり、完了すると回復する。ステータスチェック連動のアラームや自動復旧を設定している場合は、誤検知による再起動を防ぐため事前に無効化する
+        <p>アップグレード中はインスタンスステータスチェックが一時的に失敗状態になり、完了すると回復する。ステータスチェック連動のアラームや自動復旧を設定している場合は、誤検知による再起動を防ぐため事前に無効化する</p>
       </div>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/upgrade-03-installation-started.png" width="1575" height="949" alt="Fleet Managerの画面に表示されたWindows Serverのインストール開始状態">
         <figcaption>インストール開始直後の状態。以降は複数回再起動するため、接続が切れてもEC2を停止しない</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-03-installation-started.png" width="1575" height="949" alt="Fleet Managerの画面に表示されたWindows Serverのインストール開始状態">
       </figure>
 
       <h3 id="upgrade-done">8.4 完了の確認</h3>
@@ -617,8 +623,8 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/upgrade-04-diagnostic-data-choice.png" width="1718" height="1304" alt="Fleet ManagerでWindows Server 2025へ再接続し診断データを選択した画面">
         <figcaption>同じEC2インスタンスID <code>i-034980b8a789187c1</code>でWindows Server 2025へ再接続し、診断データは<code class="ui-value">必須のみ</code>を選択する</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-04-diagnostic-data-choice.png" width="1718" height="1304" alt="Fleet ManagerでWindows Server 2025へ再接続し診断データを選択した画面">
       </figure>
 
       <h2 id="post-check">9. アップグレード後の確認と作業完了</h2>
@@ -626,7 +632,7 @@ AWS NVMe Elastic Block Storage Adapter 1.8.2.53      2026/05/19 9:00:00</code></
 
       <h3 id="post-version">9.1 OSバージョンの確認</h3>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, LastBootUpTime</code></pre>
       </div>
 
@@ -641,17 +647,17 @@ Microsoft Windows Server 2025 Datacenter 10.0.26100 26100</code></pre>
       </details>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/upgrade-05-in-place-upgrade-complete.png" width="1595" height="923" alt="同じEC2インスタンスIDでWindows Server 2025 Datacenterが稼働しているサーバーマネージャー画面">
         <figcaption>サーバーマネージャーでWindows Server 2025 Datacenterへの更新を確認。インスタンスIDはアップグレード前と同じ<code>i-034980b8a789187c1</code>であり、既存EC2上のインプレースアップグレードであることを確認できる</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/upgrade-05-in-place-upgrade-complete.png" width="1595" height="923" alt="同じEC2インスタンスIDでWindows Server 2025 Datacenterが稼働しているサーバーマネージャー画面">
       </figure>
 
       <h3 id="post-aws">9.2 SSM AgentとAWSドライバーの確認</h3>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-Service AmazonSSMAgent</code></pre>
       </div>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>Get-CimInstance Win32_PnPSignedDriver |
   Where-Object { $_.DeviceName -like "*Elastic Network Adapter*" -or $_.DeviceName -like "*NVMe*" } |
   Select-Object DeviceName, DriverVersion</code></pre>
@@ -674,7 +680,7 @@ Amazon Elastic Network Adapter         2.11.0.0</code></pre>
 
       <h3 id="post-license">9.3 ライセンス認証の確認</h3>
       <div class="code">
-        <div class="code-header"><span>powershell</span><button class="copy" type="button">Copy</button></div>
+        <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cscript //nologo $env:windir\System32\slmgr.vbs /dlv</code></pre>
       </div>
       <details class="example-details">
@@ -698,8 +704,8 @@ Amazon Elastic Network Adapter         2.11.0.0</code></pre>
       </ol>
 
       <figure class="screenshot-wide">
-        <img src="../assets/img/windows-server-2016-upgrade/cleanup-01-install-media-detach.png" width="1718" height="1304" alt="Windows Server 2025インストールメディア用EBSボリュームのデタッチ確認画面">
         <figcaption>アップグレード完了後、インストールメディアとして使用した8 GiBのEBSボリュームをデタッチする</figcaption>
+        <img src="../assets/img/windows-server-2016-upgrade/cleanup-01-install-media-detach.png" width="1718" height="1304" alt="Windows Server 2025インストールメディア用EBSボリュームのデタッチ確認画面">
       </figure>
 
     </main>
