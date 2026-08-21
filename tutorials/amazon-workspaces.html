@@ -76,7 +76,6 @@
       <div id="pcoip-eos" class="callout callout-warning">
         <strong>⚠️ PCoIPベースのWorkSpaces Personalは2027年10月31日にサポート終了</strong>
         <p>2026年7月31日以降、PCoIPベースのWorkSpaces Personalは新規顧客へ提供されない<br>2027年10月31日以降は利用できないため、新規構築はDCV（WSP）を標準とし、既存環境は移行を計画する</p>
-        <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-pcoip-end-of-support.html">PCoIP-based WorkSpaces Personal end of support</a></p>
       </div>
 
       <h2 id="specifications">仕様</h2>
@@ -108,7 +107,6 @@
       </table>
 
       <p>本ページのAWS Managed Microsoft ADによる利用者管理手順は、Amazon WorkSpaces Workshopの実施内容を基に整理する</p>
-      <p>出典：<a href="https://catalog.us-east-1.prod.workshops.aws/workshops/ba8389fd-99a1-4010-a95e-d691a2c08311/en-US/workspaces">Amazon WorkSpaces Workshop</a></p>
 
       <h3 id="protocol-selection">ストリーミングプロトコルの選定</h3>
       <p>WorkSpaces PersonalはDCV（WSP）とPCoIPをサポートする<br>PCoIPは終了予定のため新規構築はDCVを標準とし、既存環境は端末、ネットワーク、周辺機器を検証して移行する</p>
@@ -144,7 +142,6 @@
         <strong>ℹ️ 選定時の確認</strong>
         <p>DCVとPCoIPでは、対応クライアント、OS、GPUバンドル、周辺機器のサポート範囲が異なる<br>既存PCoIPを移行する場合は、利用者の端末、ネットワーク経路、印刷、周辺機器、アプリケーションを代表ユーザーで事前検証する</p>
       </div>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/supported-features.html">Supported features by protocol type for WorkSpaces</a></p>
 
       <h3 id="directory-accounts">AWS Managed Microsoft ADのアカウントの役割</h3>
       <p>WorkSpacesの利用者選択画面には、利用者アカウントだけでなく、ディレクトリの組み込みアカウントやAWSサービスアカウントも表示される<br>WorkSpaceを割り当てる対象は、業務利用者用に作成した通常アカウントに限定する</p>
@@ -184,8 +181,6 @@
           </tr>
         </tbody>
       </table>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a></p>
-      <p>出典：<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
 
       <h2 id="flow">構築フロー</h2>
       <ol>
@@ -197,10 +192,7 @@
         <li>WorkSpaceが<code class="ui-value">AVAILABLE</code>になったことを確認し、クライアントアプリまたはWeb Accessで接続</li>
       </ol>
 
-      <h2 id="register-directory">WorkSpacesディレクトリ登録</h2>
-      <p>Directory Serviceで作成または接続したディレクトリをAmazon WorkSpacesへ登録する<br>登録後に利用サブネット、アクセス制御、セルフサービス権限、Web Accessを設定する</p>
-
-      <h3>WorkSpacesディレクトリを作成・登録する</h3>
+      <h2 id="register-directory">WorkSpacesディレクトリを作成・登録する</h2>
       <ol>
         <li>Amazon WorkSpaces コンソールの<code class="ui-value">ディレクトリ</code> ＞ <code class="ui-value">ディレクトリの作成</code>を選択</li>
         <li>WorkSpace タイプは<code class="ui-value">個人</code>、WorkSpace デバイス管理は<code class="ui-value">AWS Directory Service</code>を選択</li>
@@ -210,8 +202,8 @@
       </ol>
 
       <div class="callout callout-error">
-        <strong>❌ エラー</strong>
-        <p><strong>同一 Availability Zone のサブネットは選択不可</strong><br>2つのサブネットが同じAvailability Zoneにある場合、ディレクトリの作成・登録はサポートされない<br>コンソールには<code class="ui-value">You tried to choose two subnets that are in the same Availability Zone</code>というエラーが表示される</p>
+        <strong>❌ 同一 Availability Zone のサブネットは選択不可</strong>
+        <p>2つのサブネットが同じAvailability Zoneにある場合、ディレクトリの作成・登録はサポートされない<br>コンソールには<code class="ui-value">You tried to choose two subnets that are in the same Availability Zone</code>というエラーが表示される</p>
       </div>
 
       <figure class="screenshot-wide">
@@ -250,7 +242,6 @@
         <strong>⚠️ 注意</strong>
         <p>カスタムイメージを作成する予定があるWorkSpaceでは、ボリューム暗号化の扱いを事前に決定する<br>暗号化されたWorkSpaceからのイメージ作成はサポートされない</p>
       </div>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/create-custom-bundle.html">Create a custom WorkSpaces image and bundle for WorkSpaces Personal</a></p>
 
       <h3 id="connect">接続</h3>
       <p>WorkSpaceの作成完了後、利用者には初回接続用メールが届く<br>メールの個別リンクと登録コードは接続情報にあたるため、ドキュメントやチケットへ転載しない<br>利用者自身がメールからプロフィールと初期パスワードを設定する</p>
@@ -261,7 +252,6 @@
         <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインイン</li>
       </ol>
       <p>DCV（WSP）ベースのWindowsまたはLinux WorkSpaceでWeb Accessを有効化すると、クライアントを導入せずに対応ブラウザから接続できる</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-clients.html">WorkSpaces clients</a></p>
 
       <h3 id="web-access">Web Accessを有効化</h3>
       <p>Web Accessはディレクトリ単位で許可する<br>同じディレクトリへ登録したWorkSpaceに設定が適用されるため、対象利用者と接続元ネットワークへの影響を確認してから変更する</p>
@@ -327,10 +317,7 @@
         <figcaption>DCV（WSP）のWorkSpaceへブラウザから接続した状態</figcaption>
         <img src="../assets/img/workspaces/workspaces-web-access-browser.png" alt="Google ChromeからAmazon WorkSpaces Web Accessへ接続し、Windowsデスクトップを表示した画面" width="1718" height="1391" loading="lazy">
       </figure>
-      <p>DCVのWeb AccessはWindowsとLinuxのWorkSpacesで利用できる<br>対応ブラウザはChrome、Edge、Safari、Firefoxの最新3バージョン<br>PCoIP Web Accessは新規設計に使用しない</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/web-access.html">Enable and configure WorkSpaces Web Access</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html">IP address and port requirements</a></p>
+      <p>DCV（WSP）のWindows / Linux WorkSpaceは、Chrome、Edge、Safari、FirefoxからWeb Accessを利用できる</p>
 
       <h3 id="ad-admin-tools">AD管理ツールとGPMC</h3>
       <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法が推奨される<br>OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console（GPMC）を導入したディレクトリ参加済みの管理端末を用意する</p>
@@ -409,11 +396,6 @@
         <img src="../assets/workspaces-aduc-new-user.png" alt="Active Directoryの新しいオブジェクトユーザー画面で利用者情報を入力した状態" width="1358" height="1158" loading="lazy">
       </figure>
       <p>初回パスワードには一時パスワードを設定し、<code class="ui-value">ユーザーは次回ログオン時にパスワード変更が必要</code>を選択する<br><code class="ui-value">パスワードを無期限にする</code>と<code class="ui-value">アカウントは無効</code>は通常の利用者アカウントでは選択しない<br>アカウントを無効化して作成した場合は、WorkSpaceを割り当てる前に有効化する</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a></p>
-      <p>出典：<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
       <h2 id="group-policy">WorkSpaces固有のグループポリシー</h2>
       <p>Windows WorkSpacesへプロトコル固有の設定を適用するには、使用中のプロトコルに対応する管理用テンプレートをActive Directoryの中央ストアへ配置する<br>新規環境はDCV用テンプレートを使用し、PCoIP用テンプレートは既存環境だけで使用する</p>
@@ -482,7 +464,6 @@
         <p><code>\\&lt;domain-fqdn&gt;\SYSVOL\&lt;domain-fqdn&gt;\Policies\PolicyDefinitions</code>に<code>wsp.admx</code>、その配下の<code>en-US</code>に<code>wsp.adml</code>があれば配置完了<br><code>workspaces.labx.com</code>のようにドメイン名のドットを省略しない</p>
       </div>
       <p><code>admx</code>と<code>adml</code>のXML内容は編集しない</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/group_policy.html">Windows WorkSpacesのグループポリシー管理</a></p>
 
       <h3>PCoIPテンプレートを使用する場合</h3>
       <p>既存PCoIP環境では、PCoIP Agentのビット数に合うテンプレートを取得し、同じ中央ストアへ<code>PCoIP.admx</code>と<code>PCoIP.adml</code>を配置する<br>32ビットエージェントの場合、コピー元は<code>C:\Program Files (x86)\Teradici\PCoIP Agent\configuration\policyDefinitions</code>となる</p>
@@ -563,9 +544,6 @@
         <li>移行先バンドルと最後のスナップショット日時を確認</li>
         <li>影響を確認して<code class="ui-value">WorkSpaceの移行</code>を選択</li>
       </ol>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
 
       <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
       <p>PCoIPバンドルから作成したWindows WorkSpaceは、ルートボリュームを再作成せずにDCV（WSP）へ変更できる<br>対象のWorkSpaceがDCVのクライアント、ネットワーク、バンドル要件を満たすことを確認してから変更する</p>
@@ -624,9 +602,6 @@
   --query 'Workspaces[0].{WorkspaceId:WorkspaceId,State:State,Protocols:WorkspaceProperties.Protocols}' \
   --output table</code></pre>
       </div>
-
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/modify-workspaces.html#modify-workspaces-protocols">Modify protocols</a></p>
-
 
     </main>
 
