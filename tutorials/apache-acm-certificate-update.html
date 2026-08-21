@@ -73,10 +73,9 @@
       <h1>AWS Certificate Manager (ACM)</h1>
       <p class="lead">ACMで発行したエクスポート可能なパブリック証明書をRHEL 9上のApacheへ配置し、更新、再配置、TLS通信を確認する手順をまとめる</p>
 
-      <div class="callout callout-warning">
+      <div class="callout callout-info">
         <strong>ℹ️ サーバーに配置した証明書は自動更新の対象外</strong>
-        <p>ACMがエクスポート可能な証明書を更新しても、EC2上のApacheやNGINXに配置した証明書ファイルは自動で差し替わらない</p>
-        <p>更新後の証明書を再エクスポートし、対象サーバーへ配置して、構文確認とサービス再読み込みを行う仕組みが必要</p>
+        <p>ACMがエクスポート可能な証明書を更新しても、EC2上のApacheやNGINXに配置した証明書ファイルは自動で差し替わらない<br>更新後の証明書を再エクスポートし、対象サーバーへ配置して、構文確認とサービス再読み込みを行う仕組みが必要</p>
       </div>
 
       <h2 id="lifetime">有効期間と今後の短縮</h2>
@@ -122,10 +121,6 @@ sha256 Fingerprint=E3:E1:44:EE:3A:6F:7A:15:57:16:FF:21:3A:61:4D:02:B1:F9:79:ED:B
 
       <p>Apacheの稼働状態と80番・443番の待ち受け確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl is-active httpd</code></pre></div>
-      <details class="example-details execution-example">
-        <summary>実行例を展開する</summary>
-        <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>active</code></pre></div>
-      </details>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
@@ -264,12 +259,30 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       </details>
       <p>サーバー証明書のIssuer DNと証明書チェーン先頭のSubject DNで同じハッシュ値を確認</p>
 
-      <h2 id="fullchain">7. fullchainの作成</h2>
-      <p>サーバー証明書と証明書チェーンの存在確認</p>
+      <h2 id="fullchain">7. 証明書チェーンの配置方式を確認</h2>
+      <p>ACMから出力されるサーバー証明書、証明書チェーン、秘密鍵は別々のデータ<br>サーバー証明書と証明書チェーンを結合するかは、Apacheの設定方式に合わせて決定する</p>
+      <table>
+        <thead><tr><th>配置方式</th><th>Apache設定</th><th>fullchainの作成</th></tr></thead>
+        <tbody>
+          <tr><td>1ファイルで参照</td><td><code>SSLCertificateFile</code>へサーバー証明書と中間証明書を結合したファイルを指定</td><td>必要<br>サーバー証明書、中間証明書の順で結合</td></tr>
+          <tr><td>証明書チェーンを別ファイルで参照</td><td><code>SSLCertificateFile</code>へサーバー証明書、<code>SSLCertificateChainFile</code>へ証明書チェーンを指定</td><td>不要<br>既存設定で各ファイルを個別に参照</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info">
+        <strong>ℹ️ Apache 2.4.8以降の推奨構成</strong>
+        <p>Apache 2.4.8以降は、<code>SSLCertificateFile</code>でサーバー証明書と中間証明書を1ファイルから読み込める<br><code>SSLCertificateChainFile</code>は非推奨となっているため、本手順ではfullchainを作成して<code>SSLCertificateFile</code>へ指定する</p>
+      </div>
+      <div class="callout callout-warning">
+        <strong>⚠️ 秘密鍵はfullchainへ結合しない</strong>
+        <p>fullchainへ含めるのはサーバー証明書と証明書チェーンだけ<br>秘密鍵はアクセス権を制限した別ファイルとして<code>SSLCertificateKeyFile</code>へ指定する</p>
+      </div>
+      <p>出典：<a href="https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile">Apache HTTP Server mod_ssl</a></p>
+
+      <p>fullchain方式を使用する場合は、サーバー証明書と証明書チェーンの存在を確認</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com.crt &amp;&amp; echo "サーバー証明書: OK"</code></pre></div>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com-chain.pem &amp;&amp; echo "証明書チェーン: OK"</code></pre></div>
 
-      <p>サーバー証明書、証明書チェーンの順によるfullchain作成</p>
+      <p>サーバー証明書、証明書チェーンの順でfullchainを作成</p>
       <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com-chain.pem &gt; /etc/pki/tls/certs/www.zexample.com-fullchain.pem</code></pre></div>
 
       <p>fullchainに含まれる証明書数の確認</p>
@@ -358,7 +371,7 @@ Verify return code: 0 (ok)</code></pre></div>
       <a href="#placement">4. ACM証明書のエクスポートとファイル配置</a>
       <a href="#certificate-check">5. 秘密鍵と証明書の確認</a>
       <a href="#hash-check">6. ハッシュ値の整合性確認</a>
-      <a href="#fullchain">7. fullchainの作成</a>
+      <a href="#fullchain">7. 証明書チェーンの配置方式</a>
       <a href="#apache">8. Apache設定の更新</a>
       <a href="#verification">9. TLS通信確認</a>
       <a href="#browser">10. 更新後のブラウザ確認</a>

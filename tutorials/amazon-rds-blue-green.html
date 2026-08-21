@@ -463,53 +463,8 @@ SET default_transaction_read_only = on;</code></pre>
       </div>
       <div class="callout">
         <strong>ℹ️ ダウンタイムの期待値</strong>
-        <p>AWSは2026年1月から、単一リージョン構成の直接エンドポイント接続でライター停止を通常5秒以下、AWS Advanced JDBC Driver利用時は通常2秒以下と案内している。これはアプリケーション全体のSLOや完了時間を保証する値ではないため、接続プールと再試行を含むE2E試験で採用可否を判断</p>
+        <p>AWSは2026年1月から、単一リージョン構成の直接エンドポイント接続でライター停止を通常5秒以下、AWS Advanced JDBC Driver利用時は通常2秒以下と案内している。これはアプリケーション全体のSLOや完了時間を保証する値ではないため、接続プールと再試行を含むエンドツーエンド（End-to-End）試験で採用可否を判断</p>
       </div>
-
-      <h2 id="monitoring">監視・イベント・運用記録</h2>
-      <p>作成から切替、切替後までの状態遷移を、RDSコンソール、CloudWatch、Performance Insights、RDSイベント、EventBridgeで追跡。アプリケーション側ではHTTP/APIエラー率、DB接続失敗、レイテンシ、キュー滞留、ジョブ失敗を同じ時間軸で確認</p>
-      <table>
-        <thead><tr><th>タイミング</th><th>DB側の主な確認項目</th><th>アプリ/運用側の主な確認項目</th></tr></thead>
-        <tbody>
-          <tr><td>Green作成中</td><td>Deployment status、Status details、ストレージ初期化、レプリケーション状態、空き容量</td><td>費用アラート、作業ログ、承認状況</td></tr>
-          <tr><td>試験中</td><td>DBLoad、CPU、接続数、待機イベント、レプリケーション遅延、クエリ性能</td><td>機能試験、接続プール、バッチ、外部連携</td></tr>
-          <tr><td>切替直前</td><td>接続数、長時間トランザクション、ReplicaLagまたはOldestReplicationSlotLag、空き容量</td><td>メンテナンス告知、書き込み抑制、監視担当の待機</td></tr>
-          <tr><td>切替後</td><td>新本番のDB識別子、DbiResourceId、エラー、負荷、バックアップ、旧Blueの状態</td><td>再接続成功率、業務処理、通知、連携先、監視/タグ/IAM/AWS Backup更新</td></tr>
-        </tbody>
-      </table>
-      <p>RDSイベントをEventBridgeで受信する場合は、切替開始、成功、失敗、レプリケーション異常のイベントを作業用チャネルへ通知し、時刻、実行者、Deployment ID、判断結果を変更記録へ残す</p>
-
-      <h2 id="rollback">ロールバックではなく復旧計画として設計</h2>
-      <div class="callout callout-warning">
-        <strong>⚠️ 切替後の安全なスイッチバックはない</strong>
-        <p>Blue/Green Deploymentsには、切替後に旧Blueへ戻す自動ロールバック機能がないため、切替が完了するとBlueとGreenのレプリケーションは停止し、新本番で発生した書き込みは旧Blueに存在しない仕様となる</p>
-      </div>
-      <table>
-        <thead><tr><th>状況</th><th>取るべき行動</th><th>避けること</th></tr></thead>
-        <tbody>
-          <tr><td>切替前に試験失敗</td><td>切替を行わず、Greenの修正またはDeployment削除と再作成</td><td>未解決のまま時間制約だけで切替</td></tr>
-          <tr><td>切替がガードレールで失敗</td><td>長時間トランザクション、同期遅延、ヘルス、PostgreSQL論理レプリケーション制約を調査</td><td>Greenの手動昇格</td></tr>
-          <tr><td>切替直後に障害</td><td>アプリ書き込みを止め、事実関係、データ差分、旧Blue、スナップショット、PITRを評価して復旧手段を決定</td><td>旧Blueを書き込み可能にして接続先だけ戻す操作</td></tr>
-          <tr><td>受入完了後</td><td>旧Blueの保持期限を終えた後、削除保護、スナップショット、バックアップを確認して削除</td><td>旧Blueを無期限に残して費用と運用対象を増やすこと</td></tr>
-        </tbody>
-      </table>
-      <p>復旧の実現性は、業務停止後に新本番で書き込まれたデータ量、RPO/RTO、データ補正手段で変わる。実施前に「どの時点へ戻すか」「新規データをどう回収するか」「誰が復旧判断するか」を具体化</p>
-
-      <h2 id="cost">料金と削除計画</h2>
-      <p>Green環境にはBlueと同様にDBインスタンス、ストレージ、読み書きI/O、バックアップ、Performance Insightsなどの通常料金が発生する。BlueとGreenを並行稼働する期間は、構成が同程度であれば概ね2倍のランニングコストとなる</p>
-      <p>切替後も旧Blueは自動削除されず、標準料金が継続する。検証期間の延長は安全性と費用のトレードオフであるため、保持終了日時、削除承認者、削除前チェックを変更計画に含める</p>
-      <p>費用の見積りには、Greenのインスタンス数、Multi-AZ、ストレージ種別・容量、IOPS/スループット、バックアップ、Performance Insights、RDS Proxyを含める。割引適用の有無は使用するリージョン・インスタンスクラス・購入形態に依存するため、AWS Pricing CalculatorまたはCost Explorerで実値を確認</p>
-      <p><em>＊画像挿入：受入完了後に旧BlueとBlue/Green Deploymentを削除した一覧（AWSアカウントID・ユーザー名をマスキング）＊</em></p>
-
-      <h2 id="references">公式ドキュメント</h2>
-      <ul>
-        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-overview.html">AWS - Overview of Amazon RDS Blue/Green Deployments</a></li>
-        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-creating.html">AWS - Creating a blue/green deployment in Amazon RDS</a></li>
-        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-switching.html">AWS - Switching a blue/green deployment in Amazon RDS</a></li>
-        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html">AWS - Limitations and considerations for Amazon RDS blue/green deployments</a></li>
-        <li>AWS公式手順：<a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.ExtensionUpgrades.html">AWS - Upgrading PostgreSQL extensions</a></li>
-        <li>出典：<a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/managing_software_with_the_dnf_tool/assembly_managing-versions-of-application-stream-content_managing-software-with-the-dnf-tool">Red Hat - Managing versions of Application Stream content</a></li>
-      </ul>
 
     </main>
 
@@ -522,10 +477,6 @@ SET default_transaction_read_only = on;</code></pre>
       <a href="#prerequisites">対応条件・制約</a>
       <a href="#procedure">実践手順</a>
       <a href="#connection">DNS・接続・停止影響</a>
-      <a href="#monitoring">監視・イベント</a>
-      <a href="#rollback">復旧計画</a>
-      <a href="#cost">料金と削除計画</a>
-      <a href="#references">公式ドキュメント</a>
     </aside>
   </div>
 
