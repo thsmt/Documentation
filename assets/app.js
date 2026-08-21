@@ -42,6 +42,20 @@ sidebarToggle?.addEventListener("click", () => {
 
 syncSidebarToggle();
 
+const enhancePageSummaries = () => {
+  document.querySelectorAll("main.content > p.lead").forEach((lead) => {
+    const summary = document.createElement("div");
+    const label = document.createElement("strong");
+
+    summary.className = "page-summary";
+    label.textContent = "⚡ このページの要約";
+    lead.before(summary);
+    summary.append(label, lead);
+  });
+};
+
+enhancePageSummaries();
+
 const pageUserValues = (document.body.dataset.userValues || "")
   .split(",")
   .map((value) => value.trim())
@@ -112,6 +126,26 @@ const highlightUserValues = () => {
   });
 };
 
+const addAwsCliLineNumbers = () => {
+  document.querySelectorAll(".aws-cli-guide .code pre code").forEach((code) => {
+    if (code.classList.contains("line-numbered")) return;
+
+    const text = code.textContent.replace(/\r\n?/g, "\n");
+    code.dataset.copyText = text;
+    code.textContent = "";
+    code.classList.add("line-numbered");
+
+    text.split("\n").forEach((line) => {
+      const row = document.createElement("span");
+      row.className = "code-line";
+      row.textContent = line || "\u200b";
+      code.append(row);
+    });
+  });
+};
+
+addAwsCliLineNumbers();
+
 if (document.body.dataset.userValueHighlighting !== "off") {
   highlightUserValues();
 }
@@ -180,7 +214,8 @@ document.addEventListener("click", async (event) => {
 
   try {
     if (!code) throw new Error("Copy button is not associated with a code block");
-    await writeClipboardText(code.textContent.replace(/\r\n?/g, "\n"));
+    const copyText = code.dataset.copyText || code.textContent.replace(/\r\n?/g, "\n");
+    await writeClipboardText(copyText);
     button.textContent = "Copied";
   } catch (error) {
     console.error("Code copy failed", error);

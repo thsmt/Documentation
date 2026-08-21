@@ -18,7 +18,7 @@
   --warning-bg: rgba(250, 204, 21, 0.12);
   --warning-line: #eab308;
   --warning-text: #fde68a;
-  --summary-accent: #f59e0b;
+  --summary-accent: #6e7681;
   --summary-title: #fbbf24;
   --user-value: #ff9900;
   --ui-value-bg: rgba(88, 166, 255, 0.14);
@@ -56,7 +56,7 @@
   --warning-bg: #fff8c5;
   --warning-line: #9a6700;
   --warning-text: #7d4e00;
-  --summary-accent: #f59e0b;
+  --summary-accent: #8c959f;
   --summary-title: #b45309;
   --user-value: #a84b00;
   --ui-value-bg: #ddf4ff;
@@ -354,14 +354,16 @@ li {
 
 .page-summary {
   margin: 24px 0 40px;
-  padding: 2px 0 2px 18px;
-  border-left: 4px solid var(--summary-accent);
+  padding: 4px 0 4px 20px;
+  border-left: 5px solid var(--summary-accent);
 }
 
 .page-summary strong {
   display: block;
   margin-bottom: 8px;
   color: var(--summary-title);
+  font-size: 20px;
+  line-height: 1.4;
 }
 
 .page-summary .lead {
@@ -855,6 +857,44 @@ pre {
   margin: 0;
   padding: 18px;
   overflow-x: auto;
+}
+
+.aws-cli-guide .code pre {
+  padding: 18px 0;
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+.aws-cli-guide .code pre code.line-numbered {
+  display: block;
+  min-width: max-content;
+  counter-reset: code-line;
+}
+
+.aws-cli-guide .code-line {
+  position: relative;
+  display: block;
+  min-height: 1.5em;
+  padding: 0 18px 0 64px;
+  line-height: 1.5;
+}
+
+.aws-cli-guide .code-line::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  padding-right: 12px;
+  border-right: 1px solid #30363d;
+  color: #8b949e;
+  text-align: right;
+  content: counter(code-line);
+  counter-increment: code-line;
+  user-select: none;
+}
+
+.aws-cli-guide .code .user-value {
+  color: #ff9900;
 }
 
 code {
