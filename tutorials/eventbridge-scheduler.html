@@ -449,8 +449,6 @@
   --end-time &lt;END_TIME_ISO8601&gt; \
   --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' \
   --output table</code></pre></div>
-      <p>SchedulerコンソールとAPIから行った操作はCloudTrailへ記録される。記録内容はAWS公式手順：<a href="https://docs.aws.amazon.com/scheduler/latest/UserGuide/logging-using-cloudtrail.html">EventBridge Scheduler API呼び出しのCloudTrail記録</a></p>
-
       <h3 id="operations-change">変更時の確認手順</h3>
       <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule \
   --name &lt;SCHEDULE_NAME&gt; \
