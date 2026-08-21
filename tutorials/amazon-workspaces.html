@@ -184,7 +184,8 @@
           </tr>
         </tbody>
       </table>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a></p>
+      <p>出典：<a href="https://aws.amazon.com/blogs/modernizing-with-aws/enhance-security-of-your-aws-app-integration-with-aws-managed-microsoft-ad/">AWS application-specific service accounts</a></p>
 
       <h2 id="flow">構築フロー</h2>
       <p>VPC → 異なるAvailability Zoneの2サブネット → AWS Managed Microsoft AD → WorkSpacesディレクトリ登録<br>利用者選択・作成 → バンドル・実行モード・タグ → 暗号化・ルートボリューム・ユーザーボリューム → WorkSpaces Personal作成<br>AVAILABLE確認 → WorkSpacesクライアントまたはWeb Accessで接続</p>
@@ -201,9 +202,9 @@
         <li>必要なセルフサービス権限を確認して登録し、ディレクトリの登録状態が有効になることを確認</li>
       </ol>
 
-      <div class="callout callout-warning">
-        <strong>⚠️ 同一 Availability Zone のサブネットは選択不可</strong>
-        <p>2つのサブネットが同じAvailability Zoneにある場合、ディレクトリの作成・登録はサポートされない<br>コンソールには<code class="ui-value">You tried to choose two subnets that are in the same Availability Zone</code>というエラーが表示される</p>
+      <div class="callout callout-error">
+        <strong>❌ エラー</strong>
+        <p><strong>同一 Availability Zone のサブネットは選択不可</strong><br>2つのサブネットが同じAvailability Zoneにある場合、ディレクトリの作成・登録はサポートされない<br>コンソールには<code class="ui-value">You tried to choose two subnets that are in the same Availability Zone</code>というエラーが表示される</p>
       </div>
 
       <figure class="screenshot-wide">
@@ -249,7 +250,7 @@
       <ol>
         <li>WorkSpaceのステータスが<code class="ui-value">AVAILABLE</code>であることを確認</li>
         <li>利用者が初回接続用メールからプロフィールと初期パスワードを設定</li>
-        <li><a href="https://clients.amazonworkspaces.com/ja">Amazon WorkSpacesクライアントのダウンロードページ</a>から、利用端末に合うクライアントを導入</li>
+        <li>Amazon WorkSpacesクライアントのダウンロードページから、利用端末に合うクライアントを導入</li>
         <li>クライアントへメール記載の登録コードを入力し、ディレクトリのユーザー名と設定済みパスワードでサインイン</li>
       </ol>
       <p>DCV（WSP）ベースのWindowsまたはLinux WorkSpaceでWeb Accessを有効化すると、クライアントを導入せずに対応ブラウザから接続できる</p>
@@ -262,7 +263,7 @@
         <li>ディレクトリ詳細の<code class="ui-value">他のプラットフォーム</code> ＞ <code class="ui-value">編集</code>を選択</li>
         <li><code class="ui-value">Web Access</code>を選択して保存</li>
         <li>対象WorkSpaceを再起動して設定を反映</li>
-        <li><a href="https://clients.amazonworkspaces.com/ja">WorkSpacesクライアントページ</a>で<code class="ui-value">Webアクセス</code>を選択し、登録コードとディレクトリ資格情報で接続</li>
+        <li>WorkSpacesクライアントページで<code class="ui-value">Webアクセス</code>を選択し、登録コードとディレクトリ資格情報で接続</li>
       </ol>
 
       <figure class="screenshot-wide">
@@ -320,7 +321,9 @@
         <img src="../assets/img/workspaces/workspaces-web-access-browser.png" alt="Google ChromeからAmazon WorkSpaces Web Accessへ接続し、Windowsデスクトップを表示した画面" width="1718" height="1391" loading="lazy">
       </figure>
       <p>DCVのWeb AccessはWindowsとLinuxのWorkSpacesで利用できる<br>対応ブラウザはChrome、Edge、Safari、Firefoxの最新3バージョン<br>PCoIP Web Accessは新規設計に使用しない</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/web-access.html">Enable and configure WorkSpaces Web Access</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html">IP address and port requirements</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/web-access.html">Enable and configure WorkSpaces Web Access</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/userguide/amazon-workspaces-web-access.html">WorkSpaces Web Access</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html">IP address and port requirements</a></p>
 
       <h3 id="ad-admin-tools">AD管理ツールとGPMC</h3>
       <p>WorkSpacesのコンピューターオブジェクト用とユーザーオブジェクト用に、別々のOUを作成する方法が推奨される<br>OUやGPOを管理するには、AD管理ツールとGroup Policy Management Console（GPMC）を導入したディレクトリ参加済みの管理端末を用意する</p>
@@ -399,8 +402,11 @@
         <img src="../assets/workspaces-aduc-new-user.png" alt="Active Directoryの新しいオブジェクトユーザー画面で利用者情報を入力した状態" width="1358" height="1158" loading="lazy">
       </figure>
       <p>初回パスワードには一時パスワードを設定し、<code class="ui-value">ユーザーは次回ログオン時にパスワード変更が必要</code>を選択する<br><code class="ui-value">パスワードを無期限にする</code>と<code class="ui-value">アカウントは無効</code>は通常の利用者アカウントでは選択しない<br>アカウントを無効化して作成した場合は、WorkSpaceを割り当てる前に有効化する</p>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a>、<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
-      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a>、<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/directory_administration.html">Set up Active Directory Administration Tools for WorkSpaces Personal</a></p>
+      <p>出典：<a href="https://learn.microsoft.com/windows-server/administration/install-remote-server-administration-tools">Install and Manage Remote Server Administration Tools in Windows</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_create_user.html">Creating an AWS Managed Microsoft AD user</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started_admin_account.html">AWS Managed Microsoft AD Administrator account and group permissions</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_best_practices.html">AWS Managed Microsoft AD best practices</a></p>
 
       <h2 id="group-policy">WorkSpaces固有のグループポリシー</h2>
       <p>Windows WorkSpacesへプロトコル固有の設定を適用するには、使用中のプロトコルに対応する管理用テンプレートをActive Directoryの中央ストアへ配置する<br>新規環境はDCV用テンプレートを使用し、PCoIP用テンプレートは既存環境だけで使用する</p>
@@ -550,7 +556,9 @@
         <li>移行先バンドルと最後のスナップショット日時を確認</li>
         <li>影響を確認して<code class="ui-value">WorkSpaceの移行</code>を選択</li>
       </ol>
-      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a>、<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/restore-workspace.html">Restore a WorkSpace</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/rebuild-workspace.html">Rebuild a WorkSpace</a></p>
+      <p>出典：<a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/migrate-workspaces.html">Migrate a WorkSpace</a></p>
 
       <h2 id="protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</h2>
       <p>PCoIPバンドルから作成したWindows WorkSpaceは、ルートボリュームを再作成せずにDCV（WSP）へ変更できる<br>対象のWorkSpaceがDCVのクライアント、ネットワーク、バンドル要件を満たすことを確認してから変更する</p>
