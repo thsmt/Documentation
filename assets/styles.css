@@ -334,7 +334,8 @@ main {
   min-width: 0;
 }
 
-.aws-cli-guide > h2 {
+.aws-cli-guide > h2,
+.eventbridge-scheduler-guide > h2 {
   margin-top: 68px;
   padding-top: 30px;
   border-top: 1px solid var(--line);
@@ -1091,6 +1092,10 @@ figcaption {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.7;
+}
+
+figure > figcaption:first-child {
+  margin: 0 0 8px;
 }
 
 .repo-link {

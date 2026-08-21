@@ -76,19 +76,17 @@
       <h2 id="vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ALB構築フロー</h2>
       <p>AWS CLIでネットワークから仮想サーバー、ロードバランサーまでを順に構築する</p>
 
-      <ol class="step-list">
-        <li><strong>VPC</strong><span><code>create-vpc</code>、<code>modify-vpc-attribute</code></span></li>
-        <li><strong>サブネット</strong><span><code>create-subnet</code></span></li>
-        <li><strong>ルートテーブル</strong><span><code>create-route-table</code>、<code>associate-route-table</code></span></li>
-        <li><strong>インターネットゲートウェイ</strong><span><code>create-internet-gateway</code>、<code>attach-internet-gateway</code></span></li>
-        <li><strong>デフォルトルート</strong><span><code>create-route</code></span></li>
-        <li><strong>キーペア</strong><span><code>create-key-pair</code>、<code>import-key-pair</code></span></li>
-        <li><strong>Security Group</strong><span><code>create-security-group</code>、<code>authorize-security-group-ingress</code></span></li>
-        <li><strong>EC2</strong><span><code>run-instances</code>、<code>create-tags</code></span></li>
-        <li><strong>AMI</strong><span><code>create-image</code>、<code>describe-images</code></span></li>
-        <li><strong>Elastic IP</strong><span><code>allocate-address</code>、<code>associate-address</code></span></li>
-        <li><strong>Application Load Balancer</strong><span><code>create-load-balancer</code>、<code>create-target-group</code>、<code>register-targets</code>、<code>create-listener</code></span></li>
-      </ol>
+      <p><strong>VPC</strong><br><code>create-vpc</code>、<code>modify-vpc-attribute</code></p>
+      <p><strong>サブネット</strong><br><code>create-subnet</code></p>
+      <p><strong>ルートテーブル</strong><br><code>create-route-table</code>、<code>associate-route-table</code></p>
+      <p><strong>インターネットゲートウェイ</strong><br><code>create-internet-gateway</code>、<code>attach-internet-gateway</code></p>
+      <p><strong>デフォルトルート</strong><br><code>create-route</code></p>
+      <p><strong>キーペア</strong><br><code>create-key-pair</code>、<code>import-key-pair</code></p>
+      <p><strong>Security Group</strong><br><code>create-security-group</code>、<code>authorize-security-group-ingress</code></p>
+      <p><strong>EC2</strong><br><code>run-instances</code>、<code>create-tags</code></p>
+      <p><strong>AMI</strong><br><code>create-image</code>、<code>describe-images</code></p>
+      <p><strong>Elastic IP</strong><br><code>allocate-address</code>、<code>associate-address</code></p>
+      <p><strong>Application Load Balancer</strong><br><code>create-load-balancer</code>、<code>create-target-group</code>、<code>register-targets</code>、<code>create-listener</code></p>
 
       <h3 id="build-vpc">1. VPCの作成</h3>
       <p>CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>

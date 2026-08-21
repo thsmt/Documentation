@@ -207,7 +207,7 @@
       <div class="callout callout-warning"><strong>⚠️ Resourceの範囲</strong><p>上記はコンソール検証を進めやすくするため<code>Resource</code>を<code>*</code>としている。実運用では、停止を許可するEC2インスタンスARNだけへ制限する。RDSやWorkSpacesは同じポリシーへ混在させず、サービスと操作単位で権限を分離する</p></div>
 
       <h2 id="iam-role">IAMロールの作成</h2>
-      <p>次に、Schedulerが引き受ける実行ロール<code>EventBridgeSchedulerEC2Stop</code>を作成する。IAMコンソールで<code class="ui-value">ロールを作成</code>を開き、<code class="ui-value">カスタム信頼ポリシー</code>を選択してScheduler用の信頼ポリシーを登録する</p>
+      <p>次に、Schedulerが引き受ける実行ロール<code>EventBridgeSchedulerEC2Stop</code>を作成する<br>IAMコンソールで<code class="ui-value">ロールを作成</code>を開き、<code class="ui-value">カスタム信頼ポリシー</code>を選択してScheduler用の信頼ポリシーを登録する</p>
       <ol>
         <li>IAMの<code class="ui-value">ロールを作成</code>を開き、<code class="ui-value">カスタム信頼ポリシー</code>を選択</li>
         <li>次の信頼ポリシーを登録</li>
@@ -225,12 +225,12 @@
 
       <h2 id="procedure">Schedule作成手順</h2>
       <h3 id="ec2-stop">EC2を毎日18:00に停止する</h3>
-      <p>東京リージョンのEC2インスタンス2台を対象として、毎日18:00 JSTに停止するScheduleをAWSマネジメントコンソールから作成する。Schedulerと対象EC2は同じリージョンに作成する</p>
+      <p>東京リージョンのEC2インスタンス2台を対象として、毎日18:00 JSTに停止するScheduleをAWSマネジメントコンソールから作成する<br>Schedulerと対象EC2は同じリージョンに作成する</p>
       <h4>1. 停止前の状態を確認</h4>
       <p>対象となる2台が実行中であることを確認する。利用者接続、実行中バッチ、バックアップ、メンテナンス処理がある場合は、停止前に終了させる</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-running-before-stop.png" alt="東京リージョンで2台のEC2インスタンスが実行中であることを確認する画面" width="1718" height="341" loading="lazy">
         <figcaption>停止対象となる2台のEC2インスタンスが実行中であることを確認</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-running-before-stop.png" alt="東京リージョンで2台のEC2インスタンスが実行中であることを確認する画面" width="1718" height="341" loading="lazy">
       </figure>
       <h4>2. Scheduleの詳細を指定</h4>
       <table>
@@ -248,20 +248,20 @@
         </tbody>
       </table>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-stop-schedule-details.png" alt="EventBridge Schedulerで毎日18時のEC2停止Scheduleを設定する画面" width="1718" height="1304" loading="lazy">
         <figcaption>東京リージョンで毎日18:00 JSTに実行するScheduleを設定</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-stop-schedule-details.png" alt="EventBridge Schedulerで毎日18時のEC2停止Scheduleを設定する画面" width="1718" height="1304" loading="lazy">
       </figure>
       <h4>3. Amazon EC2サービスを選択</h4>
       <p>Target APIで<code class="ui-value">すべてのAPI</code>を選択する。サービス検索欄に<code class="ui-value">Amazon EC2</code>を入力し、表示された<code class="ui-value">Amazon EC2</code>を選択する</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-service-redacted.png" alt="EventBridge SchedulerのTarget APIでAmazon EC2を検索して選択する画面" width="1717" height="555" loading="lazy">
         <figcaption><code class="ui-value">すべてのAPI</code>を選択し、<code class="ui-value">Amazon EC2</code>を検索して選択</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-service-redacted.png" alt="EventBridge SchedulerのTarget APIでAmazon EC2を検索して選択する画面" width="1717" height="555" loading="lazy">
       </figure>
       <h4>4. StopInstances APIを選択</h4>
       <p>Amazon EC2のAPI一覧で<code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">StopInstances</code>を選択する。停止処理用のScheduleでは、起動用の<code class="ui-value">StartInstances</code>を選択しない</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-api-redacted.png" alt="Amazon EC2のAPI一覧でStopInstancesを検索して選択する画面" width="1717" height="555" loading="lazy">
         <figcaption><code class="ui-value">stopInstances</code>を検索し、<code class="ui-value">Amazon EC2</code> ＞ <code class="ui-value">StopInstances</code>を選択</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target-select-api-redacted.png" alt="Amazon EC2のAPI一覧でStopInstancesを検索して選択する画面" width="1717" height="555" loading="lazy">
       </figure>
       <h4>5. 停止対象のインスタンスIDを入力</h4>
       <p>Targetの入力欄に、停止対象の<code>InstanceIds</code>配列を指定する。IDはEC2コンソールからコピーし、停止対象以外のインスタンスを含めない</p>
@@ -272,14 +272,14 @@
   ]
 }</code></pre></div>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target.png" alt="Amazon EC2 StopInstances APIと2台のインスタンスIDを指定する画面" width="1718" height="1304" loading="lazy">
         <figcaption>Universal targetとしてAmazon EC2のStopInstancesを選択し、対象2台を指定</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-stop-target.png" alt="Amazon EC2 StopInstances APIと2台のインスタンスIDを指定する画面" width="1718" height="1304" loading="lazy">
       </figure>
       <h4>6. 実行ロールを選択</h4>
       <p><code class="ui-value">Schedule</code>を有効化し、完了後のアクションは<code class="ui-value">NONE</code>、再試行は<code class="ui-value">OFF</code>、DLQは<code class="ui-value">なし</code>、暗号化は<code class="ui-value">デフォルト</code>とする。<code class="ui-value">既存のロールを使用</code>を選択し、<code>EventBridgeSchedulerEC2Stop</code>を指定する</p>
       <figure class="screenshot-wide">
-        <img src="../assets/img/eventbridge-scheduler/ec2-stop-settings.png" alt="Schedulerの設定で停止用IAMロールを選択する画面" width="1718" height="1304" loading="lazy">
         <figcaption>停止専用の実行ロールEventBridgeSchedulerEC2Stopを選択</figcaption>
+        <img src="../assets/img/eventbridge-scheduler/ec2-stop-settings.png" alt="Schedulerの設定で停止用IAMロールを選択する画面" width="1718" height="1304" loading="lazy">
       </figure>
       <p>確認画面でリージョン、実行時刻、Target、対象インスタンス、実行ロールを再確認してScheduleを作成する。最初の実行後は、EC2の状態とCloudTrailの<code>StopInstances</code>イベントを確認する</p>
 
