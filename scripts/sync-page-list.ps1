@@ -1,4 +1,4 @@
-﻿param(
+param(
     [switch]$Check
 )
 
@@ -29,23 +29,11 @@ $groups = @(
             [pscustomobject]@{ File = 'amazon-linux-2023.html'; Label = 'Amazon Linux 2023' }
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = 'Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
- [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
+            [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
-            [pscustomobject]@{ File = 'apache-self-signed-https.html'; Label = 'EC2 SSLターミネーション' }
+            [pscustomobject]@{ File = 'apache-self-signed-ssl-termination.html'; Label = 'Apache SSL終端構築手順（自己署名証明書）' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'postgresql.html'; Label = 'PostgreSQL' }
-            [pscustomobject]@{ File = 'zabbix-ops.html'; Label = 'Zabbix 6.0 運用手順' }
-        )
-    }
-    [pscustomobject]@{
-        Label = '開発／自動化'
-        Pages = @(
-            [pscustomobject]@{ File = 'git-github-basics.html'; Label = 'Git / GitHub 基本編' }
-            [pscustomobject]@{ File = 'git-github-practical.html'; Label = 'Git / GitHub 実践編' }
-            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform' }
-            [pscustomobject]@{ File = 'awx-ansible.html'; Label = 'AWX / Ansible' }
-            [pscustomobject]@{ File = 'container.html'; Label = 'コンテナ' }
-            [pscustomobject]@{ File = 'github-actions.html'; Label = 'GitHub Actions' }
         )
     }
     [pscustomobject]@{
@@ -53,7 +41,6 @@ $groups = @(
         Pages = @(
             [pscustomobject]@{ File = 'troubleshooting.html'; Label = '障害切り分けチェックリスト' }
             [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
-            [pscustomobject]@{ File = 'glossary.html'; Label = '用語集' }
         )
     }
 )
@@ -69,6 +56,7 @@ $hiddenAliasFiles = [System.Collections.Generic.HashSet[string]]::new(
 )
 [void]$hiddenAliasFiles.Add('ec2-rhel9-apache-https.html')
 [void]$hiddenAliasFiles.Add('rhel9-apache-tls.html')
+[void]$hiddenAliasFiles.Add('apache-self-signed-https.html')
 [void]$hiddenAliasFiles.Add('aws-certificate-manager.html')
 
 $errors = [System.Collections.Generic.List[string]]::new()

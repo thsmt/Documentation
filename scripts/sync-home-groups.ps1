@@ -25,7 +25,7 @@ $groupMatches = [regex]::Matches(
     $sidebarMatch.Groups[1].Value,
     '(?s)<p class="sidebar-group">([^<]+)</p>(.*?)(?=<p class="sidebar-group">|$)'
 )
-$sectionIds = @('aws-cloud', 'os-server', 'automation', 'reference')
+$sectionIds = @('aws-cloud', 'os-server', 'reference')
 
 if ($groupMatches.Count -ne $sectionIds.Count) {
     throw "Expected $($sectionIds.Count) sidebar groups, found $($groupMatches.Count)"

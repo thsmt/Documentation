@@ -46,21 +46,12 @@
       <a href="tutorials/windows-server-2025.html">Windows Server 2025</a>
       <a href="tutorials/windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
       <a href="tutorials/apache.html">Apache</a>
-      <a href="tutorials/apache-self-signed-https.html">EC2 SSLターミネーション</a>
+      <a href="tutorials/apache-self-signed-ssl-termination.html">Apache SSL終端構築手順（自己署名証明書）</a>
       <a href="tutorials/mariadb.html">MariaDB</a>
       <a href="tutorials/postgresql.html">PostgreSQL</a>
-      <a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a>
-      <p class="sidebar-group">開発／自動化</p>
-      <a href="tutorials/git-github-basics.html">Git / GitHub 基本編</a>
-      <a href="tutorials/git-github-practical.html">Git / GitHub 実践編</a>
-      <a href="tutorials/terraform.html">Terraform</a>
-      <a href="tutorials/awx-ansible.html">AWX / Ansible</a>
-      <a href="tutorials/container.html">コンテナ</a>
-      <a href="tutorials/github-actions.html">GitHub Actions</a>
       <p class="sidebar-group">リファレンス</p>
       <a href="tutorials/troubleshooting.html">障害切り分けチェックリスト</a>
       <a href="tutorials/eol.html">EOL / ライフサイクル一覧表</a>
-      <a href="tutorials/glossary.html">用語集</a>
     </aside>
 
     <main class="content">
@@ -70,7 +61,7 @@
       </nav>
 
       <h1>Documentation</h1>
-      <p class="lead">AWS、OS、ミドルウェア、開発・自動化、リファレンスの構築・運用手順を分野別に整理する</p>
+      <p class="lead">AWS、OS、ミドルウェア、リファレンスの構築・運用手順を分野別に整理する</p>
 
       <section class="template-feature" aria-label="GitHub Pages notation and template">
         <strong><a href="writing-style-guide.html">[GitHub Pages] 記法・テンプレート</a></strong>
@@ -141,7 +132,7 @@
           <p>Windows Server 2022との差分、Credential Guard、OpenSSH、SMBセキュリティを含む構築手順を整理する</p>
         </article>
         <article class="card">
-<strong><a href="tutorials/windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a></strong>
+          <strong><a href="tutorials/windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a></strong>
           <p>EC2上のWindows Server 2016を、インストールメディアでWindows Server 2025へインプレースアップグレードする手順を整理する</p>
         </article>
         <article class="card">
@@ -149,8 +140,8 @@
           <p>Apacheの構築・運用で必要なTLS、SELinux、認証、リバースプロキシ、ログ調査を整理する</p>
         </article>
         <article class="card">
-          <strong><a href="tutorials/apache-self-signed-https.html">EC2 SSLターミネーション</a></strong>
-          <p>EC2上のRHEL 9.8でApacheへ自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとSSLターミネーションを確認する</p>
+          <strong><a href="tutorials/apache-self-signed-ssl-termination.html">Apache SSL終端構築手順（自己署名証明書）</a></strong>
+          <p>EC2上のRHEL 9.8でApacheへ自己署名証明書を設定し、HTTPからHTTPSへのリダイレクトとSSL終端を確認する</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/mariadb.html">MariaDB</a></strong>
@@ -159,38 +150,6 @@
         <article class="card">
           <strong><a href="tutorials/postgresql.html">PostgreSQL</a></strong>
           <p>RHEL 8 / 9でのバージョン選択、初期化、認証、ロール管理、バックアップ、クライアント更新を整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/zabbix-ops.html">Zabbix 6.0 運用手順</a></strong>
-          <p>Zabbix Agent、ホスト登録、監視項目、メンテナンス設定、作業前後エビデンス取得の観点を整理する</p>
-        </article>
-      </section>
-
-      <h2 id="automation">開発／自動化</h2>
-      <section class="card-grid" aria-label="開発／自動化">
-        <article class="card">
-          <strong><a href="tutorials/git-github-basics.html">Git / GitHub 基本編</a></strong>
-          <p>導入、認証、ブランチ操作、Pull Request、レビュー、IaC開発での注意点を整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/git-github-practical.html">Git / GitHub 実践編</a></strong>
-          <p>コンフリクト、rebase、取り消し、PR運用、秘密情報の初動を安全に扱う実務手順を整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/terraform.html">Terraform</a></strong>
-          <p>既存の学習メモを本サイトへ移行している</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/awx-ansible.html">AWX / Ansible</a></strong>
-          <p>既存の運用メモを本サイトへ移行している</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/container.html">コンテナ</a></strong>
-          <p>既存の学習メモを本サイトへ移行している</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/github-actions.html">GitHub Actions</a></strong>
-          <p>既存の学習メモを本サイトへ移行している</p>
         </article>
       </section>
 
@@ -204,10 +163,6 @@
           <strong><a href="tutorials/eol.html">EOL / ライフサイクル一覧表</a></strong>
           <p>OS、AWSサービス、ミドルウェア、エージェントのサポート期限と確認リンクを整理する</p>
         </article>
-        <article class="card">
-          <strong><a href="tutorials/glossary.html">用語集</a></strong>
-          <p>AWS、IaC、RHEL、Amazon Linux、RPM、ソフトウェア系譜に関する用語を整理する</p>
-        </article>
       </section>
       <!-- home-groups:end -->
     </main>
@@ -216,7 +171,6 @@
       <h2>ページ内</h2>
       <a class="active" href="#aws-cloud">AWS</a>
       <a href="#os-server">OS／ミドルウェア</a>
-      <a href="#automation">開発／自動化</a>
       <a href="#reference">リファレンス</a>
     </aside>
   </div>
