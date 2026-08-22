@@ -54,11 +54,11 @@ const movePageTocToSidebar = () => {
   const summary = document.createElement("summary");
   const subnav = document.createElement("nav");
   const pageName = activePageLink.textContent.trim();
+  const tocHeading = sourceToc.querySelector(":scope > h2")?.textContent.trim() || "ページ内";
 
   menu.className = "sidebar-page-menu";
-  summary.textContent = pageName;
+  summary.textContent = tocHeading;
   summary.setAttribute("aria-label", `${pageName}のページ内見出しを開閉`);
-  summary.setAttribute("aria-current", "page");
   subnav.className = "sidebar-subnav";
   subnav.setAttribute("aria-label", `${pageName}のページ内見出し`);
 
@@ -67,7 +67,6 @@ const movePageTocToSidebar = () => {
   });
 
   menu.append(summary, subnav);
-  activePageLink.remove();
   sidebar.querySelector(".sidebar-heading")?.after(menu);
   sourceToc.remove();
 
