@@ -23,7 +23,7 @@ if (-not $sidebarMatch.Success) {
 
 $groupMatches = [regex]::Matches(
     $sidebarMatch.Groups[1].Value,
-    '(?s)<p class="sidebar-group">([^<]+)</p>(.*?)(?=<p class="sidebar-group">|$)'
+    '(?s)<p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">.*?</span>([^<]+)</p>(.*?)(?=<p class="sidebar-group">|$)'
 )
 $sectionIds = @('aws-cloud', 'os-server', 'reference')
 

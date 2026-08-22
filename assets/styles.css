@@ -262,11 +262,24 @@ body.sidebar-collapsed .sidebar-page-menu {
 }
 
 .sidebar-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 22px 0 7px;
   color: var(--text);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.sidebar-group-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 18px;
+  color: var(--accent-strong);
+  font-family: "Segoe UI Symbol", sans-serif;
+  font-size: 15px;
+  line-height: 1;
 }
 
 .sidebar-heading + .sidebar-group {

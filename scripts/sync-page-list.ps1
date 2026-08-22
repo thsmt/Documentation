@@ -9,6 +9,7 @@ $tutorialsRoot = Join-Path $root 'tutorials'
 $groups = @(
     [pscustomobject]@{
         Label = 'AWS'
+        Icon = '☁︎'
         Pages = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
@@ -23,6 +24,7 @@ $groups = @(
     }
     [pscustomobject]@{
         Label = 'OS／ミドルウェア'
+        Icon = '⚙︎'
         Pages = @(
             [pscustomobject]@{ File = 'rhel9.html'; Label = 'Red Hat Enterprise Linux 9' }
             [pscustomobject]@{ File = 'rhel10.html'; Label = 'Red Hat Enterprise Linux 10' }
@@ -31,13 +33,14 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
             [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
-            [pscustomobject]@{ File = 'apache-self-signed-ssl-termination.html'; Label = 'Apache SSL終端構築手順（自己署名証明書）' }
+            [pscustomobject]@{ File = 'apache-self-signed-ssl-termination.html'; Label = 'Apache SSL終端（自己署名証明書）' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'postgresql.html'; Label = 'PostgreSQL' }
         )
     }
     [pscustomobject]@{
         Label = 'リファレンス'
+        Icon = '▤'
         Pages = @(
             [pscustomobject]@{ File = 'troubleshooting.html'; Label = '障害切り分けチェックリスト' }
             [pscustomobject]@{ File = 'eol.html'; Label = 'EOL / ライフサイクル一覧表' }
@@ -113,7 +116,7 @@ foreach ($target in $targets) {
     $lines.Add('      </div>')
 
     foreach ($group in $groups) {
-        $lines.Add("      <p class=`"sidebar-group`">$($group.Label)</p>")
+        $lines.Add("      <p class=`"sidebar-group`"><span class=`"sidebar-group-icon`" aria-hidden=`"true`">$($group.Icon)</span>$($group.Label)</p>")
 
         foreach ($page in $group.Pages) {
             $activeClass = if ($page.File -eq $activeFile) { ' class="active"' } else { '' }
