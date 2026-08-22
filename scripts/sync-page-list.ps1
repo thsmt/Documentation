@@ -109,8 +109,7 @@ foreach ($target in $targets) {
 
     $lines.Add('    <aside id="site-sidebar" class="sidebar" aria-label="Page list">')
     $lines.Add('      <div class="sidebar-heading">')
-    $lines.Add('        <h2>ページ一覧</h2>')
-    $lines.Add('        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ページ一覧を閉じる" aria-label="ページ一覧を閉じる">☰</button>')
+    $lines.Add('        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>')
     $lines.Add('      </div>')
 
     foreach ($group in $groups) {

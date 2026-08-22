@@ -30,8 +30,8 @@ const syncSidebarToggle = () => {
   const isOpen = !document.body.classList.contains("sidebar-collapsed");
 
   sidebarToggle.setAttribute("aria-expanded", String(isOpen));
-  sidebarToggle.setAttribute("title", isOpen ? "ページ一覧を閉じる" : "ページ一覧を開く");
-  sidebarToggle.setAttribute("aria-label", isOpen ? "ページ一覧を閉じる" : "ページ一覧を開く");
+  sidebarToggle.setAttribute("title", isOpen ? "ナビゲーションを閉じる" : "ナビゲーションを開く");
+  sidebarToggle.setAttribute("aria-label", isOpen ? "ナビゲーションを閉じる" : "ナビゲーションを開く");
 };
 
 sidebarToggle?.addEventListener("click", () => {
@@ -67,7 +67,8 @@ const movePageTocToSidebar = () => {
   });
 
   menu.append(summary, subnav);
-  activePageLink.replaceWith(menu);
+  activePageLink.remove();
+  sidebar.querySelector(".sidebar-heading")?.after(menu);
   sourceToc.remove();
 
   if (window.location.hash && Array.from(subnav.querySelectorAll("a")).some((link) => link.hash === window.location.hash)) {
