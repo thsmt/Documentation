@@ -166,6 +166,7 @@ const addCodeLineNumbers = () => {
     if (code.classList.contains("line-numbered")) return;
 
     const text = code.textContent.replace(/\r\n?/g, "\n");
+    const prompt = code.closest(".code")?.dataset.prompt || "";
     code.dataset.copyText = text;
     code.textContent = "";
     code.classList.add("line-numbered");
@@ -173,6 +174,10 @@ const addCodeLineNumbers = () => {
     text.split("\n").forEach((line) => {
       const row = document.createElement("span");
       row.className = "code-line";
+      if (prompt) {
+        row.classList.add("prompted");
+        row.dataset.prompt = line && !line.trimStart().startsWith("#") ? prompt : "";
+      }
       row.textContent = line || "\u200b";
       code.append(row);
     });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AWS Certificate Manager (ACM) | Documentation</title>
+  <title>証明書更新（ACMエクスポート） | Documentation</title>
   <meta name="description" content="AWS Certificate Managerで発行したエクスポート可能なパブリック証明書をRHEL 9.8上のApacheへ配置し、有効期間、証明書更新、TLS通信を確認した実行記録。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a class="active" href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a class="active" href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -61,7 +61,7 @@
         <span>トピック</span>
       </nav>
 
-      <h1>AWS Certificate Manager (ACM)</h1>
+      <h1>証明書更新（ACMエクスポート）</h1>
       <p class="lead">ACMで発行したエクスポート可能なパブリック証明書をRHEL 9上のApacheへ配置し、更新、再配置、TLS通信を確認する手順をまとめる</p>
 
       <div class="callout callout-info">
@@ -92,7 +92,7 @@
       </figure>
 
       <p>Apacheが参照している証明書と秘密鍵のパス確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -nE '^[[:space:]]*SSLCertificate(File|KeyFile|ChainFile|CACertificateFile)' /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -nE '^[[:space:]]*SSLCertificate(File|KeyFile|ChainFile|CACertificateFile)' /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>11:  SSLCertificateFile /etc/pki/tls/certs/www.zexample.com.crt
@@ -100,7 +100,7 @@
       </details>
 
       <p>更新前の自己署名証明書におけるSubject、Issuer、有効期限、SHA-256フィンガープリント確認。公開用の実行例では所在地を<code>&lt;CITY&gt;</code>へ匿名化</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -dates -fingerprint -sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -dates -fingerprint -sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>subject=C=JP, ST=Tokyo, L=&lt;CITY&gt;, O=Example Publishing Ltd, OU=System Dept., CN=www.zexample.com
@@ -111,8 +111,8 @@ sha256 Fingerprint=E3:E1:44:EE:3A:6F:7A:15:57:16:FF:21:3A:61:4D:02:B1:F9:79:ED:B
       </details>
 
       <p>Apacheの稼働状態と80番・443番の待ち受け確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl is-active httpd</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl is-active httpd</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>LISTEN 0 511 *:80  *:* users:(("httpd",pid=***,fd=4))
@@ -120,13 +120,13 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
       </details>
 
       <p>Apacheが更新前に提示している証明書の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates -fingerprint -sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates -fingerprint -sha256</code></pre></div>
 
       <h2 id="backup">2. 更新前ファイルのバックアップ</h2>
       <p>VirtualHost設定、サーバー証明書、秘密鍵のバックアップ</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/httpd/conf.d/www.zexample.com.conf /etc/httpd/conf.d/www.zexample.com.conf.$(date +%Y%m%d)</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt.$(date +%Y%m%d)</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/private/www.zexample.com.key /etc/pki/tls/private/www.zexample.com.key.$(date +%Y%m%d)</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/httpd/conf.d/www.zexample.com.conf /etc/httpd/conf.d/www.zexample.com.conf.$(date +%Y%m%d)</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt.$(date +%Y%m%d)</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/pki/tls/private/www.zexample.com.key /etc/pki/tls/private/www.zexample.com.key.$(date +%Y%m%d)</code></pre></div>
 
       <h2 id="request">3. ACMパブリック証明書のリクエスト</h2>
       <p>ACMの証明書リクエスト画面で選択した設定</p>
@@ -171,9 +171,9 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
       </figure>
 
       <p>ダウンロードした証明書本文、証明書チェーン、暗号化秘密鍵の保存</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com-chain.pem</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/private/www.zexample.com.key.enc</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/certs/www.zexample.com-chain.pem</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/pki/tls/private/www.zexample.com.key.enc</code></pre></div>
       <table>
         <thead><tr><th>ACMの出力</th><th>保存先</th></tr></thead>
         <tbody>
@@ -185,7 +185,7 @@ LISTEN 0 511 *:443 *:* users:(("httpd",pid=***,fd=6))</code></pre></div>
 
       <h2 id="certificate-check">5. 秘密鍵と証明書の確認</h2>
       <p>ACMエクスポート時に指定したパスフレーズによる秘密鍵の復号</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key.enc -out /etc/pki/tls/private/www.zexample.com.key</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key.enc -out /etc/pki/tls/private/www.zexample.com.key</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Enter pass phrase for /etc/pki/tls/private/www.zexample.com.key.enc:
@@ -193,14 +193,14 @@ writing RSA key</code></pre></div>
       </details>
 
       <p>復号したRSA秘密鍵の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key -check -noout</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key -check -noout</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>RSA key ok</code></pre></div>
       </details>
 
       <p>ACM証明書のSubject、Issuer、シリアル番号、有効期限、SHA-256フィンガープリント確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -serial -dates -fingerprint -sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -serial -dates -fingerprint -sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>subject=CN=www.zexample.com
@@ -212,7 +212,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       </details>
 
       <p>証明書のSubject Alternative Name確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext subjectAltName</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext subjectAltName</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>X509v3 Subject Alternative Name:
@@ -221,14 +221,14 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
 
       <h2 id="hash-check">6. ハッシュ値の整合性確認</h2>
       <p>RSA秘密鍵のmodulusにおけるSHA-256確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key -noout -modulus | openssl dgst -sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl rsa -in /etc/pki/tls/private/www.zexample.com.key -noout -modulus | openssl dgst -sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>SHA2-256(stdin)= 7a344c38fb7c193e1d627d65b97402978595da9126b149a53a1d96de3b1834ff</code></pre></div>
       </details>
 
       <p>サーバー証明書のmodulusにおけるSHA-256確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -modulus | openssl dgst -sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -modulus | openssl dgst -sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>SHA2-256(stdin)= 7a344c38fb7c193e1d627d65b97402978595da9126b149a53a1d96de3b1834ff</code></pre></div>
@@ -236,14 +236,14 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       <p>秘密鍵とサーバー証明書で同じSHA-256を確認</p>
 
       <p>サーバー証明書のIssuer DNハッシュ確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -issuer_hash -noout -in /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -issuer_hash -noout -in /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>ad40cdd9</code></pre></div>
       </details>
 
       <p>証明書チェーン先頭のSubject DNハッシュ確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -subject_hash -noout -in /etc/pki/tls/certs/www.zexample.com-chain.pem</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -subject_hash -noout -in /etc/pki/tls/certs/www.zexample.com-chain.pem</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>ad40cdd9</code></pre></div>
@@ -271,14 +271,14 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
       <p>出典：<a href="https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#sslcertificatefile">Apache HTTP Server mod_ssl</a></p>
 
       <p>fullchain方式を使用する場合は、サーバー証明書と証明書チェーンの存在を確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com.crt &amp;&amp; echo "サーバー証明書: OK"</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com-chain.pem &amp;&amp; echo "証明書チェーン: OK"</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com.crt &amp;&amp; echo "サーバー証明書: OK"</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>test -s /etc/pki/tls/certs/www.zexample.com-chain.pem &amp;&amp; echo "証明書チェーン: OK"</code></pre></div>
 
       <p>サーバー証明書、証明書チェーンの順でfullchainを作成</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com-chain.pem &gt; /etc/pki/tls/certs/www.zexample.com-fullchain.pem</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cat /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com-chain.pem &gt; /etc/pki/tls/certs/www.zexample.com-fullchain.pem</code></pre></div>
 
       <p>fullchainに含まれる証明書数の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -c 'BEGIN CERTIFICATE' /etc/pki/tls/certs/www.zexample.com-fullchain.pem</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>grep -c 'BEGIN CERTIFICATE' /etc/pki/tls/certs/www.zexample.com-fullchain.pem</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>3</code></pre></div>
@@ -286,7 +286,7 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
 
       <h2 id="apache">8. Apache設定の更新</h2>
       <p>VirtualHost設定の証明書参照先をfullchainへ変更</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <div class="code"><div class="code-header"><span>/etc/httpd/conf.d/www.zexample.com.conf</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;VirtualHost *:80&gt;
   ServerName www.zexample.com
   Redirect permanent / https://www.zexample.com/
@@ -311,16 +311,16 @@ sha256 Fingerprint=C5:CE:F4:C4:76:9E:B5:78:5D:75:E5:F6:8D:1B:E3:FA:D0:EF:9D:65:E
 &lt;/VirtualHost&gt;</code></pre></div>
 
       <p>Apacheの構文とVirtualHost割り当て確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -S</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -S</code></pre></div>
       <p><code>httpd -t</code>では<code>Syntax OK</code>、<code>httpd -S</code>では80番・443番ともに<code>www.zexample.com.conf</code>への割り当てを確認</p>
 
       <p>Apache設定の再読み込み</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl reload httpd</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl reload httpd</code></pre></div>
 
       <h2 id="verification">9. TLS通信確認</h2>
       <p>ホスト名、信頼チェーン、TLS通信の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com -verify_hostname www.zexample.com -verify_return_error -CAfile /etc/pki/tls/certs/ca-bundle.crt &lt;/dev/null</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl s_client -connect 127.0.0.1:443 -servername www.zexample.com -verify_hostname www.zexample.com -verify_return_error -CAfile /etc/pki/tls/certs/ca-bundle.crt &lt;/dev/null</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>depth=2 C=US, O=Amazon, CN=Amazon Root CA 1
@@ -363,7 +363,7 @@ Verify return code: 0 (ok)</code></pre></div>
       <a href="#placement">4. ACM証明書のエクスポートとファイル配置</a>
       <a href="#certificate-check">5. 秘密鍵と証明書の確認</a>
       <a href="#hash-check">6. ハッシュ値の整合性確認</a>
-      <a href="#fullchain">7. 証明書チェーンの配置方式</a>
+      <a href="#fullchain">7. 証明書チェーンの配置方式を確認</a>
       <a href="#apache">8. Apache設定の更新</a>
       <a href="#verification">9. TLS通信確認</a>
       <a href="#browser">10. 更新後のブラウザ確認</a>

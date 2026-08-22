@@ -35,7 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -281,7 +281,7 @@
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:stopInstances",
   "Input": "{\"InstanceIds\":[\"<span class="user-value">&lt;EC2_INSTANCE_ID_1&gt;</span>\",\"<span class="user-value">&lt;EC2_INSTANCE_ID_2&gt;</span>\"]}"
 }</code></pre></div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
   --name ec2-stop-daily-schedule \
   --group-name ec2-schedule-group \
   --schedule-expression "cron(0 18 * * ? *)" \
@@ -296,7 +296,7 @@
   "Arn": "arn:aws:scheduler:::aws-sdk:ec2:startInstances",
   "Input": "{\"InstanceIds\":[\"&lt;EC2_INSTANCE_ID_1&gt;\",\"&lt;EC2_INSTANCE_ID_2&gt;\"]}"
 }</code></pre></div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler create-schedule \
   --name ec2-start-daily-schedule \
   --group-name ec2-schedule-group \
   --schedule-expression "cron(0 9 * * ? *)" \
@@ -404,7 +404,7 @@
         </tbody>
       </table>
       <p>SQSコンソールの受信画面はSchedule ARNなどによるサーバー側検索を行わない。メッセージ数が多い場合は、次のCLIで最大10件を受信し、切り分けに必要な属性だけを表示する</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sqs receive-message \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sqs receive-message \
   --queue-url &lt;SCHEDULER_DLQ_URL&gt; \
   --attribute-names All \
   --message-attribute-names All \
@@ -434,18 +434,18 @@
       </table>
       <div class="callout callout-info"><strong>ℹ️ イベント履歴のフィルター制約</strong><p>CloudTrailのイベント履歴は現在のリージョンにある過去90日間の管理イベントを対象とし、属性フィルターは1回に1つだけ指定できる。イベントソースとイベント名を同時指定できないため、時間範囲を絞ったうえで条件を切り替えて確認する。複数属性や長期データを横断検索する場合はCloudTrail Lakeを使用する</p></div>
       <p>CLIではイベントソースで取得した結果から、Scheduleの作成、変更、削除だけを表示できる</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws cloudtrail lookup-events \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws cloudtrail lookup-events \
   --lookup-attributes AttributeKey=EventSource,AttributeValue=scheduler.amazonaws.com \
   --start-time &lt;START_TIME_ISO8601&gt; \
   --end-time &lt;END_TIME_ISO8601&gt; \
   --query 'Events[?EventName==`CreateSchedule` || EventName==`UpdateSchedule` || EventName==`DeleteSchedule`].[EventTime,EventName,Username,EventId]' \
   --output table</code></pre></div>
       <h3 id="operations-change">変更時の確認手順</h3>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler get-schedule \
   --name &lt;SCHEDULE_NAME&gt; \
   --group-name ec2-schedule-group \
   --output json</code></pre></div>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler list-schedules \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws scheduler list-schedules \
   --group-name ec2-schedule-group \
   --output table</code></pre></div>
       <table>
@@ -464,17 +464,17 @@
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a href="#services">適用できるサービス</a>
-      <a href="#iam-policy">カスタムIAMポリシー</a>
-      <a href="#iam-role">IAMロール</a>
-      <a href="#procedure">Schedule作成</a>
-      <a href="#operations">モニタリング・通知</a>
-      <a href="#operations-console">GUI設定確認</a>
-      <a href="#operations-metrics">CloudWatch</a>
-      <a href="#operations-notification">通知</a>
-      <a href="#operations-dlq">DLQ</a>
-      <a href="#operations-cloudtrail">CloudTrail</a>
-      <a href="#operations-change">変更管理</a>
+      <a href="#services">自動停止・起動を適用できる主なサービス</a>
+      <a href="#iam-policy">カスタムIAMポリシーの作成</a>
+      <a href="#iam-role">IAMロールの作成</a>
+      <a href="#procedure">Schedule作成手順</a>
+      <a href="#operations">モニタリング・通知・変更管理</a>
+      <a href="#operations-console">Schedulerコンソールで設定を確認</a>
+      <a href="#operations-metrics">CloudWatchで実行状況をモニタリング</a>
+      <a href="#operations-notification">CloudWatchアラームとSNSで失敗を通知</a>
+      <a href="#operations-dlq">SQS DLQで失敗理由を確認</a>
+      <a href="#operations-cloudtrail">CloudTrailで変更履歴をフィルター</a>
+      <a href="#operations-change">変更時の確認手順</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

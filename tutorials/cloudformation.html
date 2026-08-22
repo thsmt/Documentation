@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -394,17 +394,17 @@ deployments/stg-stack.yaml</code></pre>
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#policy">基本方針</a>
-      <a href="#deploy-methods">デプロイ方法</a>
-      <a href="#new-or-import">新規作成とインポート</a>
+      <a href="#deploy-methods">デプロイ方法の使い分け</a>
+      <a href="#new-or-import">新規作成とリソースインポート</a>
       <a href="#validate">テンプレート検証</a>
       <a href="#parameters">パラメータ設計</a>
-      <a href="#upload-file">ファイルアップロード</a>
-      <a href="#s3-url">Amazon S3 URL</a>
+      <a href="#upload-file">テンプレートファイルのアップロード</a>
+      <a href="#s3-url">Amazon S3 URLで作成</a>
       <a href="#git-sync">Gitから同期</a>
-      <a href="#composer">Infrastructure Composer</a>
-      <a href="#create-cli">AWS CLI作成</a>
+      <a href="#composer">Infrastructure Composerの扱い</a>
+      <a href="#create-cli">AWS CLIでスタック作成</a>
       <a href="#change-set">変更セット</a>
-      <a href="#rollback">ロールバック・ドリフト</a>
+      <a href="#rollback">ロールバック・ドリフト検出</a>
     </aside>
   </div>
 

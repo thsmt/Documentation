@@ -35,7 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -122,29 +122,29 @@
           <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="apache-rhel9">RHEL 9</button>
         </div>
         <section class="tab-panel active" id="apache-rhel8" role="tabpanel">
-          <div class="code"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>sudo yum install httpd</code></pre></div>
+          <div class="code" data-prompt="#"><div class="code-header"><span>RHEL 8</span><button class="copy" type="button">Copy</button></div><pre><code>yum install httpd</code></pre></div>
         </section>
         <section class="tab-panel" id="apache-rhel9" role="tabpanel" hidden>
-          <div class="code"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install httpd</code></pre></div>
+          <div class="code" data-prompt="#"><div class="code-header"><span>RHEL 9</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install httpd</code></pre></div>
         </section>
       </div>
 
       <p class="procedure-step"><strong>2. サービスを起動して状態を確認</strong></p>
-      <div class="code"><div class="code-header"><span>共通</span><button class="copy" type="button">Copy</button></div><pre><code>sudo systemctl enable --now httpd.service
-sudo systemctl status httpd.service --no-pager
+      <div class="code" data-prompt="#"><div class="code-header"><span>共通</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now httpd.service
+systemctl status httpd.service --no-pager
 httpd -v
-sudo httpd -M</code></pre></div>
+httpd -M</code></pre></div>
 
       <p class="procedure-step"><strong>3. 必要な通信だけを許可</strong></p>
-      <div class="code"><div class="code-header"><span>firewalld</span><button class="copy" type="button">Copy</button></div><pre><code>sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
-sudo firewall-cmd --list-services</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>firewalld</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --add-service=http
+firewall-cmd --permanent --add-service=https
+firewall-cmd --reload
+firewall-cmd --list-services</code></pre></div>
 
       <p class="procedure-step"><strong>4. ローカルで応答を確認</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I http://127.0.0.1/
-sudo ss -lntp | grep -E ':(80|443)'
-sudo httpd -S</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I http://127.0.0.1/
+ss -lntp | grep -E ':(80|443)'
+httpd -S</code></pre></div>
       <p><code>httpd -S</code> は読み込まれた VirtualHost と <code>ServerName</code> の対応を表示します。意図しない既定 VirtualHost が応答しているときの最初の確認手段</p>
 
       <h2 id="change">設定変更の基本手順</h2>
@@ -162,12 +162,12 @@ sudo httpd -S</code></pre></div>
           <tr><td><code>/etc/httpd/conf/magic</code></td><td>必要時に MIME type を判定するための補助設定</td></tr>
         </tbody>
       </table>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0700 /root/config-backup
-sudo cp -a /etc/httpd /root/config-backup/httpd-$(date +%Y%m%d)
-sudo vi /etc/httpd/conf.d/example.conf
-sudo apachectl configtest
-sudo systemctl reload httpd.service
-sudo systemctl status httpd.service --no-pager</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0700 /root/config-backup
+cp -a /etc/httpd /root/config-backup/httpd-$(date +%Y%m%d)
+vi /etc/httpd/conf.d/example.conf
+apachectl configtest
+systemctl reload httpd.service
+systemctl status httpd.service --no-pager</code></pre></div>
       <div class="callout">
         <strong>ℹ️ reload と restart</strong>
         <p>通常の設定変更は既存接続への影響を小さくできる <code>reload</code> を使います。モジュールやプロセスの状態を含めて再起動が必要な場合だけ、影響を確認して <code>restart</code> を選びます。構文エラーがある設定を適用しないため、<code>configtest</code> は省略しない</p>
@@ -192,9 +192,9 @@ sudo systemctl status httpd.service --no-pager</code></pre></div>
   &lt;/Directory&gt;
 &lt;/VirtualHost&gt;</code></pre></div>
       <p><code>ServerName</code>、<code>ServerAlias</code>、<code>DocumentRoot</code>、アクセスログ、エラーログを VirtualHost ごとに明示します。<code>Options -Indexes</code> により、インデックスファイルがないディレクトリの一覧表示を防ぎます。VirtualHost を追加しても DNS レコードは作成されないため、DNS と疎通経路は別に準備する</p>
-      <div class="code"><div class="code-header"><span>content preparation</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0755 -o root -g root /var/www/example
-sudo vi /var/www/example/index.html
-sudo restorecon -Rv /var/www/example
+      <div class="code" data-prompt="#"><div class="code-header"><span>content preparation</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0755 -o root -g root /var/www/example
+vi /var/www/example/index.html
+restorecon -Rv /var/www/example
 curl -I -H 'Host: www.example.com' http://127.0.0.1/</code></pre></div>
       <p>公開コンテンツの書き込み権限は、デプロイに必要なアカウントだけへ付与します。独自コンテンツを配置した後は、RHEL の標準テストページが外部へ表示されていないことも確認する</p>
 
@@ -202,14 +202,14 @@ curl -I -H 'Host: www.example.com' http://127.0.0.1/</code></pre></div>
       <p>TLS 終端を Apache で行う場合、証明書の有効期限、秘密鍵の権限、更新後の再読み込みまでを運用項目にします。暗号スイートやプロトコルは個別に古い値を固定せず、組織の基準と RHEL の暗号ポリシーに従う</p>
 
       <p class="procedure-step"><strong>1. mod_ssl を導入し、秘密鍵と CSR を作成</strong></p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install mod_ssl
-sudo install -d -m 0700 /etc/pki/tls/private
-sudo openssl genpkey -algorithm RSA \
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install mod_ssl
+install -d -m 0700 /etc/pki/tls/private
+openssl genpkey -algorithm RSA \
   -pkeyopt rsa_keygen_bits:3072 \
   -out /etc/pki/tls/private/www.example.com.key
-sudo chmod 0600 /etc/pki/tls/private/www.example.com.key
+chmod 0600 /etc/pki/tls/private/www.example.com.key
 
-sudo openssl req -new \
+openssl req -new \
   -key /etc/pki/tls/private/www.example.com.key \
   -subj "/CN=www.example.com" \
   -addext "subjectAltName=DNS:www.example.com,DNS:example.com" \
@@ -242,8 +242,8 @@ openssl req -in /etc/pki/tls/certs/www.example.com.csr -noout -text</code></pre>
 &lt;/VirtualHost&gt;</code></pre></div>
       <p><code>www.example.com</code> を正規 URL として厳密に統一する場合は、<code>example.com</code> 専用のポート 443 VirtualHost を分け、同じ SAN 証明書を設定したうえで <code>www.example.com</code> へ転送する</p>
       <p class="procedure-step"><strong>4. 設定、証明書、外部接続を確認</strong></p>
-      <div class="code"><div class="code-header"><span>verification</span><button class="copy" type="button">Copy</button></div><pre><code>sudo apachectl configtest
-sudo systemctl reload httpd.service
+      <div class="code" data-prompt="#"><div class="code-header"><span>verification</span><button class="copy" type="button">Copy</button></div><pre><code>apachectl configtest
+systemctl reload httpd.service
 openssl s_client -connect www.example.com:443 -servername www.example.com &lt; /dev/null
 openssl x509 -in /etc/pki/tls/certs/www.example.com.crt -noout -subject -issuer -enddate</code></pre></div>
       <p>証明書更新は期限前に検証環境で試し、本番では秘密鍵との組み合わせ、SAN、有効期限、チェーン、構文、再読み込み、外部からの接続確認までを一連の作業にする</p>
@@ -252,26 +252,26 @@ openssl x509 -in /etc/pki/tls/certs/www.example.com.crt -noout -subject -issuer 
       <p>SELinux を無効化して解決する運用は行いません。403、バックエンド接続失敗、独自ポートでの起動不可は、Linux 権限だけでなく SELinux のラベルとブール値を確認する</p>
 
       <h3>標準外の公開パス</h3>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install policycoreutils-python-utils
-sudo semanage fcontext -a -t httpd_sys_content_t "/srv/www/example(/.*)?"
-sudo restorecon -Rv /srv/www/example</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install policycoreutils-python-utils
+semanage fcontext -a -t httpd_sys_content_t "/srv/www/example(/.*)?"
+restorecon -Rv /srv/www/example</code></pre></div>
 
       <h3>Apache から書き込むパス</h3>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage fcontext -a -t httpd_sys_rw_content_t "/srv/www/example/uploads(/.*)?"
-sudo restorecon -Rv /srv/www/example/uploads</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>semanage fcontext -a -t httpd_sys_rw_content_t "/srv/www/example/uploads(/.*)?"
+restorecon -Rv /srv/www/example/uploads</code></pre></div>
 
       <h3>独自ポートとプロキシ接続</h3>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo semanage port -a -t http_port_t -p tcp 8080
-sudo setsebool -P httpd_can_network_connect on
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>semanage port -a -t http_port_t -p tcp 8080
+setsebool -P httpd_can_network_connect on
 getsebool httpd_can_network_connect</code></pre></div>
       <p>ブール値は Apache がリバースプロキシとして外部接続を開始する場合にだけ必要です。実施前に対象バックエンドと通信先を確認します。拒否ログは <code>ausearch -m AVC -ts recent</code> で確認する</p>
 
       <h2 id="access">アクセス制御と認証</h2>
       <p>管理画面や限定公開コンテンツには、ネットワーク制御と認証を組み合わせます。Basic 認証を使う場合は必ず HTTPS を前提とし、パスワードファイルを公開ディレクトリに置かない</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo dnf install httpd-tools
-sudo htpasswd -c /etc/httpd/conf/.htpasswd t_hashimoto
-sudo chown root:apache /etc/httpd/conf/.htpasswd
-sudo chmod 0640 /etc/httpd/conf/.htpasswd</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install httpd-tools
+htpasswd -c /etc/httpd/conf/.htpasswd t_hashimoto
+chown root:apache /etc/httpd/conf/.htpasswd
+chmod 0640 /etc/httpd/conf/.htpasswd</code></pre></div>
       <div class="code"><div class="code-header"><span>authentication example</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;Location "/admin"&gt;
   AuthType Basic
   AuthName "Restricted Area"
@@ -295,11 +295,11 @@ UserDir public_html
   Options -Indexes
   Require all granted
 &lt;/Directory&gt;</code></pre></div>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo install -d -m 0755 -o t_hashimoto -g t_hashimoto \
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0755 -o t_hashimoto -g t_hashimoto \
   /home/t_hashimoto/public_html
-sudo chmod 0711 /home/t_hashimoto
-sudo setsebool -P httpd_enable_homedirs on
-sudo restorecon -Rv /home/t_hashimoto/public_html</code></pre></div>
+chmod 0711 /home/t_hashimoto
+setsebool -P httpd_enable_homedirs on
+restorecon -Rv /home/t_hashimoto/public_html</code></pre></div>
       <p>ホームディレクトリの検索権限を Apache に与えるため、利用者情報や非公開ファイルの配置ルールを確認します。同じオリジン上のユーザーコンテンツは相互に影響する可能性があるため、信頼できない利用者へは提供しません。不要になったら設定と SELinux ブール値を戻す</p>
 
       <h2 id="proxy">リバースプロキシ</h2>
@@ -309,9 +309,9 @@ ProxyPreserveHost On
 
 ProxyPass        /app/ http://127.0.0.1:8080/
 ProxyPassReverse /app/ http://127.0.0.1:8080/</code></pre></div>
-      <div class="code"><div class="code-header"><span>verification</span><button class="copy" type="button">Copy</button></div><pre><code>sudo httpd -M | grep -E 'proxy_module|proxy_http_module'
-sudo apachectl configtest
-sudo systemctl reload httpd.service
+      <div class="code" data-prompt="#"><div class="code-header"><span>verification</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -M | grep -E 'proxy_module|proxy_http_module'
+apachectl configtest
+systemctl reload httpd.service
 curl -I http://127.0.0.1/app/</code></pre></div>
       <div class="callout callout-warning">
         <strong>⚠️ ProxyRequests は Off のままにする</strong>
@@ -341,9 +341,9 @@ ProxyPassReverse /app/ balancer://appcluster/</code></pre></div>
           <tr><td>ディスク</td><td><code>df -hT /var/log/httpd</code>、<code>df -ih /var/log/httpd</code></td></tr>
         </tbody>
       </table>
-      <div class="code"><div class="code-header"><span>log operations</span><button class="copy" type="button">Copy</button></div><pre><code>sudo du -sh /var/log/httpd
-sudo logrotate -d /etc/logrotate.d/httpd
-sudo journalctl -u httpd.service --since "1 hour ago" --no-pager</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>log operations</span><button class="copy" type="button">Copy</button></div><pre><code>du -sh /var/log/httpd
+logrotate -d /etc/logrotate.d/httpd
+journalctl -u httpd.service --since "1 hour ago" --no-pager</code></pre></div>
       <p>ログ肥大化時に調査証跡を消す目的でファイルを削除しません。ローテーション設定、保持期間、転送先、ディスク使用量を確認し、必要なログを退避してから対応する</p>
 
       <h3>mod_status の安全な公開</h3>
@@ -374,13 +374,13 @@ TraceEnable Off
       <p>バージョン情報を抑制しても脆弱性対策にはなりません。OS と httpd の更新、不要モジュールの無効化、管理画面のアクセス制御、証明書更新、ログ監視を継続します。WAF やレート制限は Apache 単体で抱えず、ロードバランサー、CDN、WAF の責任範囲と合わせて設計する</p>
 
       <h2 id="troubleshooting">トラブルシューティング</h2>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sudo apachectl configtest
-sudo systemctl status httpd.service --no-pager
-sudo journalctl -u httpd.service -b -p warning --no-pager
-sudo tail -n 100 /var/log/httpd/error_log
-sudo httpd -S
-sudo ss -lntp | grep -E ':(80|443|8080)'
-sudo ausearch -m AVC -ts recent
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>apachectl configtest
+systemctl status httpd.service --no-pager
+journalctl -u httpd.service -b -p warning --no-pager
+tail -n 100 /var/log/httpd/error_log
+httpd -S
+ss -lntp | grep -E ':(80|443|8080)'
+ausearch -m AVC -ts recent
 curl -I -H 'Host: www.example.com' http://127.0.0.1/</code></pre></div>
       <table>
         <thead><tr><th>症状</th><th>優先して確認すること</th></tr></thead>
@@ -412,17 +412,17 @@ curl -I -H 'Host: www.example.com' http://127.0.0.1/</code></pre></div>
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#scope">対象と基本構成</a>
-      <a href="#selection">Apache と NGINX</a>
+      <a href="#selection">Apache と NGINX の使い分け</a>
       <a href="#install">導入と初期確認</a>
       <a href="#change">設定変更の基本手順</a>
       <a href="#tls">TLS と証明書</a>
       <a href="#selinux">SELinux とファイル権限</a>
       <a href="#access">アクセス制御と認証</a>
       <a href="#proxy">リバースプロキシ</a>
-      <a href="#logs">ログと性能調査</a>
-      <a href="#security">セキュリティ設定</a>
+      <a href="#logs">ログ、状態確認、性能調査</a>
+      <a href="#security">最低限のセキュリティ設定</a>
       <a href="#troubleshooting">トラブルシューティング</a>
-      <a href="#next">要件別の追加機能</a>
+      <a href="#next">要件がある場合に追加する機能</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

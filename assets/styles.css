@@ -955,6 +955,11 @@ pre {
   user-select: none;
 }
 
+.code-line.prompted::before {
+  content: attr(data-prompt);
+  counter-increment: none;
+}
+
 .code .user-value {
   color: #ff9900;
 }

@@ -45,7 +45,7 @@ $codeBlockPattern = [regex]::new(
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
 $wrappedCodeBlockPattern = [regex]::new(
-    '<div class="code">\s*<div class="code-header">.*?</div>\s*<pre><code(?:\s[^>]*)?>',
+    '<div class="code"(?:\s[^>]*)?>\s*<div class="code-header">.*?</div>\s*<pre><code(?:\s[^>]*)?>',
     [System.Text.RegularExpressions.RegexOptions]::Singleline -bor
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )

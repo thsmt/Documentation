@@ -38,7 +38,7 @@
       <a class="active" href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -106,14 +106,14 @@
 
       <h3>1. 必要なパッケージを導入</h3>
       <p>Postfix、SMTP AUTHに必要なSASL認証パッケージ、送信テスト用のmailxを導入</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf install -y postfix cyrus-sasl-plain mailx</code></pre>
       </div>
 
       <h3>2. 変更前の状態を記録</h3>
       <p><code>systemctl status</code>で稼働状態、<code>postconf -n</code>で初期値から変更されたPostfix設定、<code>postqueue -p</code>で滞留メールを確認</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl status postfix --no-pager
 postconf -n
@@ -122,7 +122,7 @@ postqueue -p</code></pre>
 
       <h3>3. main.cfをバックアップ</h3>
         <p>変更対象の<code>main.cf</code>だけを退避し、作成結果を確認</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cp -pi /etc/postfix/main.cf /etc/postfix/main.cf.`date +%Y%m%d`
 ls -la /etc/postfix/main.cf*</code></pre>
@@ -130,7 +130,7 @@ ls -la /etc/postfix/main.cf*</code></pre>
 
       <h3>4. ホスト名を確認</h3>
       <p>OSが認識するFQDNとPostfixの<code>myhostname</code>を確認する<br>両方がメールリレーサーバーとして使用するFQDNで一致している場合、<code>myhostname</code>の明示設定は不要</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>hostname -f
 postconf myhostname</code></pre>
@@ -138,7 +138,7 @@ postconf myhostname</code></pre>
 
       <h3>5. main.cfを編集</h3>
       <p>東京リージョンのSES SMTPエンドポイントをリレー先に設定する</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/postfix/main.cf</code></pre>
       </div>
@@ -177,7 +177,7 @@ smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt</code></pre>
 
       <h3>6. SMTP認証情報を設定</h3>
       <p><code>sasl_passwd</code>を作成し、SES SMTPエンドポイント、SMTPユーザー名、SMTPパスワードを1行で記載</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/postfix/sasl_passwd</code></pre>
       </div>
@@ -189,7 +189,7 @@ smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt</code></pre>
 
       <h3>7. 認証情報DBと権限を設定</h3>
       <p><code>postmap</code>でPostfixが参照するハッシュDBを生成し、平文ファイルとDBをrootだけが読み書きできる状態へ変更</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>postmap hash:/etc/postfix/sasl_passwd
 chown root:root /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
@@ -199,7 +199,7 @@ ls -la /etc/postfix/sasl_passwd*</code></pre>
 
       <h3>8. CA証明書を確認</h3>
       <p><code>postconf</code>でPostfixが参照するCAバンドル、<code>grep</code>で設定行、<code>test -r</code>でファイルの読み取り可否を確認</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>postconf smtp_tls_CAfile
 grep -n '^smtp_tls_CAfile' /etc/postfix/main.cf
@@ -208,7 +208,7 @@ test -r /etc/pki/tls/certs/ca-bundle.crt &amp;&amp; echo "CA bundle: OK"</code><
 
       <h3>9. 設定を検証</h3>
       <p><code>postfix check</code>は設定構文と権限を検査する<br>正常時は何も表示されない<br>続けて有効値を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>postfix check
 postconf relayhost smtp_sasl_auth_enable smtp_sasl_security_options \
@@ -217,7 +217,7 @@ postconf relayhost smtp_sasl_auth_enable smtp_sasl_security_options \
       </div>
 
       <h3>10. Postfixを再起動</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl restart postfix
 systemctl status postfix --no-pager</code></pre>
@@ -230,21 +230,21 @@ systemctl status postfix --no-pager</code></pre>
 
       <h3>1. 実際のメールアドレスへ送信</h3>
       <p><code>&lt;SENDER_EMAIL&gt;</code>をAmazon SESで検証済みの送信元メールアドレス、<code>&lt;RECIPIENT_EMAIL&gt;</code>を送信先メールアドレスへ置き換える</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>echo "This message was sent using Amazon SES" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "Amazon SES relay test" &lt;RECIPIENT_EMAIL&gt;</code></pre>
       </div>
 
       <h3>2. SESメールボックスシミュレーターへ送信</h3>
       <p><code>success@simulator.amazonses.com</code>は正常配信を模擬する宛先<br>メールボックスで受信するのではなく、Postfixログの<code>status=sent</code>とSESメトリクスで結果を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>echo "This message was sent using Amazon SES" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "Amazon SES relay test" success@simulator.amazonses.com</code></pre>
       </div>
 
       <h2 id="send-check">送信後の確認</h2>
       <h3>1. Postfixログとキューを確認</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>journalctl -u postfix --since "10 minutes ago" --no-pager
 postqueue -p</code></pre>
@@ -358,7 +358,7 @@ postqueue -p</code></pre>
       <p>出典：<a href="https://docs.aws.amazon.com/ses/latest/dg/mail-from.html">Using a custom MAIL FROM domain</a></p>
 
       <h2 id="dns-check">DNS反映確認</h2>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dig MX &lt;MAIL_FROM_DOMAIN&gt; +short
 dig TXT &lt;MAIL_FROM_DOMAIN&gt; +short</code></pre>
@@ -385,10 +385,10 @@ dig TXT &lt;MAIL_FROM_DOMAIN&gt; +short</code></pre>
       <h2>ページ内</h2>
       <a class="active" href="#ses-identity">Amazon SES作成</a>
       <a href="#smtp-credentials">IAM SMTP認証情報</a>
-      <a href="#postfix">Postfixリレー</a>
+      <a href="#postfix">PostfixからSES SMTPへリレー</a>
       <a href="#send-test">送信テスト</a>
       <a href="#send-check">送信後の確認</a>
-      <a href="#mail-from">カスタムMAIL FROM</a>
+      <a href="#mail-from">カスタムMAIL FROM設定</a>
       <a href="#dns">DNSレコード登録</a>
       <a href="#dns-check">DNS反映確認</a>
     </aside>

@@ -49,29 +49,54 @@
 
       <h2 id="command-blocks">コードブロック</h2>
 
-      <h3>パターン1：プレースホルダーを含まない通常のコードブロック</h3>
-      <div class="code">
-        <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
+      <h3>パターン1：一般ユーザーで実行するLinuxコマンド</h3>
+      <p>一般ユーザーで実行するコマンドは、表示専用の<code class="inline-code">$</code>プロンプトを使用する。Copyボタンではプロンプトを除外し、コマンド本文だけをコピーする</p>
+      <div class="code" data-prompt="$">
+        <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl is-enabled postfix.service
-systemctl enable postfix.service
-systemctl is-enabled postfix.service</code></pre>
+systemctl status postfix.service --no-pager</code></pre>
       </div>
 
       <p class="markup-label">HTML記法</p>
       <div class="code">
         <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>&lt;div class="code"&gt;
+        <pre><code>&lt;div class="code" data-prompt="$"&gt;
   &lt;div class="code-header"&gt;
-    &lt;span&gt;bash&lt;/span&gt;
+    &lt;span&gt;user shell&lt;/span&gt;
     &lt;button class="copy" type="button"&gt;Copy&lt;/button&gt;
   &lt;/div&gt;
   &lt;pre&gt;&lt;code&gt;systemctl is-enabled postfix.service
-systemctl enable postfix.service
-systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
+systemctl status postfix.service --no-pager&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;</code></pre>
       </div>
 
-      <h3>パターン2：プレースホルダーを含むコードブロック</h3>
+      <h3>パターン2：rootユーザーで実行するLinuxコマンド</h3>
+      <p>rootユーザーで実行するコマンドは、表示専用の<code class="inline-code">#</code>プロンプトを使用し、コード本文から<code class="inline-code">sudo</code>を外す</p>
+      <div class="code" data-prompt="#">
+        <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>systemctl enable postfix.service
+systemctl restart postfix.service</code></pre>
+      </div>
+
+      <p class="markup-label">HTML記法</p>
+      <div class="code">
+        <div class="code-header"><span>HTML</span><button class="copy" type="button">Copy</button></div>
+        <pre><code>&lt;div class="code" data-prompt="#"&gt;
+  &lt;div class="code-header"&gt;
+    &lt;span&gt;root shell&lt;/span&gt;
+    &lt;button class="copy" type="button"&gt;Copy&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;pre&gt;&lt;code&gt;systemctl enable postfix.service
+systemctl restart postfix.service&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>ℹ️ 行番号を使用するコード</strong>
+        <p>設定ファイル、JSON、IAMポリシー、SQL、PowerShell、実行結果はプロンプトを付けず、従来どおり行番号を表示する</p>
+      </div>
+
+      <h3>パターン3：プレースホルダーを含むPowerShell</h3>
       <div class="code">
         <div class="code-header"><span>PowerShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>$Password = Read-Host "Password for &lt;CUSTOMER_USER&gt;" -AsSecureString</code></pre>
@@ -88,7 +113,6 @@ systemctl is-enabled postfix.service&lt;/code&gt;&lt;/pre&gt;
   &lt;pre&gt;&lt;code&gt;$Password = Read-Host "Password for &amp;lt;CUSTOMER_USER&amp;gt;" -AsSecureString&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;</code></pre>
       </div>
-
       <h2 id="values">入力パラメータと固定値</h2>
       <p>利用者が置き換えるプレースホルダーはオレンジ色、画面上の項目名、選択値、ボタン名は前後に半角スペース相当の間隔を持つ薄いグレーの等幅書体で表示する。確定済みのリソース名、ポリシー名、コマンド名、APIアクション、設定プロパティは通常色の等幅書体で表示する</p>
 

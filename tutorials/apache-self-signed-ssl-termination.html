@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -113,7 +113,7 @@
 
       <h3>1. Apacheと関連ツールのインストール</h3>
       <p>Apache HTTP Server、TLS終端用の<code>mod_ssl</code>、証明書操作用の<code>openssl</code>、DNS確認用の<code>bind-utils</code>のインストール</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install httpd mod_ssl openssl bind-utils</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install httpd mod_ssl openssl bind-utils</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Transaction Summary
@@ -130,7 +130,7 @@ Installed:
 Complete!</code></pre></div>
       </details>
       <p>インストールされたパッケージのバージョン確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>rpm -q httpd mod_ssl openssl</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>rpm -q httpd mod_ssl openssl</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>httpd-2.4.62-13.el9_8.5.x86_64
@@ -138,7 +138,7 @@ mod_ssl-2.4.62-13.el9_8.5.x86_64
 openssl-3.5.5-6.el9_8.x86_64</code></pre></div>
       </details>
       <p>Apache本体のバージョン確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -v</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -v</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Server version: Apache/2.4.62 (Red Hat Enterprise Linux)
@@ -147,11 +147,11 @@ Server built:   Jul  9 2026 00:00:00</code></pre></div>
 
       <h3>2. ホスト名とDocumentRootの作成</h3>
       <p>OSホスト名とApacheの<code>ServerName</code>は別設定である。単一サイト構成として、OSの静的ホスト名を公開FQDNへ変更</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>hostnamectl set-hostname www.zexample.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>hostnamectl set-hostname www.zexample.com</code></pre></div>
       <p><code>/var/www/tls-lab</code>でも動作するが、複数サイトを判別しやすくするため、FQDN単位のDocumentRootを作成</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -o root -g root -m 0755 /var/www/www.zexample.com/public_html</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -o root -g root -m 0755 /var/www/www.zexample.com/public_html</code></pre></div>
       <p>FQDN単位のDocumentRoot作成結果の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /var/www/</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /var/www/</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>total 4
@@ -176,7 +176,7 @@ drwxr-xr-x.  3 root root   25 Aug 12 08:41 www.zexample.com</code></pre></div>
 &lt;/html&gt;
 EOF</code></pre></div>
       <p>DocumentRootの所有者とパーミッション確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -ld /var/www/www.zexample.com/public_html</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -ld /var/www/www.zexample.com/public_html</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>drwxr-xr-x. 2 root root 24 Aug 12 08:42 /var/www/www.zexample.com/public_html</code></pre></div>
@@ -184,9 +184,9 @@ EOF</code></pre></div>
 
       <h3>3. EC P-256秘密鍵の生成</h3>
       <p>秘密鍵用ディレクトリへの移動</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cd /etc/pki/tls/private</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cd /etc/pki/tls/private</code></pre></div>
       <p>秘密鍵生成前のディレクトリ確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /etc/pki/tls/private</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la /etc/pki/tls/private</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>total 0
@@ -194,15 +194,15 @@ drwxr-xr-x. 2 root root   6 Jul 15 09:44 .
 drwxr-xr-x. 6 root root 143 Jul 15 09:44 ..</code></pre></div>
       </details>
       <p>NIST P-256に相当する<code>prime256v1</code>を使用したEC秘密鍵生成</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out www.zexample.com.key</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out www.zexample.com.key</code></pre></div>
       <p>秘密鍵のパーミッション設定</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 600 www.zexample.com.key</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 600 www.zexample.com.key</code></pre></div>
       <p>秘密鍵を再確認する場合は、秘密値を表示しない次のコマンドを使用する。秘密鍵の内容を表示するコマンドと出力は公開記録へ掲載しない</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in www.zexample.com.key -check -noout</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in www.zexample.com.key -check -noout</code></pre></div>
 
       <h3>4. 対話式CSRの生成</h3>
       <p>秘密鍵を使用したPKCS#10形式CSRの生成</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -new -key www.zexample.com.key -out www.zexample.com.csr</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -new -key www.zexample.com.key -out www.zexample.com.csr</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Country Name (2 letter code) [XX]:JP
@@ -230,7 +230,7 @@ optional company name []:</code></pre></div>
         </tbody>
       </table>
       <p>CSRのSubject・公開鍵方式・署名アルゴリズム確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -text -in www.zexample.com.csr</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -text -in www.zexample.com.csr</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Certificate Request:
@@ -248,13 +248,13 @@ optional company name []:</code></pre></div>
     Signature Algorithm: ecdsa-with-SHA256</code></pre></div>
       </details>
       <p>CSRに含まれる公開鍵によるCSR自己署名の検証</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -verify -in www.zexample.com.csr</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl req -noout -verify -in www.zexample.com.csr</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>Certificate request self-signature verify OK</code></pre></div>
       </details>
       <p>秘密鍵とCSRのパス、所有者、パーミッション確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -la</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>total 8
@@ -288,7 +288,7 @@ subjectAltName = DNS:www.zexample.com
 EOF</code></pre></div>
       <p>発行日の2026年8月12日から8月31日までの検証期間として、19日間有効な自己署名証明書を発行する。次のコマンドは端末ログの該当行が一部欠損しているため、拡張設定、19日間の有効期間、発行結果から再構成したコマンド例であり、端末ログから逐語確認したものではない</p>
       <p>自己署名証明書の発行</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -req -in /etc/pki/tls/private/www.zexample.com.csr \
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -req -in /etc/pki/tls/private/www.zexample.com.csr \
   -signkey /etc/pki/tls/private/www.zexample.com.key \
   -sha256 \
   -days 19 \
@@ -302,10 +302,10 @@ subject=C=JP, ST=Tokyo, L=&lt;CITY&gt;, O=Example Publishing Ltd, OU=System Dept
       </details>
       <p>出典：<a href="https://docs.openssl.org/3.5/man1/openssl-x509/">OpenSSL 3.5 - openssl-x509</a></p>
       <p>証明書の所有者とパーミッション設定</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chown root:root /etc/pki/tls/certs/www.zexample.com.crt
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chown root:root /etc/pki/tls/certs/www.zexample.com.crt
 chmod 644 /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
       <p>DocumentRoot、秘密鍵、証明書へのSELinuxコンテキスト適用</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -RFv \
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -RFv \
   /var/www/www.zexample.com \
   /etc/pki/tls/private/www.zexample.com.key \
   /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
@@ -320,7 +320,7 @@ Relabeled /etc/pki/tls/certs/www.zexample.com.crt from unconfined_u:object_r:cer
 
       <h2 id="certificate-check">証明書とEC鍵の整合性確認</h2>
       <p>自己署名で同じ値となるSubjectとIssuer、シリアル番号、有効期間の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -serial -dates</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -subject -issuer -serial -dates</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>subject=C=JP, ST=Tokyo, L=&lt;CITY&gt;, O=Example Publishing Ltd, OU=System Dept., CN=www.zexample.com
@@ -330,33 +330,33 @@ notBefore=Aug 12 09:17:17 2026 GMT
 notAfter=Aug 31 09:17:17 2026 GMT</code></pre></div>
       </details>
       <p>Subject Alternative Name（SAN）の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext subjectAltName</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext subjectAltName</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>X509v3 Subject Alternative Name:
     DNS:www.zexample.com</code></pre></div>
       </details>
       <p>Extended Key Usage（EKU）の確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext extendedKeyUsage</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -noout -ext extendedKeyUsage</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>X509v3 Extended Key Usage:
     TLS Web Server Authentication</code></pre></div>
       </details>
       <p>自己署名証明書を自身のトラストアンカーとした署名検証</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl verify -CAfile /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl verify -CAfile /etc/pki/tls/certs/www.zexample.com.crt /etc/pki/tls/certs/www.zexample.com.crt</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>/etc/pki/tls/certs/www.zexample.com.crt: OK</code></pre></div>
       </details>
       <p>EC秘密鍵から取り出した公開鍵のSHA-256算出</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in /etc/pki/tls/private/www.zexample.com.key -pubout | openssl sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl pkey -in /etc/pki/tls/private/www.zexample.com.key -pubout | openssl sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>SHA2-256(stdin)= fc5b04008ec2f3266554b9c8d87dddedd61ac1a71833f6fd15a39ebddec9c8cb</code></pre></div>
       </details>
       <p>証明書から取り出した公開鍵のSHA-256算出。秘密鍵側と結果が完全に一致することによる、秘密鍵と証明書の対応確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -pubkey -noout | openssl sha256</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>openssl x509 -in /etc/pki/tls/certs/www.zexample.com.crt -pubkey -noout | openssl sha256</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>SHA2-256(stdin)= fc5b04008ec2f3266554b9c8d87dddedd61ac1a71833f6fd15a39ebddec9c8cb</code></pre></div>
@@ -393,46 +393,46 @@ notAfter=Aug 31 09:17:17 2026 GMT</code></pre></div>
 &lt;/VirtualHost&gt;
 EOF</code></pre></div>
       <p>VirtualHost設定へのSELinuxコンテキスト適用</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -v /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -v /etc/httpd/conf.d/www.zexample.com.conf</code></pre></div>
       <h3>RHEL既定のTLS VirtualHostとの重複解消</h3>
       <p>初回の<code>httpd -t</code>では、<code>ssl.conf</code>が参照する<code>localhost.crt</code>が存在しないため構文確認に失敗した。また、<code>httpd -tS</code>では既定の<code>_default_:443</code>と作成したVirtualHostが443番で重複していた</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>AH00526: Syntax error on line 85 of /etc/httpd/conf.d/ssl.conf:
 SSLCertificateFile: file '/etc/pki/tls/certs/localhost.crt' does not exist or is empty</code></pre></div>
       </details>
       <p><code>ssl.conf</code>のバックアップ取得</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.20260813</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.20260813</code></pre></div>
       <p><code>Listen 443 https</code>などの共通設定を残し、既定の<code>_default_:443</code>ブロックだけをコメントアウト</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sed -i '/^[[:space:]]*&lt;VirtualHost _default_:443&gt;/,/^[[:space:]]*&lt;\/VirtualHost&gt;/ s/^/#/' /etc/httpd/conf.d/ssl.conf</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>sed -i '/^[[:space:]]*&lt;VirtualHost _default_:443&gt;/,/^[[:space:]]*&lt;\/VirtualHost&gt;/ s/^/#/' /etc/httpd/conf.d/ssl.conf</code></pre></div>
       <p>修正後は<code>httpd -t</code>が<code>Syntax OK</code>となり、<code>httpd -S</code>で80番と443番の両方が<code>www.zexample.com.conf</code>へ割り当てられた</p>
       <p>出典：<a href="https://httpd.apache.org/docs/2.4/mod/mod_ssl.html">Apache HTTP Server - mod_ssl</a></p>
 
       <h2 id="apache-start">Apacheの構文確認とサービス有効化</h2>
       <p>TLSモジュールの読み込み確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -M | grep ssl_module</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -M | grep ssl_module</code></pre></div>
       <p><code>Syntax OK</code>となることによるApache構文確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -t</code></pre></div>
       <p>80番・443番における<code>www.zexample.com</code>のVirtualHost割り当て確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -S</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>httpd -S</code></pre></div>
       <p>Apacheの起動とOS起動時の自動起動有効化</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now httpd</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now httpd</code></pre></div>
       <p>サービス状態確認。実機では<code>Active: active (running)</code>となり、80番・443番での待ち受けがステータスへ表示された</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl status httpd</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl status httpd</code></pre></div>
       <p>TCP 80番・443番のLISTEN確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep -E ':(80|443)\b'</code></pre></div>
 
       <h2 id="communication">HTTP・HTTPS通信確認</h2>
       <p>サーバー内部からのHTTP・HTTPS間301リダイレクト確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I -H 'Host: www.zexample.com' http://127.0.0.1/</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -I -H 'Host: www.zexample.com' http://127.0.0.1/</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>HTTP/1.1 301 Moved Permanently
 Location: https://www.zexample.com/</code></pre></div>
       </details>
       <p>自己署名証明書を明示的に信頼した、DNSを経由しないローカル443番のHTTPSコンテンツ確認</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -i --cacert /etc/pki/tls/certs/www.zexample.com.crt --resolve www.zexample.com:443:127.0.0.1 https://www.zexample.com/</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>curl -i --cacert /etc/pki/tls/certs/www.zexample.com.crt --resolve www.zexample.com:443:127.0.0.1 https://www.zexample.com/</code></pre></div>
       <details class="example-details execution-example">
         <summary>実行例を展開する</summary>
         <div class="code"><div class="code-header"><span class="execution-example-label">実行例</span><button class="copy" type="button">Copy</button></div><pre><code>HTTP/1.1 200 OK
@@ -444,7 +444,7 @@ Content-Type: text/html; charset=UTF-8
       </details>
       <h3>デモサイトへの更新とブラウザ確認</h3>
       <p>初期確認後、DocumentRootの<code>index.html</code>を架空企業「Zexample Technologies」のデモサイトへ更新した。HTMLファイルの変更は次のリクエストから反映されるため、Apacheの再起動は行っていない</p>
-      <div class="code"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 644 /var/www/www.zexample.com/public_html/index.html
+      <div class="code" data-prompt="#"><div class="code-header"><span>shell</span><button class="copy" type="button">Copy</button></div><pre><code>chmod 644 /var/www/www.zexample.com/public_html/index.html
 restorecon -v /var/www/www.zexample.com/public_html/index.html</code></pre></div>
       <figure class="screenshot-wide">
         <img src="../assets/img/ec2-rhel9-apache-https/browser-self-signed-demo-site.png" alt="自己署名証明書を設定したZexample TechnologiesのHTTPSデモサイト" width="1720" height="1392" loading="lazy">
@@ -467,12 +467,12 @@ restorecon -v /var/www/www.zexample.com/public_html/index.html</code></pre></div
       <a href="#flow">証明書発行の流れ</a>
       <a href="#paths">ファイルパス</a>
       <a href="#completed">ApacheのインストールとCSR作成</a>
-      <a href="#ca">証明書発行方式</a>
-      <a href="#self-signed">自己署名証明書</a>
-      <a href="#certificate-check">証明書とEC鍵の整合性</a>
-      <a href="#virtualhost">ApacheのHTTPS終端</a>
-      <a href="#apache-start">Apacheの有効化</a>
-      <a href="#communication">通信確認</a>
+      <a href="#ca">証明書発行方式の選択</a>
+      <a href="#self-signed">自己署名証明書の発行</a>
+      <a href="#certificate-check">証明書とEC鍵の整合性確認</a>
+      <a href="#virtualhost">ApacheのHTTPS終端設定</a>
+      <a href="#apache-start">Apacheの構文確認とサービス有効化</a>
+      <a href="#communication">HTTP・HTTPS通信確認</a>
     </aside>
   </div>
 

@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -569,7 +569,7 @@
 
       <h3>AWS CLIで変更</h3>
       <p>AWS CLIでもプロトコルを変更できる<br>対象WorkSpaceの状態とプロトコルを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
   --workspace-ids &lt;WORKSPACE_ID&gt; \
@@ -578,7 +578,7 @@
       </div>
 
       <p>プロトコルをDCV（WSP）へ変更する<br><code>Protocols</code>の値は大文字・小文字を区別する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces modify-workspace-properties \
   --workspace-id &lt;WORKSPACE_ID&gt; \
@@ -586,7 +586,7 @@
       </div>
 
       <p>最大40分待機し、変更後の状態を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws workspaces describe-workspaces \
   --workspace-ids &lt;WORKSPACE_ID&gt; \
@@ -599,18 +599,18 @@
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#specifications">仕様</a>
-      <a href="#protocol-selection">プロトコル選定</a>
-      <a href="#directory-accounts">アカウントの役割</a>
+      <a href="#protocol-selection">ストリーミングプロトコルの選定</a>
+      <a href="#directory-accounts">AWS Managed Microsoft ADのアカウントの役割</a>
       <a href="#flow">構築フロー</a>
-      <a href="#register-directory">ディレクトリ登録</a>
-      <a href="#provision">WorkSpaces Personal作成</a>
+      <a href="#register-directory">WorkSpacesディレクトリを作成・登録する</a>
+      <a href="#provision">WorkSpaces Personalの作成</a>
       <a href="#connect">接続</a>
-      <a href="#web-access">Web Access</a>
+      <a href="#web-access">Web Accessを有効化</a>
       <a href="#ad-admin-tools">AD管理ツールとGPMC</a>
       <a href="#aduc-management">OU・ADユーザー管理</a>
-      <a href="#group-policy">グループポリシー</a>
+      <a href="#group-policy">WorkSpaces固有のグループポリシー</a>
       <a href="#recovery-operations">復元・再構築・移行</a>
-      <a href="#protocol-change">PCoIPからWSPへの変更</a>
+      <a href="#protocol-change">PCoIPからDCV (WSP) へのプロトコル変更</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

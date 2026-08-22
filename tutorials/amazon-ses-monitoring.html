@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a class="active" href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -127,7 +127,7 @@
       </div>
       <p>出典：<a href="https://docs.aws.amazon.com/ses/latest/dg/sending-email-suppression-list-config-level.html">設定セットレベルのサプレッションリスト</a></p>
       <p>作成したConfiguration Setの設定を確認</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-configuration-set \
   --configuration-set-name &lt;CONFIGURATION_SET_NAME&gt; \
   --region &lt;REGION&gt;</code></pre></div>
       <p>作成後は設定セットの概要を開き、評判オプション、サプレッションリスト、VDM、送信状態が意図した設定になっていることを確認する</p>
@@ -244,7 +244,7 @@
         <li>保存後、IDの設定画面へ設定セット名が表示されることを確認</li>
       </ol>
       <p>送信IDに設定されたConfiguration Setを確認</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-email-identity \
   --email-identity &lt;SES_IDENTITY&gt; \
   --region &lt;REGION&gt; \
   --query "{IdentityType:IdentityType,VerifiedForSendingStatus:VerifiedForSendingStatus,ConfigurationSetName:ConfigurationSetName}"</code></pre></div>
@@ -268,15 +268,15 @@
       </table>
 
       <h3>正常配信</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES delivery monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES success test" success@simulator.amazonses.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES delivery monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES success test" success@simulator.amazonses.com</code></pre></div>
       <h3>バウンス</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES bounce monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES bounce test" bounce@simulator.amazonses.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES bounce monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES bounce test" bounce@simulator.amazonses.com</code></pre></div>
       <h3>苦情</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES complaint monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES complaint test" complaint@simulator.amazonses.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES complaint monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES complaint test" complaint@simulator.amazonses.com</code></pre></div>
       <h3>自動応答</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES out-of-office monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES OOTO test" ooto@simulator.amazonses.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES out-of-office monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES OOTO test" ooto@simulator.amazonses.com</code></pre></div>
       <h3>サプレッション</h3>
-      <div class="code"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES suppression monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES suppression test" suppressionlist@simulator.amazonses.com</code></pre></div>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>echo "SES suppression monitoring test" | mailx -v -r &lt;SENDER_EMAIL&gt; -s "SES suppression test" suppressionlist@simulator.amazonses.com</code></pre></div>
       <p>テスト後はPostfixログ、SNS通知、EventBridgeイベント、CloudWatchメトリクスを、同じ送信時刻とSES Message IDで照合する</p>
 
       <h2 id="event-check">SNS／EventBridgeイベントの確認</h2>
@@ -363,15 +363,15 @@
         <li>誤登録と判断できる場合だけ、宛先の有効性と再送許可を確認して削除</li>
       </ol>
       <p>サプレッションリストを確認</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 list-suppressed-destinations \
   --region &lt;REGION&gt; \
   --output table</code></pre></div>
       <p>対象メールアドレスの登録理由と日時を確認</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-suppressed-destination \
   --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region &lt;REGION&gt;</code></pre></div>
       <p>再送可能と判断した場合だけ対象メールアドレスを削除</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 delete-suppressed-destination \
   --email-address &lt;SUPPRESSED_EMAIL_ADDRESS&gt; \
   --region &lt;REGION&gt;</code></pre></div>
       <div class="callout callout-warning"><strong>⚠️ 安易に削除しない</strong><p>ハードバウンスした無効な宛先を削除して再送すると、バウンス率が悪化する<br>アドレスの誤入力修正、受信者からの再登録、管理者による有効性確認など、再送できる根拠を記録してから削除する</p></div>
@@ -409,7 +409,7 @@
         <li>送信量が上限へ近づく前に、用途と送信パターンを整理して引き上げを申請</li>
       </ol>
       <p>送信クォータとサンドボックス状態を確認</p>
-      <div class="code"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-account \
+      <div class="code" data-prompt="$"><div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div><pre><code>aws sesv2 get-account \
   --region &lt;REGION&gt; \
   --query "{ProductionAccessEnabled:ProductionAccessEnabled,EnforcementStatus:EnforcementStatus,SendQuota:SendQuota,SendingEnabled:SendingEnabled}"</code></pre></div>
       <table>
@@ -445,17 +445,17 @@
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
       <a class="active" href="#overview">配信監視の全体像</a>
-      <a href="#configuration-set">Configuration Set</a>
-      <a href="#destinations">イベント送信先</a>
-      <a href="#identity-default">送信IDへの設定</a>
-      <a href="#simulator">シミュレーター</a>
-      <a href="#event-check">イベント確認</a>
-      <a href="#reputation">レピュテーション</a>
-      <a href="#alarms">CloudWatchアラーム</a>
-      <a href="#suppression">サプレッション</a>
-      <a href="#vdm">VDM</a>
-      <a href="#quota">クォータ</a>
-      <a href="#troubleshooting">障害切り分け</a>
+      <a href="#configuration-set">Configuration Setの作成</a>
+      <a href="#destinations">イベント送信先の作成</a>
+      <a href="#identity-default">送信IDへのConfiguration Set設定</a>
+      <a href="#simulator">メールボックスシミュレーター</a>
+      <a href="#event-check">SNS／EventBridgeイベントの確認</a>
+      <a href="#reputation">レピュテーションメトリクス</a>
+      <a href="#alarms">CloudWatchアラームと通知</a>
+      <a href="#suppression">サプレッションリスト</a>
+      <a href="#vdm">Virtual Deliverability Manager</a>
+      <a href="#quota">送信クォータとサンドボックス</a>
+      <a href="#troubleshooting">障害時の切り分け</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

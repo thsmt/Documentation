@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -71,7 +71,7 @@
 
       <h3 id="build-vpc">1. VPCの作成</h3>
       <p>CIDRブロック <code>10.0.0.0/16</code> のVPCを作成し、DNSホスト名を有効化する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-vpc --cidr-block 10.0.0.0/16
 aws ec2 modify-vpc-attribute \
@@ -80,14 +80,14 @@ aws ec2 modify-vpc-attribute \
       </div>
 
       <p>専用テナンシーを指定してVPCを作成する場合</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-vpc --cidr-block 10.0.0.0/16 --instance-tenancy dedicated</code></pre>
       </div>
 
       <h3 id="build-subnet">2. サブネットの作成</h3>
       <p>異なるアベイラビリティーゾーンへ2つのサブネットを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-subnet \
   --vpc-id &lt;VPC_ID&gt; \
@@ -101,7 +101,7 @@ aws ec2 create-subnet \
 
       <h3 id="build-route-table">3. ルートテーブルの作成と関連付け</h3>
       <p>ルートテーブルを作成し、サブネットへ関連付ける</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-route-table --vpc-id &lt;VPC_ID&gt;
 aws ec2 associate-route-table \
@@ -111,7 +111,7 @@ aws ec2 associate-route-table \
 
       <h3 id="build-internet-gateway">4. インターネットゲートウェイの作成</h3>
       <p>インターネットゲートウェイを作成し、VPCへアタッチする</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-internet-gateway
 aws ec2 attach-internet-gateway \
@@ -121,7 +121,7 @@ aws ec2 attach-internet-gateway \
 
       <h3 id="build-default-route">5. デフォルトルートの作成</h3>
       <p>宛先 <code>0.0.0.0/0</code> をインターネットゲートウェイへ向ける</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-route \
   --route-table-id &lt;ROUTE_TABLE_ID&gt; \
@@ -131,13 +131,13 @@ aws ec2 attach-internet-gateway \
 
       <h3 id="build-key-pair">6. キーペアの作成と公開鍵のインポート</h3>
       <p>キーペアを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-key-pair --key-name myKeyPair</code></pre>
       </div>
 
       <p>秘密鍵を <code>myKeyPair.pem</code> へ保存する場合</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-key-pair \
   --key-name myKeyPair \
@@ -146,7 +146,7 @@ aws ec2 attach-internet-gateway \
       </div>
 
       <p>既存の公開鍵をインポートする場合</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 import-key-pair \
   --key-name ImportKey \
@@ -155,7 +155,7 @@ aws ec2 attach-internet-gateway \
 
       <h3 id="build-security-group">7. Security Groupの作成</h3>
       <p>Security Groupを作成し、接続元グローバルIPv4アドレスからのSSHを許可して設定を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-security-group \
   --group-name mySecurityGroup \
@@ -163,7 +163,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id &lt;VPC_ID&gt;</code></pre>
       </div>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress \
   --group-id &lt;SECURITY_GROUP_ID&gt; \
@@ -177,7 +177,7 @@ aws ec2 describe-security-groups \
 
       <h3 id="build-ec2">8. EC2インスタンスの作成</h3>
       <p>AMI、インスタンスタイプ、キーペア、Security Group、サブネットを指定してEC2インスタンスを起動し、Nameタグを追加する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 run-instances \
   --image-id &lt;AMI_ID&gt; \
@@ -188,7 +188,7 @@ aws ec2 describe-security-groups \
   --subnet-id &lt;SUBNET_ID&gt;</code></pre>
       </div>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-tags \
   --resources &lt;INSTANCE_ID&gt; \
@@ -197,7 +197,7 @@ aws ec2 describe-security-groups \
 
       <h3 id="build-ami">9. AMIの作成と確認</h3>
       <p>EC2インスタンスからAMIを作成し、AMI IDを指定して確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-image \
   --instance-id &lt;INSTANCE_ID&gt; \
@@ -205,14 +205,14 @@ aws ec2 describe-security-groups \
   --description "myFirstEC2-AMI"</code></pre>
       </div>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-images --image-ids &lt;AMI_ID&gt;</code></pre>
       </div>
 
       <h3 id="build-elastic-ip">10. Elastic IPの取得と関連付け</h3>
       <p>VPC用のElastic IPを取得し、EC2インスタンスへ関連付けて確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 allocate-address --domain vpc
 aws ec2 associate-address \
@@ -223,7 +223,7 @@ aws ec2 describe-addresses</code></pre>
 
       <h3 id="build-elb">11. Application Load Balancerの作成とEC2インスタンスの登録</h3>
       <p>2つのアベイラビリティーゾーンへインターネット向けApplication Load Balancerを作成し、実行結果のARNを控える</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws elbv2 create-load-balancer \
   --name External-Web \
@@ -238,7 +238,7 @@ aws ec2 describe-addresses</code></pre>
       </div>
 
       <p>HTTPの80番ポートを使用するインスタンスターゲットグループを作成し、実行結果のARNを控える</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws elbv2 create-target-group \
   --name External-Web-TG \
@@ -251,7 +251,7 @@ aws ec2 describe-addresses</code></pre>
       </div>
 
       <p>2台のEC2インスタンスをターゲットグループへ登録する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws elbv2 register-targets \
   --target-group-arn &lt;TARGET_GROUP_ARN&gt; \
@@ -259,7 +259,7 @@ aws ec2 describe-addresses</code></pre>
       </div>
 
       <p>Application Load BalancerにHTTPリスナーを作成し、受信した通信をターゲットグループへ転送する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws elbv2 create-listener \
   --load-balancer-arn &lt;LOAD_BALANCER_ARN&gt; \
@@ -290,7 +290,7 @@ aws --version</code></pre>
         </section>
 
         <section class="tab-panel" id="awscli-macos" role="tabpanel">
-          <div class="code">
+          <div class="code" data-prompt="$">
             <div class="code-header"><span>zsh</span><button class="copy" type="button">Copy</button></div>
             <pre><code>brew install awscli
 aws --version</code></pre>
@@ -298,11 +298,11 @@ aws --version</code></pre>
         </section>
 
         <section class="tab-panel" id="awscli-linux" role="tabpanel">
-          <div class="code">
+          <div class="code" data-prompt="#">
             <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
             <pre><code>curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
-sudo ./aws/install
+./aws/install
 aws --version</code></pre>
           </div>
         </section>
@@ -310,14 +310,14 @@ aws --version</code></pre>
 
       <h3 id="identity">認証情報の確認</h3>
       <p>現在の認証情報が、想定しているAWSアカウントとIAMユーザー/ロールを向いているか確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
 
       <h3 id="credentials">認証情報の設定</h3>
       <p>作業端末で初めてAWS CLIを使う場合は、デフォルト認証情報を設定する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure</code></pre>
       </div>
@@ -336,13 +336,13 @@ aws --version</code></pre>
         </tbody>
       </table>
       <p>作業対象のリージョンを設定する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure set region &lt;REGION&gt;</code></pre>
       </div>
 
       <p>設定したリージョンを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws configure get region</code></pre>
       </div>
@@ -361,25 +361,25 @@ aws --version</code></pre>
       </table>
 
       <p>IAMユーザーを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <p>IAMグループを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-group --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>作成したIAMユーザーを既存グループに追加する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam add-user-to-group --user-name &lt;USER_NAME&gt; --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>AWS管理ポリシーをIAMグループにアタッチする<br>例では読み取り専用の<code>ReadOnlyAccess</code>を使用する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam attach-group-policy --group-name &lt;GROUP_NAME&gt; --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess</code></pre>
       </div>
@@ -402,31 +402,31 @@ aws --version</code></pre>
       </div>
 
       <p>JSONファイルからカスタマー管理ポリシーを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-policy --policy-name &lt;POLICY_NAME&gt; --policy-document file://policy.json</code></pre>
       </div>
 
       <p>作成したカスタマー管理ポリシーをIAMグループにアタッチする</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam attach-group-policy --group-name &lt;GROUP_NAME&gt; --policy-arn &lt;CUSTOM_POLICY_ARN&gt;</code></pre>
       </div>
 
       <p>IAMグループにアタッチされているポリシーを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-attached-group-policies --group-name &lt;GROUP_NAME&gt;</code></pre>
       </div>
 
       <p>ユーザーの所属グループを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-groups-for-user --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
 
       <p>IAMユーザーのアクセスキーを発行する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-access-key --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
@@ -438,31 +438,31 @@ aws --version</code></pre>
       <p>出典：<a href="https://docs.aws.amazon.com/cli/latest/reference/iam/create-access-key.html">create-access-key</a></p>
 
       <p>CloudShellで一時パスワードを自動生成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>TEMPORARY_PASSWORD="$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | head -c 20)Aa1-"</code></pre>
       </div>
 
       <p>生成した一時パスワードを使用して、IAMユーザーへコンソールログイン用のログインプロファイルを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam create-login-profile --user-name &lt;USER_NAME&gt; --password "$TEMPORARY_PASSWORD" --password-reset-required</code></pre>
       </div>
 
       <p>AWSアカウントIDを取得する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"</code></pre>
       </div>
 
       <p>コンソールサインインURL、IAMユーザー名、一時パスワードを画面へ一度だけ表示する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>printf 'URL: https://%s.signin.aws.amazon.com/console/\nUser: %s\nPassword: %s\n' "$ACCOUNT_ID" '&lt;USER_NAME&gt;' "$TEMPORARY_PASSWORD"</code></pre>
       </div>
 
       <p>利用者へ安全に共有した後、一時パスワードをシェル変数から削除する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>unset TEMPORARY_PASSWORD</code></pre>
       </div>
@@ -484,14 +484,14 @@ aws --version</code></pre>
       </table>
 
       <p>アクセスキーを確認して無効化する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam list-access-keys --user-name &lt;USER_NAME&gt;
 aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCESS_KEY_ID&gt; --status Inactive</code></pre>
       </div>
 
       <p>コンソールログインを停止する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws iam delete-login-profile --user-name &lt;USER_NAME&gt;</code></pre>
       </div>
@@ -511,43 +511,43 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </table>
 
       <p>作業前に、対象Security Groupの現在のルールを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-security-groups --group-ids &lt;SECURITY_GROUP_ID&gt;</code></pre>
       </div>
 
       <p>ケース①：特定のCIDRからHTTP（80/tcp）への接続だけを許可する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>ケース②：特定のCIDRからHTTP（80/tcp）への接続を、説明付きで許可する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=&lt;CIDR&gt;,Description="&lt;DESCRIPTION&gt;"}]'</code></pre>
       </div>
 
       <p>ケース③：特定のCIDRから全プロトコル・全ポートへの接続を一時的に許可する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>Security GroupルールID、CIDR、説明欄を一覧で確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-security-group-rules --filters Name=group-id,Values=&lt;SECURITY_GROUP_ID&gt; --query "SecurityGroupRules[*].[SecurityGroupRuleId,IsEgress,IpProtocol,FromPort,ToPort,CidrIpv4,Description]" --output table</code></pre>
       </div>
 
       <p>ケース①で追加したHTTP（80/tcp）の許可ルールを削除する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol tcp --port 80 --cidr &lt;CIDR&gt;</code></pre>
       </div>
 
       <p>ケース③で追加した全プロトコル・全ポートの許可ルールを削除する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 revoke-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --protocol -1 --cidr &lt;CIDR&gt;</code></pre>
       </div>
@@ -581,33 +581,33 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
 
       <h3>Prefix Listの作成</h3>
       <p>Prefix Listを作成し、初期CIDRを登録する<br>接続元を1件だけ登録する場合は、<code>Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code>をコマンドから削除する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-managed-prefix-list --prefix-list-name &lt;PREFIX_LIST_NAME&gt; --address-family IPv4 --max-entries &lt;MAX_ENTRIES&gt; --entries Cidr=&lt;CIDR_1&gt;,Description="&lt;DESCRIPTION_1&gt;" Cidr=&lt;CIDR_2&gt;,Description="&lt;DESCRIPTION_2&gt;"</code></pre>
       </div>
 
       <h3>Prefix Listの確認・更新</h3>
       <p>作成したPrefix ListのID、現在のバージョン、最大エントリ数、状態を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=&lt;PREFIX_LIST_NAME&gt; --query "PrefixLists[*].[PrefixListId,PrefixListName,Version,MaxEntries,State]" --output table</code></pre>
       </div>
 
       <p>既存のPrefix Listへ接続元CIDRを追加する<br>直前に確認した<code>Version</code>を<code>&lt;CURRENT_VERSION&gt;</code>へ指定する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-managed-prefix-list --prefix-list-id &lt;PREFIX_LIST_ID&gt; --current-version &lt;CURRENT_VERSION&gt; --add-entries Cidr=&lt;CIDR_3&gt;,Description="&lt;DESCRIPTION_3&gt;"</code></pre>
       </div>
 
       <p>更新後に、Prefix Listへ登録されているCIDRと説明を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 get-managed-prefix-list-entries --prefix-list-id &lt;PREFIX_LIST_ID&gt; --query "Entries[*].[Cidr,Description]" --output table</code></pre>
       </div>
 
       <h3>Security Groupからの参照</h3>
       <p>Security GroupのインバウンドルールからPrefix Listを参照する<br>Prefix Listへ登録した接続元CIDR群から<code>&lt;PORT&gt;</code>へのTCP通信を許可する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 authorize-security-group-ingress --group-id &lt;SECURITY_GROUP_ID&gt; --ip-permissions IpProtocol=tcp,FromPort=&lt;PORT&gt;,ToPort=&lt;PORT&gt;,PrefixListIds=[{PrefixListId=&lt;PREFIX_LIST_ID&gt;}]</code></pre>
       </div>
@@ -626,19 +626,19 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </table>
 
       <p>SNS Topicを作成する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns create-topic --name &lt;TOPIC_NAME&gt;</code></pre>
       </div>
 
       <p>SNS Topic一覧を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns list-topics</code></pre>
       </div>
 
       <p>メール通知先をSubscriptionとして登録する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns subscribe --topic-arn &lt;TOPIC_ARN&gt; --protocol email --notification-endpoint &lt;MAIL_ADDRESS&gt;</code></pre>
       </div>
@@ -649,25 +649,25 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </div>
 
       <p>Topicに紐づくSubscriptionを確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns list-subscriptions-by-topic --topic-arn &lt;TOPIC_ARN&gt;</code></pre>
       </div>
 
       <p>Topic属性を確認する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns get-topic-attributes --topic-arn &lt;TOPIC_ARN&gt;</code></pre>
       </div>
 
       <p>通知テストを実行する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns publish --topic-arn &lt;TOPIC_ARN&gt; --message "notification test"</code></pre>
       </div>
 
       <p>不要になったSubscriptionを解除する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sns unsubscribe --subscription-arn &lt;SUBSCRIPTION_ARN&gt;</code></pre>
       </div>
@@ -684,25 +684,25 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </table>
 
       <p>作業前の復旧ポイントとしてスナップショットを作成</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 create-snapshot --volume-id &lt;VOLUME_ID&gt; --description "pre-resize backup"</code></pre>
       </div>
 
       <p>権限と入力値を事前確認する<br><code>DryRunOperation</code>が返る場合は実行権限がある</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt; --dry-run</code></pre>
       </div>
 
       <p>EBSボリュームの拡張</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 modify-volume --volume-id &lt;VOLUME_ID&gt; --size &lt;TARGET_SIZE_GIB&gt;</code></pre>
       </div>
 
       <p>変更状況を確認する<br>OS側の拡張は、状態が<code>optimizing</code>または<code>completed</code>になってから実施する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws ec2 describe-volumes-modifications --volume-ids &lt;VOLUME_ID&gt; --query "VolumesModifications[*].[VolumeId,ModificationState,OriginalSize,TargetSize,Progress]" --output table</code></pre>
       </div>
@@ -727,7 +727,7 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </table>
 
       <p>現在のアドレスとロックトークンを取得する<br>CloudFrontスコープの場合は<code>--region us-east-1</code>を追加する</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws wafv2 get-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt;</code></pre>
       </div>
@@ -742,7 +742,7 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
       </div>
 
       <p>IPセットの更新</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws wafv2 update-ip-set --name &lt;IP_SET_NAME&gt; --scope &lt;SCOPE&gt; --id &lt;IP_SET_ID&gt; --lock-token &lt;LOCK_TOKEN&gt; --addresses file://ip-set-addresses.json</code></pre>
       </div>
@@ -756,15 +756,15 @@ aws iam update-access-key --user-name &lt;USER_NAME&gt; --access-key-id &lt;ACCE
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#vpc-ec2-elb-build-flow">VPC／EC2／ALB 構築フロー</a>
-      <a href="#setup">AWS CLI初期設定</a>
-      <a href="#iam">IAM</a>
-      <a href="#iam-offboarding">IAMユーザー利用停止</a>
-      <a href="#security-group">Security Group</a>
-      <a href="#prefix-list">Prefix Listの作成</a>
-      <a href="#sns">SNS</a>
-      <a href="#ebs-expand">EBS ボリューム拡張</a>
-      <a href="#waf-ip-set">AWS WAF IPセット</a>
+      <a class="active" href="#vpc-ec2-elb-build-flow">AWS CLIによるVPC／EC2／ALB構築フロー</a>
+      <a href="#setup">AWS CLIの初期設定</a>
+      <a href="#iam">Identity and Access Management (IAM)</a>
+      <a href="#iam-offboarding">IAMユーザーの利用停止・削除</a>
+      <a href="#security-group">Security Group ルール追加・削除</a>
+      <a href="#prefix-list">Prefix Listの作成・IP登録</a>
+      <a href="#sns">SNS Topic・Subscription作成</a>
+      <a href="#ebs-expand">EC2 / EBS ボリューム拡張</a>
+      <a href="#waf-ip-set">AWS WAF IPセットの更新</a>
     </aside>
   </div>
   <script src="../assets/app.js"></script>

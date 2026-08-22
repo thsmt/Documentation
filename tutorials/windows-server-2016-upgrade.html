@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Windows Server 2016から2025へのインプレースアップグレード | Documentation</title>
+<title>Windows Server 2016 インプレースアップグレード | Documentation</title>
   <meta name="description" content="Amazon EC2上のWindows Server 2016をWindows Server 2025へ直接インプレースアップグレードする実機検証手順。AMI、事前準備、AWSドライバー、EBSインストールメディア、実行、事後確認を扱う。">
   <link rel="stylesheet" href="../assets/styles.css">
 </head>
@@ -35,7 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -58,7 +58,7 @@
         <span>トピック</span>
       </nav>
 
-<h1>Windows Server 2016から2025へのインプレースアップグレード</h1>
+<h1>Windows Server 2016 インプレースアップグレード</h1>
       <div class="page-summary">
         <strong>⚡ このページの要約</strong>
         <p class="lead">Amazon EC2上のWindows Server 2016を、AWS提供のインストールメディアを使用してWindows Server 2025へ直接アップグレードする実機検証手順をまとめる<br>バックアップAMI、AWSドライバー、EBSインストールメディア、実行中の監視、アップグレード後の確認を順に整理する</p>
@@ -703,15 +703,15 @@ Amazon Elastic Network Adapter         2.11.0.0</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#overview">1. 概要</a>
-      <a href="#support">2. サポート期限</a>
-      <a href="#constraints">3. 非対応構成</a>
-      <a href="#aws-notes">4. EC2固有</a>
-      <a href="#lab-setup">5. 事前検証</a>
-      <a href="#pre-tasks">6. 事前準備</a>
-      <a href="#media">7. メディア準備</a>
-      <a href="#upgrade">8. 実行</a>
-      <a href="#post-check">9. 事後確認</a>
+      <a class="active" href="#overview">1. インプレースアップグレードの概要</a>
+      <a href="#support">2. サポート期限とアップグレードパス</a>
+      <a href="#constraints">3. アップグレードできない・非推奨の構成</a>
+      <a href="#aws-notes">4. Amazon EC2固有の注意点</a>
+      <a href="#lab-setup">5. 今回の検証環境を構築する</a>
+      <a href="#pre-tasks">6. アップグレード前の準備</a>
+      <a href="#media">7. インストールメディアの準備</a>
+      <a href="#upgrade">8. インプレースアップグレードの実行</a>
+      <a href="#post-check">9. アップグレード後の確認と作業完了</a>
     </aside>
   </div>
 

@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a class="active" href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -217,18 +217,18 @@
         <figcaption>対象Blue DBを開き、エンジンバージョン、DBパラメータグループ、インスタンスクラス、ストレージ、削除保護などの現在値を確認</figcaption>
         <img src="../assets/img/amazon-rds-blue-green/01-blue-db-settings.png" alt="Blue DBの設定確認画面" width="1718" height="1304" loading="lazy">
       </figure>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws sts get-caller-identity</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances \
   --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; \
   --query "DBInstances[0].{Identifier:DBInstanceIdentifier,ResourceId:DbiResourceId,Engine:Engine,EngineVersion:EngineVersion,Class:DBInstanceClass,MultiAZ:MultiAZ,Endpoint:Endpoint.Address,BackupRetention:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}" \
   --output json</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances \
   --db-instance-identifier &lt;BLUE_DB_INSTANCE_IDENTIFIER&gt; \
@@ -302,7 +302,7 @@ ORDER BY 1, 2;</code></pre>
         <figcaption><code class="ui-value">見直しと確認</code>でBlueとGreenのエンジンバージョン、DBパラメータグループ、インスタンスクラス、ストレージを照合し、<code class="ui-value">作成</code>を選択</figcaption>
         <img src="../assets/img/amazon-rds-blue-green/06-create-review.png" alt="Blue Green Deployment作成前の見直しと確認" width="1718" height="1304" loading="lazy">
       </figure>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds create-blue-green-deployment \
   --blue-green-deployment-name &lt;BLUE_GREEN_DEPLOYMENT_NAME&gt; \
@@ -319,14 +319,14 @@ ORDER BY 1, 2;</code></pre>
         <figcaption>RDSコンソールのデータベース一覧で、Deployment配下のBlueとGreenがともに<code class="ui-value">利用可能</code>であることを確認</figcaption>
         <img src="../assets/img/amazon-rds-blue-green/07-after-create-db-list.png" alt="Blue Green Deployment作成後のRDSデータベース一覧" width="1716" height="336" loading="lazy">
       </figure>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-blue-green-deployments \
   --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
   --query "BlueGreenDeployments[0].{Status:Status,Replication:StatusDetails,Source:Source,Target:Target,Tasks:Tasks}" \
   --output json</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances \
   --db-instance-identifier &lt;GREEN_DB_INSTANCE_IDENTIFIER&gt; \
@@ -335,7 +335,7 @@ ORDER BY 1, 2;</code></pre>
       </div>
       <h3>6. Greenで受入試験を実施</h3>
       <p>Green固有のエンドポイントを用い、アプリケーションの起動、読み取り画面、バッチのドライラン、主要SQL、実行計画、接続数、CPU、メモリ、待機イベント、エラー率を確認。データ変更を伴う試験はレプリケーション競合を起こすため、実施範囲と後始末をDBAと合意してから実施</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>psql "host=&lt;GREEN_ENDPOINT&gt; port=5432 dbname=pocdb user=pocadmin sslmode=require connect_timeout=10"</code></pre>
       </div>
@@ -356,30 +356,30 @@ ORDER BY 1, 2;</code></pre>
 
       <h3>7. RHEL 9.8のPostgreSQLクライアントを13.23から18.4へ更新</h3>
       <p>PostgreSQL 13.23の<code>psql</code>はGreenの18.4へ接続できたが、メジャーバージョン差の警告が表示された。さらに<code>pg_dump 13.23</code>は新しい18.4サーバーを扱えず、<code>server version: 18.4; pg_dump version: 13.23</code>として停止した</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump "host=&lt;GREEN_ENDPOINT&gt; port=5432 dbname=pocdb user=pocadmin sslmode=require" --schema-only &gt; /dev/null</code></pre>
       </div>
       <p>RHEL 9.8 AppStreamでは<code>postgresql:18</code>のclientプロファイルを指定して更新。<code>dnf module enable</code>だけではストリーム選択にとどまるため、既存クライアントを実際に18へ更新する場合は<code>dnf module install postgresql:18/client</code>を実行する</p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf module install postgresql:18/client</code></pre>
       </div>
       <p>今回の実行ではストリーム18が有効になり、サーバーパッケージを追加せず、既存の<code>postgresql</code>と<code>postgresql-private-libs</code>が13.23から18.4へ更新された</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>psql --version</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump --version</code></pre>
       </div>
       <p>両方が18.4になった後、同じ<code>pg_dump 18.4</code>でBlueのPostgreSQL 13.23とGreenの18.4に対するスキーマダンプが成功した<br>コマンドが何も表示せずシェルへ戻れば、標準出力を<code>/dev/null</code>へ捨てているため正常<br>入力するパスワードはOSのrootではなく、RDSユーザー<code>pocadmin</code>のパスワード</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8 / Blue</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump "host=&lt;BLUE_ENDPOINT&gt; port=5432 dbname=pocdb user=pocadmin sslmode=require" --schema-only &gt; /dev/null</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>RHEL 9.8 / Green</span><button class="copy" type="button">Copy</button></div>
         <pre><code>pg_dump "host=&lt;GREEN_ENDPOINT&gt; port=5432 dbname=pocdb user=pocadmin sslmode=require" --schema-only &gt; /dev/null</code></pre>
       </div>
@@ -422,7 +422,7 @@ SET default_transaction_read_only = on;</code></pre>
         <pre><code>ALTER EXTENSION pg_stat_statements UPDATE;</code></pre>
       </div>
       <p>切替直前にはBlueの手動スナップショットも作成する。スナップショットは切替後の自動スイッチバックではなく、復旧判断時の選択肢として使用</p>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds create-db-snapshot \
   --db-instance-identifier poc-pg-db \
@@ -440,7 +440,7 @@ SET default_transaction_read_only = on;</code></pre>
         <figcaption>BlueとGreenの設定、レプリケーション状態、スイッチオーバーのタイムアウトを確認し、<code class="ui-value">切り替え</code>を選択</figcaption>
         <img src="../assets/img/amazon-rds-blue-green/09-switchover-review.png" alt="Blue Green Deploymentのスイッチオーバー設定確認" width="1718" height="1304" loading="lazy">
       </figure>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds switchover-blue-green-deployment \
   --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
@@ -457,14 +457,14 @@ SET default_transaction_read_only = on;</code></pre>
         <figcaption>旧Blueの<code>poc-pg-db-old1</code>を選択し、削除前の確認対象として識別</figcaption>
         <img src="../assets/img/amazon-rds-blue-green/11-old-blue-selected.png" alt="スイッチオーバー後に残った旧Blue DBの選択" width="1716" height="403" loading="lazy">
       </figure>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-blue-green-deployments \
   --blue-green-deployment-identifier &lt;BLUE_GREEN_DEPLOYMENT_IDENTIFIER&gt; \
   --query "BlueGreenDeployments[0].{Status:Status,Source:Source,Target:Target}" \
   --output json</code></pre>
       </div>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>CloudShell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>aws rds describe-db-instances \
   --db-instance-identifier &lt;PRODUCTION_DB_INSTANCE_IDENTIFIER&gt; \
@@ -501,10 +501,10 @@ SET default_transaction_read_only = on;</code></pre>
       <a class="active" href="#lab-environment">今回の検証環境</a>
       <a href="#summary">結論と使いどころ</a>
       <a href="#in-place">インプレース更新との違い</a>
-      <a href="#architecture">仕組みと切替フロー</a>
-      <a href="#prerequisites">対応条件・制約</a>
+      <a href="#architecture">仕組みと切替の内部フロー</a>
+      <a href="#prerequisites">対応条件・制約・依存関係</a>
       <a href="#procedure">実践手順</a>
-      <a href="#connection">DNS・接続・停止影響</a>
+      <a href="#connection">DNS・接続・停止影響の設計</a>
     </aside>
   </div>
 

@@ -35,7 +35,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a class="active" href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -78,14 +78,14 @@
       <h2 id="step-02">2. SELinuxの設定変更</h2>
       <p>Red Hat Enterprise Linux 9では <code>SELINUX=disabled</code> にすると起動や動作に影響する場合があるため、ログ出力のみの <code>permissive</code> に変更する</p>
       <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/selinux
 cp -pi /etc/selinux/config /root/config-backup/selinux/config.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルの編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/selinux/config</code></pre>
       </div>
@@ -97,19 +97,19 @@ cp -pi /etc/selinux/config /root/config-backup/selinux/config.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>4. 変更差分の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>diff -u /root/config-backup/selinux/config.bak /etc/selinux/config</code></pre>
       </div>
 
       <p class="procedure-step"><strong>5. 再起動前の一時反映</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>setenforce permissive</code></pre>
       </div>
 
       <p class="procedure-step"><strong>6. 動作状態の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>getenforce</code></pre>
       </div>
@@ -118,14 +118,14 @@ cp -pi /etc/selinux/config /root/config-backup/selinux/config.bak</code></pre>
       <h2 id="step-03">3. subscription-managerの無効化</h2>
       <p>AWS Marketplaceの従量課金（PAYG）RHEL AMIは、Red Hat Update Infrastructure（RHUI）から更新パッケージを取得し、Red Hat Subscription Management（RHSM）への登録を必要としません。この構成では<code>subscription-manager</code>プラグインを無効化する</p>
       <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/yum-plugin
 cp -pi /etc/yum/pluginconf.d/subscription-manager.conf /root/config-backup/yum-plugin/subscription-manager.conf.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルの編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/yum/pluginconf.d/subscription-manager.conf</code></pre>
       </div>
@@ -158,14 +158,14 @@ enabled=0</code></pre>
         </tbody>
       </table>
       <p class="procedure-step"><strong>1. <code>/etc/profile</code>のバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/profile
 cp -pi /etc/profile /root/config-backup/profile/profile.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. <code>/etc/profile</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/profile</code></pre>
       </div>
@@ -243,14 +243,14 @@ HISTTIMEFORMAT='%Y-%m-%d %T '</code></pre>
       </details>
 
       <p class="procedure-step"><strong>3. 新規ユーザー作成時に使用する雛形のバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/skel
 cp -pi /etc/skel/.bash_profile /root/config-backup/skel/bash_profile.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>4. 新規ユーザー用<code>.bash_profile</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/skel/.bash_profile</code></pre>
       </div>
@@ -276,19 +276,19 @@ PS1="[\u@\h \W \t]\\$ "</code></pre>
 
       <h2 id="step-05">5. ホスト名とhosts設定</h2>
       <p class="procedure-step"><strong>1. ホスト名の変更</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>hostnamectl set-hostname &lt;HOSTNAME&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. ホスト名の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>hostnamectl</code></pre>
       </div>
 
       <p class="procedure-step"><strong>3. <code>/etc/hosts</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/hosts</code></pre>
       </div>
@@ -301,13 +301,13 @@ PS1="[\u@\h \W \t]\\$ "</code></pre>
 
       <h2 id="step-06">6. タイムゾーン設定</h2>
       <p class="procedure-step"><strong>1. タイムゾーンの日本時間への変更</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>timedatectl set-timezone Asia/Tokyo</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 反映状態の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>timedatectl status</code></pre>
       </div>
@@ -315,14 +315,14 @@ PS1="[\u@\h \W \t]\\$ "</code></pre>
       <h2 id="step-07">7. sshd_config修正</h2>
       <p>SSHのrootログイン、タイムアウト、DNS逆引き、SFTPログ出力の設定</p>
       <p class="procedure-step"><strong>1. 設定ファイルのバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/ssh
 cp -pi /etc/ssh/sshd_config /root/config-backup/ssh/sshd_config.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルの編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/ssh/sshd_config</code></pre>
       </div>
@@ -342,7 +342,7 @@ Subsystem sftp /usr/libexec/openssh/sftp-server -f LOCAL3 -l VERBOSE</code></pre
       </div>
 
       <p class="procedure-step"><strong>4. sshdの再起動と反映</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl restart sshd.service</code></pre>
       </div>
@@ -363,20 +363,20 @@ Subsystem sftp /usr/libexec/openssh/sftp-server -f LOCAL3 -l VERBOSE</code></pre
         <p>既定ユーザー、rootログイン、SSH鍵、ユーザーデータの実行順序を要件として変更する場合だけ、変更前後の差分を確認して実施する</p>
       </div>
       <p class="procedure-step"><strong>1. cloud-initの完了状態を確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cloud-init status --long</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 変更が必要な場合だけ設定ファイルのバックアップを取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/cloud-init
 cp -pi /etc/cloud/cloud.cfg /root/config-backup/cloud-init/cloud.cfg.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>3. 設定ファイルの編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/cloud/cloud.cfg</code></pre>
       </div>
@@ -451,7 +451,7 @@ system_info:
       </details>
 
       <p class="procedure-step"><strong>4. 変更差分の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>diff -u /root/config-backup/cloud-init/cloud.cfg.bak /etc/cloud/cloud.cfg</code></pre>
       </div>
@@ -460,21 +460,21 @@ system_info:
       <p>EBSボリュームを追加する場合は、デバイス確認、ファイルシステム作成、マウントポイント作成、<code>/etc/fstab</code>追記まで実施します。NitroベースのEC2では、コンソール上のデバイス名とOS上のデバイス名が異なるため、必ず<code>lsblk</code>で対象を特定する</p>
 
       <p class="procedure-step"><strong>1. 追加ディスクの確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>lsblk -f
 file -s /dev/&lt;DEVICE_NAME&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. ファイルシステムとマウントポイントの作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkfs -t xfs /dev/&lt;DEVICE_NAME&gt;
 mkdir -p /data</code></pre>
       </div>
 
       <p class="procedure-step"><strong>3. 一時マウントとUUID確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mount /dev/&lt;DEVICE_NAME&gt; /data
 blkid /dev/&lt;DEVICE_NAME&gt;</code></pre>
@@ -487,7 +487,7 @@ blkid /dev/&lt;DEVICE_NAME&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>5. マウント設定の検証</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mount -a
 df -hT /data</code></pre>
@@ -502,38 +502,38 @@ df -hT /data</code></pre>
 
       <h3>既存EBSボリューム拡張後のOS側反映</h3>
       <p class="procedure-step"><strong>6. ファイルシステムとパーティション構成の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>lsblk -f
 df -hT</code></pre>
       </div>
 
       <p class="procedure-step"><strong>7. <code>growpart</code>未導入時のインストール</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf install -y cloud-utils-growpart</code></pre>
       </div>
 
       <p class="procedure-step"><strong>8. パーティション構成の場合のパーティション拡張</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>growpart /dev/&lt;DEVICE_NAME&gt; &lt;PARTITION_NUMBER&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>9. XFSファイルシステムの拡張</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>xfs_growfs &lt;MOUNT_POINT&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>10. ext4ファイルシステムの拡張</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>resize2fs /dev/&lt;PARTITION_DEVICE&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>11. 拡張結果の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>lsblk -f
 df -hT</code></pre>
@@ -547,39 +547,39 @@ df -hT</code></pre>
 
       <h2 id="step-10">10. swap領域作成</h2>
       <p class="procedure-step"><strong>1. 現在のswap領域の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>free | grep Swap | awk '{print $2}'</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. ルートファイルシステムの空き容量確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>df -h | grep /$ | awk '{print $4}'</code></pre>
       </div>
 
       <p class="procedure-step"><strong>3. swapファイルの作成と権限変更</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dd if=/dev/zero of=/.swapfile bs=512M count=4
 chmod 600 /.swapfile</code></pre>
       </div>
 
       <p class="procedure-step"><strong>4. swapの有効化</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkswap /.swapfile
 swapon /.swapfile</code></pre>
       </div>
 
       <p class="procedure-step"><strong>5. swap領域の再確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>free | grep Swap | awk '{print $2}'</code></pre>
       </div>
 
       <p class="procedure-step"><strong>6. <code>/etc/fstab</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/fstab</code></pre>
       </div>
@@ -607,7 +607,7 @@ swapon /.swapfile</code></pre>
       </table>
 
       <p class="procedure-step"><strong>1. 導入候補と利用可能なバージョンの確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf info httpd
 dnf module list php
@@ -621,7 +621,7 @@ dnf module list redis</code></pre>
       <p>OS標準リポジトリを優先し、要件を満たせない場合だけ、提供元、対応するRHEL 9のマイナーバージョン、保守期限を確認したうえで外部リポジトリを追加する</p>
 
       <p class="procedure-step"><strong>2. PostgreSQL 15クライアントを導入する例</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf module list postgresql
 dnf module enable postgresql:15
@@ -631,14 +631,14 @@ dnf module install postgresql/client</code></pre>
 
       <h2 id="step-12">12. Postfix設定</h2>
       <p class="procedure-step"><strong>1. PostfixとSASL認証パッケージのインストール</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>yum install postfix
 yum install cyrus-sasl-plain</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/postfix
 cp -pi /etc/postfix/main.cf /root/config-backup/postfix/main.cf.bak
@@ -646,7 +646,7 @@ cp -pi /etc/postfix/master.cf /root/config-backup/postfix/master.cf.bak</code></
       </div>
 
       <p class="procedure-step"><strong>3. <code>main.cf</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/postfix/main.cf</code></pre>
       </div>
@@ -659,7 +659,7 @@ mydomain = &lt;DOMAIN&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>5. <code>master.cf</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/postfix/master.cf</code></pre>
       </div>
@@ -713,20 +713,20 @@ bsmtp     unix  -       n       n       -       -       pipe
       </details>
 
       <p class="procedure-step"><strong>6. Postfixの再起動</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl stop postfix.service
 systemctl start postfix.service</code></pre>
       </div>
 
       <p class="procedure-step"><strong>7. 状態の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl status postfix.service</code></pre>
       </div>
 
       <p class="procedure-step"><strong>8. 自動起動状態の確認と有効化</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl is-enabled postfix.service
 systemctl enable postfix.service
@@ -734,34 +734,34 @@ systemctl is-enabled postfix.service</code></pre>
       </div>
 
       <p class="procedure-step"><strong>9. <code>s-nail</code>（<code>mail</code>、<code>mailx</code>コマンド）のインストール</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>yum install s-nail</code></pre>
       </div>
 
       <p class="procedure-step"><strong>10. メール送信の確認</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mail -s "test mail" &lt;MAIL_ADDRESS&gt;</code></pre>
       </div>
 
       <h2 id="step-13">13. Apache設定</h2>
       <p class="procedure-step"><strong>1. Apache関連パッケージの導入</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>yum install httpd.x86_64 httpd-devel.x86_64 httpd-filesystem.noarch httpd-tools.x86_64
 yum install mod_ssl</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. 設定ファイルのバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/httpd
 cp -pi /etc/httpd/conf/httpd.conf /root/config-backup/httpd/httpd.conf.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>3. <code>httpd.conf</code>の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/httpd/conf/httpd.conf</code></pre>
       </div>
@@ -838,14 +838,14 @@ IncludeOptional /etc/httpd/conf.d/*.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>4. <code>/etc/httpd/conf.d/</code>配下の不要ファイル削除</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cd /etc/httpd/conf.d/
 rm -i autoindex.conf README ssl.conf welcome.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>5. 文字コード設定ファイルの作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/httpd/conf.d/charaset.conf</code></pre>
       </div>
@@ -856,7 +856,7 @@ rm -i autoindex.conf README ssl.conf welcome.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>6. セキュリティ設定ファイルの作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/httpd/conf.d/security.conf</code></pre>
       </div>
@@ -870,7 +870,7 @@ FileETag none</code></pre>
       </div>
 
       <p class="procedure-step"><strong>7. VirtualHost読込設定の作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/httpd/conf.d/vhosts.conf</code></pre>
       </div>
@@ -882,20 +882,20 @@ Include conf/vhosts/*.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>8. 設定ファイルの権限変更</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>chmod 644 vhosts.conf charaset.conf security.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>9. VirtualHost用ディレクトリの作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir /etc/httpd/conf/vhosts
 chmod 755 /etc/httpd/conf/vhosts</code></pre>
       </div>
 
       <p class="procedure-step"><strong>10. VirtualHost設定の作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>cd /etc/httpd/conf/vhosts
 vi &lt;FQDN&gt;.conf</code></pre>
@@ -926,20 +926,20 @@ vi &lt;FQDN&gt;.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>12. VirtualHost設定の権限変更</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>chmod 644 &lt;FQDN&gt;.conf</code></pre>
       </div>
 
       <p class="procedure-step"><strong>13. ドキュメントルートの作成</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /var/www/&lt;FQDN&gt;/httpd
 chown -R apache:www /var/www/&lt;FQDN&gt;</code></pre>
       </div>
 
       <p class="procedure-step"><strong>14. 構文・VirtualHost一覧の確認とhttpdの再起動</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>httpd -t
 httpd -tS
@@ -948,7 +948,7 @@ systemctl start httpd.service</code></pre>
       </div>
 
       <p class="procedure-step"><strong>15. 自動起動の確認と有効化</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl is-enabled httpd.service
 systemctl enable httpd.service
@@ -957,7 +957,7 @@ systemctl is-enabled httpd.service</code></pre>
 
       <h2 id="step-14">14. 運用支援ツールの導入</h2>
       <p class="procedure-step"><strong>1. 運用・障害対応で利用する補助ツールの導入。Red Hat Enterprise Linux 9では<code>yum</code>もDNFへの互換コマンドですが、この手順では<code>dnf</code>を使用</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>dnf install -y telnet lftp mlocate libyaml wget mtr tcpdump tmux bash-completion net-tools</code></pre>
       </div>
@@ -980,14 +980,14 @@ systemctl is-enabled httpd.service</code></pre>
 
       <h2 id="step-15">15. logrotate設定</h2>
       <p class="procedure-step"><strong>1. 既存設定のバックアップ取得</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>mkdir -p /root/config-backup/logrotate
 cp -pi /etc/logrotate.conf /root/config-backup/logrotate/logrotate.conf.bak</code></pre>
       </div>
 
       <p class="procedure-step"><strong>2. logrotate設定の編集</strong></p>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div>
         <pre><code>vi /etc/logrotate.conf</code></pre>
       </div>
@@ -1015,21 +1015,21 @@ include /etc/logrotate.d
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#step-01">1. 起動時</a>
-      <a href="#step-02">2. SELinux</a>
-      <a href="#step-03">3. subscription-manager</a>
-      <a href="#step-04">4. profile</a>
-      <a href="#step-05">5. hostname</a>
-      <a href="#step-06">6. timezone</a>
-      <a href="#step-07">7. sshd</a>
-      <a href="#step-08">8. cloud-init</a>
-      <a href="#step-09">9. 追加ディスク</a>
-      <a href="#step-10">10. swap</a>
-      <a href="#step-11">11. ミドルウェア</a>
-      <a href="#step-12">12. Postfix</a>
-      <a href="#step-13">13. Apache</a>
-      <a href="#step-14">14. 運用支援ツール</a>
-      <a href="#step-15">15. logrotate</a>
+      <a class="active" href="#step-01">1. 起動時の確認</a>
+      <a href="#step-02">2. SELinuxの設定変更</a>
+      <a href="#step-03">3. subscription-managerの無効化</a>
+      <a href="#step-04">4. シェルのログインプロファイル設定</a>
+      <a href="#step-05">5. ホスト名とhosts設定</a>
+      <a href="#step-06">6. タイムゾーン設定</a>
+      <a href="#step-07">7. sshd_config修正</a>
+      <a href="#step-08">8. cloud-initの既定動作を確認</a>
+      <a href="#step-09">9. 追加ディスクのマウント</a>
+      <a href="#step-10">10. swap領域作成</a>
+      <a href="#step-11">11. ミドルウェアの導入</a>
+      <a href="#step-12">12. Postfix設定</a>
+      <a href="#step-13">13. Apache設定</a>
+      <a href="#step-14">14. 運用支援ツールの導入</a>
+      <a href="#step-15">15. logrotate設定</a>
     </aside>
   </div>
 

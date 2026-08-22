@@ -38,7 +38,7 @@
       <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
       <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
       <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
-      <a href="apache-acm-certificate-update.html">AWS Certificate Manager (ACM)</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
       <p class="sidebar-group">OS／ミドルウェア</p>
       <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
       <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
@@ -109,7 +109,7 @@
         ここでは復旧操作を行わず、全体像をつかむ
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>date
 hostnamectl
@@ -118,7 +118,7 @@ free -h
 df -hT
 df -ih
 systemctl --failed
-sudo journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise</code></pre>
+journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise</code></pre>
       </div>
 
       <table>
@@ -159,16 +159,16 @@ $ systemctl --failed
         まずjournalを時刻と重大度で確認し、必要に応じて <code>/var/log/messages</code> や <code>/var/log/secure</code> を確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>sudo journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise
+        <pre><code>journalctl -b -p err --since "-2 hours" --no-pager -o short-iso-precise
 
 if [ -f /var/log/messages ]; then
-  sudo grep -Ei 'error|fail|warn|oom|denied|read-only|no space' /var/log/messages | tail -n 100
+  grep -Ei 'error|fail|warn|oom|denied|read-only|no space' /var/log/messages | tail -n 100
 fi
 
 if [ -f /var/log/secure ]; then
-  sudo grep -Ei 'failed|invalid|denied|authentication|pam|sudo|sshd' /var/log/secure | tail -n 100
+  grep -Ei 'failed|invalid|denied|authentication|pam|sudo|sshd' /var/log/secure | tail -n 100
 fi</code></pre>
       </div>
 
@@ -206,7 +206,7 @@ Jul 13 10:24:12 host sshd[2345]: Failed password for invalid user test from 203.
         I/O待ち、プロセス滞留、短時間のスパイク、バックアップ処理、ログ圧縮などを分けて確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>uptime
 top -b -n 1 | head -n 20
@@ -230,12 +230,12 @@ ps -eo pid,ppid,user,stat,pcpu,pmem,etime,cmd --sort=-pmem | head -n 20</code></
         メモリ不足では、プロセス停止、応答遅延、OOM Killerによる強制終了、swap多用による性能劣化が起こる
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>free -h
 swapon --show
 ps -eo pid,ppid,user,stat,pcpu,pmem,rss,vsz,etime,cmd --sort=-rss | head -n 20
-sudo journalctl -k --since "-24 hours" --no-pager | grep -Ei 'out of memory|oom|killed process|memory cgroup'</code></pre>
+journalctl -k --since "-24 hours" --no-pager | grep -Ei 'out of memory|oom|killed process|memory cgroup'</code></pre>
       </div>
 
       <details class="example-details">
@@ -257,14 +257,14 @@ kernel: oom_reaper: reaped process 12345 (java)</code></pre>
         inode枯渇、読み取り専用マウント、I/Oエラー、ログ肥大、削除済みファイルをプロセスが掴んでいるケースを確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>df -hT
 df -ih
-sudo du -xhd1 /var 2&gt;/dev/null | sort -h
+du -xhd1 /var 2&gt;/dev/null | sort -h
 findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS
 findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS | grep -E '(^|[[:space:],])ro([,[:space:]]|$)'
-sudo journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_update_request'</code></pre>
+journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_update_request'</code></pre>
       </div>
 
       <table>
@@ -279,9 +279,9 @@ sudo journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_
         </tbody>
       </table>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>sudo lsof +L1</code></pre>
+        <pre><code>lsof +L1</code></pre>
       </div>
 
       <h2 id="systemd">7. プロセス・systemd</h2>
@@ -289,7 +289,7 @@ sudo journalctl -k --no-pager | grep -Ei 'I/O error|read-only|xfs|ext4|nvme|blk_
         サービス単位の障害では、systemdの状態、直近ログ、設定ファイル構文、実行ユーザー、依存サービスを確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl status &lt;SERVICE_NAME&gt;
 journalctl -u &lt;SERVICE_NAME&gt; -n 200 --no-pager
@@ -304,10 +304,10 @@ systemctl show &lt;SERVICE_NAME&gt; -p User -p Group -p ExecStart -p Restart -p 
           systemdでは環境変数、作業ディレクトリ、実行ユーザー、ulimit、PATHが対話シェルと異なることがあります
           <code>systemctl cat</code> と <code>systemctl show</code> でユニット定義を確認する
         </p>
-        <div class="code">
+        <div class="code" data-prompt="#">
           <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
           <pre><code>systemctl show &lt;SERVICE_NAME&gt; -p Environment -p WorkingDirectory -p LimitNOFILE
-sudo -u &lt;SERVICE_USER&gt; /path/to/command --check</code></pre>
+runuser -u &lt;SERVICE_USER&gt; -- /path/to/command --check</code></pre>
         </div>
       </details>
 
@@ -316,11 +316,11 @@ sudo -u &lt;SERVICE_USER&gt; /path/to/command --check</code></pre>
         通信不可では、OS内部、Security Group、Network ACL、ルートテーブル、DNS、アプリケーション応答のどこで止まっているかを分ける
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>ip addr
 ip route
-sudo ss -lntup
+ss -lntup
 curl -vI --connect-timeout 5 --max-time 10 https://&lt;FQDN&gt;/
 nc -vz -w 5 &lt;HOST&gt; &lt;PORT&gt;</code></pre>
       </div>
@@ -342,7 +342,7 @@ nc -vz -w 5 &lt;HOST&gt; &lt;PORT&gt;</code></pre>
         IPアドレスでは接続できるがFQDNでは失敗する場合、名前解決、検索ドメイン、キャッシュ、レコード変更の反映を確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>getent hosts &lt;FQDN&gt;
 dig &lt;FQDN&gt;
@@ -366,13 +366,13 @@ ip route get &lt;DESTINATION_IP&gt;</code></pre>
         SELinuxを無効化する前に、拒否ログを確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>getenforce
-sudo journalctl -t setroubleshoot --since "-2 hours" --no-pager
-sudo ausearch -m avc,user_avc -ts recent 2&gt;/dev/null
-sudo firewall-cmd --state
-sudo firewall-cmd --list-all
+journalctl -t setroubleshoot --since "-2 hours" --no-pager
+ausearch -m avc,user_avc -ts recent 2&gt;/dev/null
+firewall-cmd --state
+firewall-cmd --list-all
 ls -lZ &lt;PATH&gt;</code></pre>
       </div>
 
@@ -390,7 +390,7 @@ ls -lZ &lt;PATH&gt;</code></pre>
         OS時刻とNTP同期状態を確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>timedatectl
 chronyc tracking
@@ -406,7 +406,7 @@ chronyc sources -v</code></pre>
         証明書更新後に古い証明書が返る場合、LB、Webサーバー、証明書チェーン、SNI、キャッシュを確認する
       </p>
 
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>echo | openssl s_client -servername &lt;FQDN&gt; -connect &lt;FQDN&gt;:443 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates
 curl -vI --connect-timeout 5 --max-time 10 https://&lt;FQDN&gt;/</code></pre>
@@ -440,34 +440,34 @@ curl -vI --connect-timeout 5 --max-time 10 https://&lt;FQDN&gt;/</code></pre>
       </table>
 
       <h3>13.2 OS側の確認</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>sudo systemctl status sshd
-sudo journalctl -u sshd --since "-2 hours" --no-pager
+        <pre><code>systemctl status sshd
+journalctl -u sshd --since "-2 hours" --no-pager
 getent passwd &lt;USER&gt;
 id &lt;USER&gt;
-sudo passwd -S &lt;USER&gt;
-sudo chage -l &lt;USER&gt;
-sudo faillock --user &lt;USER&gt;
+passwd -S &lt;USER&gt;
+chage -l &lt;USER&gt;
+faillock --user &lt;USER&gt;
 grep -E '^(AllowUsers|DenyUsers|AllowGroups|DenyGroups|Match)' /etc/ssh/sshd_config
-sudo sshd -t</code></pre>
+sshd -t</code></pre>
       </div>
 
       <h3>13.3 ホームディレクトリ・鍵・SELinux</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
-        <pre><code>sudo ls -ld /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh
-sudo ls -l /home/&lt;USER&gt;/.ssh/authorized_keys
-sudo ls -Zd /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh /home/&lt;USER&gt;/.ssh/authorized_keys
+        <pre><code>ls -ld /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh
+ls -l /home/&lt;USER&gt;/.ssh/authorized_keys
+ls -Zd /home/&lt;USER&gt; /home/&lt;USER&gt;/.ssh /home/&lt;USER&gt;/.ssh/authorized_keys
 df -hT /home
 df -ih /home</code></pre>
       </div>
 
       <h3>13.4 AD / LDAP / SSSD利用時</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl status sssd
-sudo journalctl -u sssd --since "-2 hours" --no-pager
+journalctl -u sssd --since "-2 hours" --no-pager
 getent passwd &lt;USER&gt;
 id &lt;USER&gt;
 timedatectl
@@ -500,7 +500,7 @@ pam_faillock(sshd:auth): Consecutive login failures for user user account tempor
       </p>
 
       <h3>14.1 インスタンスメタデータ</h3>
-      <div class="code">
+      <div class="code" data-prompt="$">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id
@@ -537,10 +537,10 @@ aws ec2 describe-volume-status `
       </table>
 
       <h3>14.3 SSM Agent</h3>
-      <div class="code">
+      <div class="code" data-prompt="#">
         <div class="code-header"><span>bash</span><button class="copy" type="button">Copy</button></div>
         <pre><code>systemctl status amazon-ssm-agent
-sudo journalctl -u amazon-ssm-agent --since "-2 hours" --no-pager</code></pre>
+journalctl -u amazon-ssm-agent --since "-2 hours" --no-pager</code></pre>
       </div>
 
       <p>
@@ -574,21 +574,21 @@ sudo journalctl -u amazon-ssm-agent --since "-2 hours" --no-pager</code></pre>
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#initial-record">初動記録</a>
-      <a href="#quick-check">基本状態</a>
-      <a href="#logs">ログ確認</a>
-      <a href="#cpu">CPU・Load</a>
-      <a href="#memory">メモリ・Swap</a>
-      <a href="#disk">ディスク・I/O</a>
-      <a href="#systemd">systemd</a>
-      <a href="#network">通信確認</a>
-      <a href="#dns-route">DNS・ルート</a>
-      <a href="#security">Firewall・SELinux</a>
-      <a href="#time">時刻同期</a>
-      <a href="#tls">証明書・TLS</a>
-      <a href="#login">ログイン不可</a>
-      <a href="#ec2">EC2固有</a>
-      <a href="#faq">FAQ</a>
+      <a class="active" href="#initial-record">1. 初動で記録する情報</a>
+      <a href="#quick-check">2. 60秒で行う基本状態確認</a>
+      <a href="#logs">3. rsyslog / systemd-journal のログ確認</a>
+      <a href="#cpu">4. CPU・Load Average</a>
+      <a href="#memory">5. メモリ・Swap・OOM</a>
+      <a href="#disk">6. ディスク・inode・I/O</a>
+      <a href="#systemd">7. プロセス・systemd</a>
+      <a href="#network">8. ポート・TCP・TLS・HTTP</a>
+      <a href="#dns-route">9. 名前解決・ルーティング</a>
+      <a href="#security">10. Firewall・SELinux・ファイル権限</a>
+      <a href="#time">11. 時刻同期</a>
+      <a href="#tls">12. 証明書期限・TLS</a>
+      <a href="#login">13. OSユーザーでログインできない</a>
+      <a href="#ec2">14. EC2環境固有の確認</a>
+      <a href="#faq">15. 運用でよくある質問</a>
     </aside>
   </div>
 
