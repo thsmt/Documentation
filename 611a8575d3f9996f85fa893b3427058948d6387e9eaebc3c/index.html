@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation</title>
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --page: #f4f6f9;
+      --surface: rgba(255, 255, 255, 0.96);
+      --surface-muted: #f7f8fa;
+      --text: #1f2328;
+      --muted: #656d76;
+      --line: #d8dee4;
+      --accent: #0969da;
+      --accent-hover: #0757b9;
+      --danger: #cf222e;
+      --shadow: 0 22px 55px rgba(31, 35, 40, 0.14);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #0d1117;
+        --surface: rgba(22, 27, 34, 0.97);
+        --surface-muted: #161b22;
+        --text: #e6edf3;
+        --muted: #9da7b3;
+        --line: #30363d;
+        --accent: #58a6ff;
+        --accent-hover: #79b8ff;
+        --danger: #ff7b72;
+        --shadow: 0 22px 55px rgba(0, 0, 0, 0.34);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(9, 105, 218, 0.10), transparent 32rem),
+        var(--page);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      line-height: 1.7;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .lock-screen {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .unlock-card {
+      width: min(100%, 430px);
+      padding: 38px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .lock-mark {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      margin-bottom: 22px;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: #111827;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.08em;
+    }
+
+    .kicker,
+    .memo-label {
+      margin: 0 0 5px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    p {
+      margin-top: 0;
+    }
+
+    .unlock-card h1 {
+      margin-bottom: 8px;
+      font-size: clamp(25px, 5vw, 31px);
+      line-height: 1.25;
+    }
+
+    .description {
+      margin-bottom: 26px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .field {
+      margin-top: 17px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      outline: none;
+      color: var(--text);
+      background: var(--surface-muted);
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+
+    .unlock-button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 9px;
+      color: white;
+      background: var(--accent);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .unlock-button:hover {
+      background: var(--accent-hover);
+    }
+
+    .unlock-button:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .status {
+      min-height: 1.7em;
+      margin: 14px 0 0;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .protected-content {
+      width: min(100% - 32px, 920px);
+      margin: 48px auto;
+    }
+
+    .memo-card {
+      padding: clamp(25px, 5vw, 54px);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .memo-card h1 {
+      margin-bottom: 12px;
+      font-size: clamp(29px, 5vw, 45px);
+      line-height: 1.2;
+    }
+
+    .memo-lead {
+      margin-bottom: 34px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .memo-card section {
+      margin-top: 30px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+
+    .memo-card h2 {
+      margin-bottom: 12px;
+      font-size: 23px;
+    }
+
+    .memo-card li + li {
+      margin-top: 7px;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 18px 0 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-muted);
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 520px) {
+      .unlock-card {
+        padding: 28px 22px;
+      }
+
+      .protected-content {
+        margin: 20px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="lock-screen" class="lock-screen">
+    <section class="unlock-card" aria-labelledby="unlock-title">
+      <div class="lock-mark" aria-hidden="true">••</div>
+      <p class="kicker">Documentation</p>
+      <h1 id="unlock-title">認証が必要</h1>
+      <p class="description">暗号化されたページ</p>
+
+      <form id="unlock-form" autocomplete="off">
+        <div class="field">
+          <label for="username">ユーザー名</label>
+          <input id="username" name="username" type="text" required autocomplete="off" autocapitalize="none" spellcheck="false">
+        </div>
+
+        <div class="field">
+          <label for="password">パスワード</label>
+          <input id="password" name="password" type="password" required autocomplete="off">
+        </div>
+
+        <button id="unlock-button" class="unlock-button" type="submit">ページを開く</button>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <main id="protected-content" class="protected-content" hidden></main>
+
+  <noscript>JavaScriptが必要</noscript>
+
+  <script>
+    "use strict";
+
+    const encryptedPayload = Object.freeze({
+      iterations: 600000,
+      salt: "fWfguQLvrdV65ErdzZONdg==",
+      iv: "gGO1wncLMNbX7X2D",
+      ciphertext: "K0t+XwzheVln8xD9WO/TMgLV+I581s2kjKsV1lLgJAVndiIl/kglGYfjGxNrlIDpYETdbC3yiV9rKTxN5DoYh4OHV/6YtdbN7xGGvKA8Pu4t/AMKXB/1gZS/nUU0eud1mKEGd0F0q+H2d8RSKHB52jFz2IGB9+vgirIW2ZenzL4M8Pjl02KHqtth3skPS2RIF/8fUKZ1xycAZLJBh/EvtGCyxvUp6UedIUxUu8pY7yXvuf84uaGe4MNUf4Jg6DSUhC/BLE5uJKb8mSkAltvOBw2YXlsNoe8AnnaXzNVLn1K641jnSdN0aqsKHFx/j64Czfyq1GYK8iNe6YzjiHZXXhwdXPXV6SEPlsRfO57G12cB9ixRYAcpgHQaIoeHCh5tdPDF3xn1vO7Mt0ssVB5FPbh1x77LKWf1Qnw0PxApY8VW86hcdapqpzMAwnzhY0MTr9uhsFx7yDXIGY8h9Mg9Q9HcshIOXG0DUN93xfgg+rG3AGaREBKguhkJRc+VJpwM7j9X1FSp2dUGiNY6pBicOS7OIb5q0Lri3+rhSlpUD7mS8JIuvypj2fo/njt2aOT95EsiClNAm3VaKGF1Ackx1D1HTGKmT32vjZSo+IGn6hNFHcYzpnxR61JeIIs9ZMMxVNwmCxf+vwl9yd+z0SrrXgOXU96tOWnOp4EtrkPj7ZlIFQrh5GdQCt/LJbie9OO+xYqDvi05KI4uObDkUMzjcL5OjNOFX+NzfzxwLkumCEF/rkOXNCPwFEXipM+Vpb+CJIzQ8toUBe0n6nOwQNNzh5R+aDxAQPO7OkjSoO6tWeroPvW6MSwFsjeWKHVTF+r+UhLK0b/QUMn8uoCy8QJnCpVIoXl9y8fvg+xzB/lGdv8wdgjzQcjfpFO7r+G3Gem3DOtAPR397JT6XRtQ/f6oN02qzpY+Za6EMkPxUOAt1vnMyxs1pR2H53P3vlhgsApv+mxE83knvA1Sw/m54caraD6pOciFNiqu7pAHn/P9u9jFSCTk6pgfpd4JGOHZflx+jl23Ka9Ng+N41LGLTrb7Brku9EMsRxxW6RDD1PX3veyBW9cIK5bhMXDupjzj35X+nFi1WQkUcHkwJKhVIeDCz4J0lMNZGD+z0RwujgnwZqYlVayWyc7XAnEgx9fmyl9zvfqZu6IZO2Xbf3yxlHat3SIJDkewBb7wrf7eQ2QYnlRR/Id2iPc8hPN8k+WCW4QjOaiGEJO3EIDslsmrr/pwrWrQlYoUmgBRsdwXYGLdVHn6dmxNNpLNf8CWKI0i"
+    });
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const form = document.getElementById("unlock-form");
+    const button = document.getElementById("unlock-button");
+    const status = document.getElementById("status");
+    const lockScreen = document.getElementById("lock-screen");
+    const protectedContent = document.getElementById("protected-content");
+
+    function fromBase64(value) {
+      const binary = atob(value);
+      return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    }
+
+    async function decryptPage(username, password) {
+      const credential = `${username.normalize("NFKC")}\u0000${password.normalize("NFKC")}`;
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(credential),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+
+      const key = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          hash: "SHA-256",
+          salt: fromBase64(encryptedPayload.salt),
+          iterations: encryptedPayload.iterations
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+
+      const plaintext = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: fromBase64(encryptedPayload.iv)
+        },
+        key,
+        fromBase64(encryptedPayload.ciphertext)
+      );
+
+      return decoder.decode(plaintext);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      status.textContent = "";
+      button.disabled = true;
+      button.textContent = "確認中...";
+
+      const username = form.elements.username.value;
+      const password = form.elements.password.value;
+
+      try {
+        const pageHtml = await decryptPage(username, password);
+        form.reset();
+        protectedContent.innerHTML = pageHtml;
+        lockScreen.hidden = true;
+        protectedContent.hidden = false;
+        document.title = "Documentation";
+      } catch {
+        form.elements.password.value = "";
+        status.textContent = "認証情報が一致しない";
+        form.elements.password.focus();
+      } finally {
+        button.disabled = false;
+        button.textContent = "ページを開く";
+      }
+    });
+  </script>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
