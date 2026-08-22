@@ -57,7 +57,7 @@ foreach ($file in $files) {
         }
     }
 
-    if ($content -notmatch '<script\s+src="(?:\.\./)?assets/app\.js"></script>') {
+    if ($content -notmatch '<script\s+src="(?:\.\./)?assets/app\.js(?:\?[^\"]*)?"></script>') {
         $errors.Add("$relativePath`: missing shared assets/app.js")
     }
 
