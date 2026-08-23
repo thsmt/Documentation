@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terraform 学習ノート | Documentation</title>
-  <meta name="description" content="Terraform第1章から第3章の基本概念、主要コマンド、Docker Provider、AWS Provider、IAM認証、WordPress構築の学習ノート">
-  <link rel="stylesheet" href="../assets/styles.css?v=20260823-toc2">
+  <title>Terraform AWS運用リファレンス | Documentation</title>
+  <meta name="description" content="Terraformのインストール、CLIコマンド、AWS Providerとresourceブロック、IAM認証・権限、AWSエラー対処を整理した運用リファレンス">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref1">
 </head>
 <body>
   <header class="site-header">
@@ -30,7 +30,7 @@
       </div>
       <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
       <a href="cloudformation.html">CloudFormation 運用手順集</a>
-      <a class="active" href="terraform.html">Terraform 学習ノート</a>
+      <a class="active" href="terraform.html">Terraform AWS運用リファレンス</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
@@ -56,177 +56,93 @@
     </aside>
 
     <main class="content terraform-guide">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
-      <span>トピック</span>
-    </nav>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
 
-<p class="eyebrow">Terraform / Chapter 1–3</p>
-  <h1>Terraform 学習ノート</h1>
-  <p class="lead">第1章〜第3章で扱った基本概念、Ubuntuへの導入、Docker演習、AWSでのWordPress環境構築を、2026年8月22日の作業ログを基に整理したものです。実際のパスワード、AWSアカウントID、接続元IP、リソースIDは記載していない</p>
+      <p class="eyebrow">Terraform / AWS</p>
+      <h1>Terraform AWS運用リファレンス</h1>
+      <p class="lead">TerraformをUbuntuへインストールし、AWS ProviderでAWSリソースを管理するためのコマンド、構成ブロック、認証・権限、エラー対処を整理する</p>
 
-  <div class="callout">
-    <strong>ℹ️ このページで押さえる全体像</strong>
-    <p>Terraformは「何を作りたいか」をHCLで宣言し、Terraform Coreが依存関係を判断し、Providerを通してAWSやDockerなどのAPIを操作するツールです。基本の流れは <code class="inline-code">作成 → init → validate → plan → apply → 確認 → destroy</code> </p>
-  </div>
+      <div class="callout">
+        <strong>ℹ️ 基本の実行順序</strong>
+        <p><code class="inline-code">terraform fmt → init → validate → plan → apply</code>の順に実行し、適用後は<code class="inline-code">output</code>、<code class="inline-code">state list</code>、AWS側の実リソースを確認する</p>
+      </div>
 
-  <section>
-    <h2 id="architecture">Terraformが動く仕組み</h2>
-    <div class="architecture-flow" aria-label="Terraformの処理の流れ">
-      <span>main.tf / HCL</span><b>→</b><span>Terraform Core</span><b>→ RPC →</b><span>Provider</span><b>→ API →</b><span>AWS・Dockerなど</span>
-    </div>
-    <div class="architecture-flow return-flow" aria-label="Terraformの応答の流れ">
-      <span>実際のリソース</span><b>→ API応答 →</b><span>Provider</span><b>→ RPC →</b><span>Terraform Core</span><b>→</b><span>State・Output</span>
-    </div>
+      <section>
+        <h2 id="installation">Terraformのインストール</h2>
+        <p>Ubuntu／Debianでは、HashiCorpのGPGキーと公式APTリポジトリを登録してTerraform CLIをインストールする</p>
 
-    <table>
-      <thead><tr><th>構成要素</th><th>役割</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Terraform Core</strong></td><td><code class="inline-code">.tf</code>を読み、Stateを参照し、依存関係グラフを作り、Planを実行する</td></tr>
-        <tr><td><strong>RPC</strong></td><td>Terraform CoreとProviderプラグインが別プロセス間で通信する仕組み</td></tr>
-        <tr><td><strong>Provider</strong></td><td>AWS、Dockerなど各サービス固有のリソース定義と作成・参照・更新・削除処理を実装する</td></tr>
-        <tr><td><strong>API</strong></td><td>ProviderがAWS APIやDocker APIを呼び出し、実際のインフラを変更する</td></tr>
-        <tr><td><strong>State</strong></td><td>Terraformのリソースアドレスと、実環境のリソースを対応付ける</td></tr>
-      </tbody>
-    </table>
-
-    <div class="callout">
-      <strong>ℹ️ DSL・宣言型・実行順序</strong>
-      <p>Terraform languageはHCL構文を使う、インフラ構成用の宣言型DSLである。シェルスクリプトのように上から順番に命令を実行するのではなく、完成してほしい状態を記述する。<code class="inline-code">aws_instance.web</code> が <code class="inline-code">aws_security_group.web.id</code> を参照すると、Terraformが依存関係を検出して順序を決める</p>
-      <p>したがって、ブロックやファイルの記述順は原則として実行順になりません。ただし、リストの添字、文字列、式の意味まで「何でも同じ」になるわけではありません。参照で表せない隠れた依存関係に限り、<code class="inline-code">depends_on</code>を使う</p>
-    </div>
-  </section>
-
-  <section>
-    <h2 id="installation">Ubuntuへの導入と確認</h2>
-    <p>作業ログで確認できた環境です。長いパッケージ更新ログは省略し、再現に必要な要点だけを残す</p>
-    <table>
-      <tbody>
-        <tr><th>OS</th><td>Ubuntu 26.04 LTS</td></tr>
-        <tr><th>Terraform</th><td>v1.15.9（<code class="inline-code">/usr/bin/terraform</code>）</td></tr>
-        <tr><th>Docker Engine</th><td>29.7.2</td></tr>
-        <tr><th>Docker Provider</th><td>kreuzwerker/docker v4.5.0</td></tr>
-        <tr><th>AWS Provider</th><td>hashicorp/aws v6.61.0</td></tr>
-        <tr><th>Random Provider</th><td>hashicorp/random v3.9.0</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Terraformのインストール</h3>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>sudo apt-get update
-sudo apt-get install -y gnupg software-properties-common
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>Ubuntu / Debian</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y gnupg software-properties-common
 
 wget -O- https://apt.releases.hashicorp.com/gpg \
   | gpg --dearmor \
   | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg &gt; /dev/null
 
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release &amp;&amp; echo "$VERSION_CODENAME") main" \
+gpg --no-default-keyring \
+  --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+  --fingerprint
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?&lt;=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" \
   | sudo tee /etc/apt/sources.list.d/hashicorp.list
 
 sudo apt update
-sudo apt-get install -y terraform
+sudo apt-get install terraform</code></pre>
+        </div>
 
-terraform version
+        <h3>インストール確認</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform version
 command -v terraform
-terraform -install-autocomplete</code></pre>
-    </div>
-    <p class="meta">入力ミスの <code class="inline-code">terraform -install--autocomplete</code> は無効です。正しくは <code class="inline-code">terraform -install-autocomplete</code> </p>
+terraform -help
+terraform plan -help</code></pre>
+        </div>
 
-    <h3>Dockerのインストールと権限</h3>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>sudo apt update
-sudo apt install -y docker.io
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"
-newgrp docker
+        <h3>コマンド補完</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>Bash</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>touch ~/.bashrc
+terraform -install-autocomplete
+exec "$SHELL"</code></pre>
+        </div>
 
-docker version
-docker ps</code></pre>
-    </div>
-    <p>グループ追加後は、再ログインまたは <code class="inline-code">newgrp docker</code> が必要です。OS更新で新しいカーネルが導入された場合は、作業を中断できるタイミングで再起動し、<code class="inline-code">uname -r</code>で反映を確認する</p>
-  </section>
+        <p class="meta">HashiCorp公式のコマンドは<code class="inline-code">terraform -install-autocomplete</code>であり、<code class="inline-code">terraform -install--autocomplete</code>ではない</p>
+        <p>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli">HashiCorp Developer: Install Terraform</a></p>
+      </section>
 
-  <section>
-    <h2 id="files">フォルダとファイルの作り方</h2>
-    <div class="architecture-flow">
-      <span>フォルダ作成</span><b>→</b><span><code class="inline-code">main.tf</code>作成</span><b>→</b><span><code class="inline-code">terraform init</code></span><b>→</b><span><code class="inline-code">plan</code></span><b>→</b><span><code class="inline-code">apply</code></span>
-    </div>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>mkdir -p ~/terraform/stg
-cd ~/terraform/stg
-touch main.tf
-vi main.tf
+      <section>
+        <h2 id="commands">Terraform CLIコマンドリファレンス</h2>
+        <table class="command-table">
+          <thead><tr><th>コマンド</th><th>用途</th><th>運用上の確認点</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">terraform version</code></td><td>Terraform本体と実行環境を表示</td><td>チームやCIで利用するバージョンと一致させる</td></tr>
+            <tr><td><code class="inline-code">terraform fmt</code></td><td>HCLを標準形式へ整形</td><td>変更後に実行し、差分を確認</td></tr>
+            <tr><td><code class="inline-code">terraform init</code></td><td>Provider、Module、Backendを初期化</td><td>作業ディレクトリごとに最初に実行</td></tr>
+            <tr><td><code class="inline-code">terraform init -upgrade</code></td><td>制約内でProviderを再選択</td><td>lock fileとの差分とProviderの更新内容を確認</td></tr>
+            <tr><td><code class="inline-code">terraform validate</code></td><td>構成の構文・参照・引数を検証</td><td>認証やAWS上の権限までは検証しない</td></tr>
+            <tr><td><code class="inline-code">terraform providers</code></td><td>構成とStateが必要とするProviderを表示</td><td>想定外のProviderや古い参照がないか確認</td></tr>
+            <tr><td><code class="inline-code">terraform plan</code></td><td>適用予定の差分を表示</td><td>追加・更新・削除・置換を確認</td></tr>
+            <tr><td><code class="inline-code">terraform plan -out=tfplan</code></td><td>Planをファイルへ保存</td><td>レビューしたPlanをそのまま適用する場合に使用</td></tr>
+            <tr><td><code class="inline-code">terraform show tfplan</code></td><td>保存したPlanを表示</td><td>apply前の最終確認に使用</td></tr>
+            <tr><td><code class="inline-code">terraform apply tfplan</code></td><td>保存済みPlanを適用</td><td>Plan作成後の構成変更や認証先変更を避ける</td></tr>
+            <tr><td><code class="inline-code">terraform apply</code></td><td>Plan作成後に変更を適用</td><td><code class="inline-code">yes</code>入力前に対象と件数を確認</td></tr>
+            <tr><td><code class="inline-code">terraform output</code></td><td>定義済みoutputを表示</td><td>機密値は画面やログへ残さない</td></tr>
+            <tr><td><code class="inline-code">terraform state list</code></td><td>Stateの管理対象を一覧表示</td><td>作業ディレクトリとStateが正しいか確認</td></tr>
+            <tr><td><code class="inline-code">terraform state show &lt;ADDRESS&gt;</code></td><td>State内の1リソースを表示</td><td>機密属性が含まれる可能性に注意</td></tr>
+            <tr><td><code class="inline-code">terraform import</code></td><td>既存リソースをStateへ関連付け</td><td>先に対応するresourceブロックを作成</td></tr>
+            <tr><td><code class="inline-code">terraform plan -destroy</code></td><td>削除予定を事前表示</td><td>削除・再作成・データ保持条件を確認</td></tr>
+            <tr><td><code class="inline-code">terraform destroy</code></td><td>管理対象を削除</td><td>同じBackend、State、AWSアカウント、リージョンで実行</td></tr>
+          </tbody>
+        </table>
 
-terraform fmt
-terraform init
-terraform validate
-terraform plan
-terraform apply</code></pre>
-    </div>
-
-    <table>
-      <thead><tr><th>ファイル・ディレクトリ</th><th>用途</th><th>Git</th></tr></thead>
-      <tbody>
-        <tr><td><code class="inline-code">main.tf</code></td><td>Provider、Data、Resourceなどの構成</td><td>コミットする</td></tr>
-        <tr><td><code class="inline-code">terraform.tf</code></td><td>Terraform本体とProviderのバージョン制約</td><td>コミットする</td></tr>
-        <tr><td><code class="inline-code">variables.tf</code></td><td>入力変数</td><td>コミットする</td></tr>
-        <tr><td><code class="inline-code">outputs.tf</code></td><td>出力値</td><td>コミットする</td></tr>
-        <tr><td><code class="inline-code">wordpress.sh</code></td><td>EC2のuser_dataで実行する初期化処理</td><td>コミットする</td></tr>
-        <tr><td><code class="inline-code">.terraform/</code></td><td>ダウンロードしたProviderやModule</td><td>コミットしない</td></tr>
-        <tr><td><code class="inline-code">.terraform.lock.hcl</code></td><td>選択されたProviderバージョンとチェックサム</td><td>原則コミットする</td></tr>
-        <tr><td><code class="inline-code">terraform.tfstate</code></td><td>実リソースとの対応、属性、機密情報を含み得る</td><td>コミットしない</td></tr>
-      </tbody>
-    </table>
-    <div class="callout callout-warning"><strong>⚠️ 注意</strong> Terraformは同じディレクトリ内のすべての <code class="inline-code">*.tf</code> を1つのRoot Moduleとして読みます。<code class="inline-code">main.tf</code>と<code class="inline-code">terraform.tf</code>の両方に<code class="inline-code">required_providers</code>を定義すると、<em>Duplicate required providers configuration</em>になります。定義は1か所にまとめる</div>
-  </section>
-
-  <section>
-    <h2 id="commands">主要コマンド一覧（本書52ページ相当）</h2>
-    <p>手元の実行ログを基に、日常的に使うコマンドを目的別に再構成している</p>
-    <table class="command-table">
-      <thead><tr><th>コマンド</th><th>目的</th><th>ポイント</th></tr></thead>
-      <tbody>
-        <tr><td><code class="inline-code">terraform version</code></td><td>バージョン確認</td><td>実行環境のTerraformを確認</td></tr>
-        <tr><td><code class="inline-code">terraform fmt</code></td><td>HCL整形</td><td>構文が壊れている場合は修正できない</td></tr>
-        <tr><td><code class="inline-code">terraform init</code></td><td>作業ディレクトリ初期化</td><td>Provider、Module、Backendを準備</td></tr>
-        <tr><td><code class="inline-code">terraform init -upgrade</code></td><td>Provider再選択</td><td>lock fileの制約と設定変更が合わないときに使用</td></tr>
-        <tr><td><code class="inline-code">terraform validate</code></td><td>構成検証</td><td>参照や引数を含む内部整合性を確認</td></tr>
-        <tr><td><code class="inline-code">terraform providers</code></td><td>Provider確認</td><td>構成とStateが要求するProviderを表示</td></tr>
-        <tr><td><code class="inline-code">terraform plan</code></td><td>変更予告</td><td>実リソースは変更しない</td></tr>
-        <tr><td><code class="inline-code">terraform plan -out=tfplan</code></td><td>Plan保存</td><td>レビューした内容を固定</td></tr>
-        <tr><td><code class="inline-code">terraform show tfplan</code></td><td>保存Plan表示</td><td>適用前に再確認</td></tr>
-        <tr><td><code class="inline-code">terraform apply tfplan</code></td><td>保存Plan適用</td><td>保存済みの操作を実行</td></tr>
-        <tr><td><code class="inline-code">terraform apply</code></td><td>Plan作成後に適用</td><td><code class="inline-code">yes</code>で承認する前に変更数を確認</td></tr>
-        <tr><td><code class="inline-code">terraform output</code></td><td>Output表示</td><td>定義済みのoutputだけが表示される</td></tr>
-        <tr><td><code class="inline-code">terraform state list</code></td><td>管理対象一覧</td><td>Stateに登録されたアドレスを確認</td></tr>
-        <tr><td><code class="inline-code">terraform console</code></td><td>式の対話評価</td><td>機密値を画面に露出させない</td></tr>
-        <tr><td><code class="inline-code">terraform plan -destroy</code></td><td>削除内容の確認</td><td>削除前の安全確認</td></tr>
-        <tr><td><code class="inline-code">terraform destroy</code></td><td>管理対象を削除</td><td>同じ作業ディレクトリ・State・リージョンで実施</td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section>
-    <h2 id="workflow">構築の流れ（本書53ページ相当）</h2>
-    <ol class="step-list">
-      <li><strong>作業場所を決める</strong><span>環境ごとにディレクトリとStateを分け、<code class="inline-code">pwd</code>と<code class="inline-code">ls -la</code>を確認</span></li>
-      <li><strong>構成を書く</strong><span><code class="inline-code">main.tf</code>などに目的の状態を宣言</span></li>
-      <li><strong>整形する</strong><span><code class="inline-code">terraform fmt</code>で標準形式に</span></li>
-      <li><strong>初期化する</strong><span><code class="inline-code">terraform init</code>でProviderとBackendを準備</span></li>
-      <li><strong>検証する</strong><span><code class="inline-code">terraform validate</code>で構成の整合性を確認</span></li>
-      <li><strong>計画する</strong><span><code class="inline-code">terraform plan</code>で追加・変更・削除・置換を確認</span></li>
-      <li><strong>適用する</strong><span>問題がなければ<code class="inline-code">terraform apply</code>または保存Planを適用</span></li>
-      <li><strong>結果を確認する</strong><span><code class="inline-code">terraform output</code>、<code class="inline-code">terraform state list</code>、クラウド側の画面やAPIで確認</span></li>
-      <li><strong>変更を繰り返す</strong><span>構成修正後は再び<code class="inline-code">fmt → validate → plan → apply</code>を実行</span></li>
-      <li><strong>片付ける</strong><span>不要になった検証環境は<code class="inline-code">plan -destroy</code>を確認後に<code class="inline-code">destroy</code></span></li>
-    </ol>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>pwd
-ls -la
+        <h3>日常の実行例</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>pwd
 terraform fmt
 terraform init
 terraform validate
@@ -236,248 +152,254 @@ terraform show tfplan
 terraform apply tfplan
 terraform output
 terraform state list</code></pre>
-    </div>
-  </section>
+        </div>
 
-  <section>
-    <h2 id="plan-symbols">plan / apply結果の見方</h2>
-    <div class="symbol-grid">
-      <div class="symbol-card create"><b>+</b><span><strong>create</strong> 新規作成</span></div>
-      <div class="symbol-card destroy"><b>−</b><span><strong>destroy</strong> 削除</span></div>
-      <div class="symbol-card update"><b>~</b><span><strong>update in-place</strong> その場で更新</span></div>
-      <div class="symbol-card replace"><b>−/+</b><span><strong>replacement</strong> 削除して再作成</span></div>
-      <div class="symbol-card read"><b>&lt;=</b><span><strong>read</strong> Data Sourceを参照</span></div>
-    </div>
-    <table>
-      <tbody>
-        <tr><th><code class="inline-code">(known after apply)</code></th><td>作成・更新が終わるまで値が確定しない属性</td></tr>
-        <tr><th><code class="inline-code">(sensitive value)</code></th><td>画面表示は伏せられますが、Stateに保存される可能性がある</td></tr>
-        <tr><th><code class="inline-code"># forces replacement</code></th><td>その属性変更は現物更新できず、リソースを置換する</td></tr>
-        <tr><th><code class="inline-code">Plan: 12 to add, 0 to change, 0 to destroy.</code></th><td>作成12件、変更0件、削除0件という集計</td></tr>
-        <tr><th><code class="inline-code">Apply complete!</code></th><td>applyが完了した結果です。クラウド側の確認も続けて行う</td></tr>
-      </tbody>
-    </table>
-    <div class="callout callout-warning"><strong>⚠️ 削除と置換を確認</strong><p>特に注意する記号は <code class="inline-code">-</code> と <code class="inline-code">-/+</code> です。 置換には停止時間、IP変更、データ消失の可能性があります。件数だけでなく、各リソースの理由まで読んでから承認する</p></div>
-  </section>
+        <h3>Planの記号</h3>
+        <table>
+          <thead><tr><th>記号</th><th>意味</th><th>確認点</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">+</code></td><td>新規作成</td><td>作成先アカウント、リージョン、名前、費用</td></tr>
+            <tr><td><code class="inline-code">-</code></td><td>削除</td><td>データ消失、依存先、復旧方法</td></tr>
+            <tr><td><code class="inline-code">~</code></td><td>既存リソースを更新</td><td>停止や再起動の有無</td></tr>
+            <tr><td><code class="inline-code">-/+</code></td><td>削除後に再作成</td><td>ID・IP・エンドポイント変更と停止時間</td></tr>
+            <tr><td><code class="inline-code">&lt;=</code></td><td>Data Sourceを読み取り</td><td>参照先のアカウントとリージョン</td></tr>
+            <tr><td><code class="inline-code">(known after apply)</code></td><td>適用完了後に確定</td><td>未知値そのものはエラーではない</td></tr>
+          </tbody>
+        </table>
+      </section>
 
-  <section>
-    <h2 id="docker">第2章 Docker Provider演習</h2>
-    <p>Docker Providerを使い、Nginxイメージとコンテナを宣言して、ホストの8000番ポートで公開する基本演習</p>
-    <div class="code">
-      <div class="code-header"><span>main.tf</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>terraform {
-  required_providers {
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~&gt; 4.5"
-    }
-  }
-}
+      <section>
+        <h2 id="configuration">AWS Providerとresourceブロック</h2>
+        <p><code class="inline-code">terraform</code>ブロックでProviderの配布元とバージョン制約を宣言し、<code class="inline-code">provider</code>ブロックでAWSリージョンなどの接続設定を指定する。Providerのバージョンは<code class="inline-code">provider</code>ブロックへ書かず、<code class="inline-code">required_providers</code>へ指定する</p>
 
-provider "docker" {}
-
-resource "docker_image" "nginx" {
-  name         = "nginx:latest"
-  keep_locally = false
-}
-
-resource "docker_container" "nginx" {
-  name  = "terraform-nginx"
-  image = docker_image.nginx.image_id
-
-  ports {
-    internal = 80
-    external = 8000
-  }
-}</code></pre>
-    </div>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>mkdir -p ~/terraform/stg
-cd ~/terraform/stg
-vi main.tf
-terraform fmt
-terraform init
-terraform validate
-terraform plan
-terraform apply
-docker ps
-terraform destroy</code></pre>
-    </div>
-    <ul>
-      <li><code class="inline-code">stg.cf</code>のままではTerraform設定として読まれません。拡張子は<code class="inline-code">.tf</code>にする</li>
-      <li><code class="inline-code">sourve</code>ではなく<code class="inline-code">source</code>、<code class="inline-code">iprovider</code>ではなく<code class="inline-code">provider</code></li>
-      <li><code class="inline-code">terraform fmt</code>は有効なHCLを整形しますが、タイプミスや閉じ忘れを自動修復するコマンドではない</li>
-      <li><code class="inline-code">docker ps</code>でコンテナ状態と<code class="inline-code">0.0.0.0:8000-&gt;80/tcp</code>を確認する</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2 id="aws-auth">AWS Providerの認証と権限</h2>
-    <p>AWS ProviderはAWS APIを呼び出すため、Terraformを実行する主体にIAM権限が必要です。Provider blockへアクセスキーを書かず、環境変数、共有credentials file、コンテナロール、EC2インスタンスプロファイルなどから認証情報を取得する</p>
-
-    <table>
-      <thead><tr><th>認証元</th><th>用途</th><th>ポイント</th></tr></thead>
-      <tbody>
-        <tr><td>環境変数</td><td>ローカル検証・一時的な切り替え</td><td><code class="inline-code">AWS_ACCESS_KEY_ID</code>、<code class="inline-code">AWS_SECRET_ACCESS_KEY</code>、必要に応じて<code class="inline-code">AWS_SESSION_TOKEN</code>を使う</td></tr>
-        <tr><td>共有credentials file</td><td>AWS CLI profileとの共用</td><td><code class="inline-code">~/.aws/credentials</code>と<code class="inline-code">AWS_PROFILE</code>を使う</td></tr>
-        <tr><td>EC2インスタンスプロファイル</td><td>EC2上のTerraform</td><td>IMDSから有効期限付きの一時認証情報を自動取得します。AWSの推奨方式</td></tr>
-      </tbody>
-    </table>
-
-    <div class="callout">
-      <strong>ℹ️ 認証情報の優先順位</strong>
-      <p>AWS Providerでは環境変数がEC2インスタンスプロファイルより先に評価されます。したがって、IAMユーザーのアクセスキーを試すためにEC2ロールを外す必要はありません。<code class="inline-code">AWS_EC2_METADATA_DISABLED=true</code>を追加すると、検証中にIMDSへフォールバックしないことも明示できる</p>
-    </div>
-
-    <div class="callout callout-warning">
-      <strong>⚠️ bootstrapの順番</strong>
-      <p>TerraformでIAMユーザーを作る処理そのものにも<code class="inline-code">iam:CreateUser</code>や<code class="inline-code">iam:AttachUserPolicy</code>が必要です。先にEC2ロールを外すと作成できません。現在のEC2ロールを使う専用ディレクトリと専用Stateでユーザーを作成し、その後に認証方法を切り替える</p>
-    </div>
-
-    <h3>IAMユーザーとアクセスキーを作るmain.tf</h3>
-    <div class="callout">
-      <strong>ℹ️ 提示コードで作成できるもの</strong>
-      <p>IAMユーザー、アクセスキー、EC2の参照専用inline policyを作成できます。構文の考え方は正しいですが、<code class="inline-code">ec2:Describe*</code>は参照専用です。EC2、Security Group、EIP、RDSを作成する現在のWordPress構成を<code class="inline-code">terraform apply</code>する権限はない</p>
-    </div>
-
-    <div class="code">
-      <div class="code-header"><span>bootstrap-iam/main.tf</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>terraform {
-  required_version = ">= 1.5.0"
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>terraform.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform {
+  required_version = "&gt;= 1.5.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0"
+      version = "~&gt; 6.0"
     }
   }
-}
+}</code></pre>
+        </div>
 
-provider "aws" {
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>main.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>provider "aws" {
   region = "ap-northeast-1"
 
   default_tags {
     tags = {
       ManagedBy   = "Terraform"
-      Environment = "learning"
+      Environment = "stg"
+      Project     = "WordPress"
     }
   }
+}</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ required_providersはRoot Module内で1か所</strong>
+          <p><code class="inline-code">main.tf</code>と<code class="inline-code">terraform.tf</code>の両方に<code class="inline-code">required_providers</code>を定義すると、<em>Duplicate required providers configuration</em>になる。ファイル名ではなく、同じディレクトリにあるすべての<code class="inline-code">*.tf</code>が1つのRoot Moduleとして読み込まれる</p>
+        </div>
+
+        <h3>resourceブロックの読み方</h3>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>基本構文</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>resource "aws_instance" "web" {
+  ami           = "&lt;AMI_ID_IN_AP_NORTHEAST_1&gt;"
+  instance_type = "t2.micro"
+}</code></pre>
+        </div>
+
+        <table>
+          <thead><tr><th>記述</th><th>意味</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">resource</code></td><td>Terraformが作成・更新・削除を管理するリソース</td></tr>
+            <tr><td><code class="inline-code">aws_instance</code></td><td>AWS Providerが定義するリソースタイプ</td></tr>
+            <tr><td><code class="inline-code">web</code></td><td>Terraform構成内だけで使うローカル名</td></tr>
+            <tr><td><code class="inline-code">aws_instance.web</code></td><td>ほかのブロックから参照するリソースアドレス</td></tr>
+            <tr><td><code class="inline-code">ami</code>など</td><td>リソースタイプ固有の引数</td></tr>
+          </tbody>
+        </table>
+
+        <h3>既存VPC・Subnetを参照するData Source</h3>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>network.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>data "aws_vpc" "existing" {
+  id = "&lt;VPC_ID&gt;"
 }
 
-resource "aws_iam_user" "terraform_operator" {
-  name          = "terraform-wordpress-operator"
-  path          = "/system/"
-  force_destroy = false
+data "aws_subnet" "public_1a" {
+  id = "&lt;PUBLIC_SUBNET_ID&gt;"
+}
+
+data "aws_subnet" "private_1a" {
+  id = "&lt;PRIVATE_SUBNET_1A_ID&gt;"
+}
+
+data "aws_subnet" "private_1c" {
+  id = "&lt;PRIVATE_SUBNET_1C_ID&gt;"
+}</code></pre>
+        </div>
+
+        <p>Data Sourceで参照したVPC・Subnetは、参照しただけではTerraformの削除対象にならない。新規作成したresourceと既存ネットワークの管理境界を明確にする</p>
+
+        <h3>WordPress構成で使用するAWSリソース</h3>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>main.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>resource "aws_security_group" "web" {
+  name        = "terraform-wordpress-web-sg"
+  description = "Security group for WordPress web server"
+  vpc_id      = data.aws_vpc.existing.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "web_http" {
+  security_group_id = aws_security_group.web.id
+  description       = "HTTP from Internet"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "web_all" {
+  security_group_id = aws_security_group.web.id
+  description       = "Allow all outbound traffic"
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_instance" "web" {
+  ami                         = "&lt;AMI_ID_IN_AP_NORTHEAST_1&gt;"
+  instance_type               = "t2.micro"
+  key_name                    = "&lt;KEY_PAIR_NAME&gt;"
+  subnet_id                   = data.aws_subnet.public_1a.id
+  associate_public_ip_address = true
+  vpc_security_group_ids      = [aws_security_group.web.id]
+  user_data                   = file("${path.module}/wordpress.sh")
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
 
   tags = {
-    Purpose = "Terraform learning"
-    Owner   = "&lt;YOUR_NAME&gt;"
+    Name = "terraform-wordpress-web"
   }
 }
 
-resource "aws_iam_access_key" "terraform_operator" {
-  user = aws_iam_user.terraform_operator.name
-}
+resource "aws_eip" "wordpress" {
+  domain   = "vpc"
+  instance = aws_instance.web.id
 
-data "aws_iam_policy_document" "terraform_operator_ec2_read_only" {
-  statement {
-    sid       = "DescribeEC2"
-    effect    = "Allow"
-    actions   = ["ec2:Describe*"]
-    resources = ["*"]
+  tags = {
+    Name = "terraform-wordpress-eip"
   }
-}
-
-resource "aws_iam_user_policy" "terraform_operator_ec2_read_only" {
-  name   = "terraform-ec2-describe"
-  user   = aws_iam_user.terraform_operator.name
-  policy = data.aws_iam_policy_document.terraform_operator_ec2_read_only.json
-}
-
-output "iam_user_name" {
-  value = aws_iam_user.terraform_operator.name
-}
-
-output "aws_access_key_id" {
-  value     = aws_iam_access_key.terraform_operator.id
-  sensitive = true
-}
-
-output "aws_secret_access_key" {
-  value     = aws_iam_access_key.terraform_operator.secret
-  sensitive = true
 }</code></pre>
-    </div>
+        </div>
 
-    <h3>ユーザーが変更する値</h3>
-    <table>
-      <thead><tr><th>指定値</th><th>例</th><th>説明</th></tr></thead>
-      <tbody>
-        <tr><td><code class="inline-code">terraform_operator</code></td><td>Terraform内のローカル名</td><td>AWS上の名前ではない。変更する場合は、すべての<code class="inline-code">aws_iam_user.terraform_operator</code>などの参照も同じ名前へ変更する。通常はそのままでよい</td></tr>
-        <tr><td><code class="inline-code">name</code></td><td><code class="inline-code">terraform-wordpress-operator</code></td><td>AWS上に作成されるIAMユーザー名です。同一AWSアカウント内で重複しない名前へ変更する</td></tr>
-        <tr><td><code class="inline-code">path</code></td><td><code class="inline-code">/system/</code></td><td>IAMユーザーを論理的に分類するパスです。先頭と末尾を<code class="inline-code">/</code>にします。不要なら<code class="inline-code">/</code>を使用できる</td></tr>
-        <tr><td><code class="inline-code">Purpose</code>、<code class="inline-code">Owner</code></td><td>タグのキーと値</td><td>管理・検索・費用管理用の任意メタデータです。権限そのものには影響しません。<code class="inline-code">&lt;YOUR_NAME&gt;</code>を管理者名や識別名へ変更する</td></tr>
-        <tr><td><code class="inline-code">sid</code></td><td><code class="inline-code">DescribeEC2</code></td><td>IAM policy statementの識別名です。任意ですが、英数字で目的が分かる名前にする</td></tr>
-        <tr><td><code class="inline-code">actions</code></td><td><code class="inline-code">ec2:Describe*</code></td><td>許可するAWS API操作です。この例はEC2の参照操作だけです。作成・更新・削除権限はない</td></tr>
-        <tr><td><code class="inline-code">resources</code></td><td><code class="inline-code">*</code></td><td>権限の対象リソースです。EC2のDescribe系APIは個別ARNへ限定できない操作が多いため、この例では全リソースを指定する</td></tr>
-        <tr><td>policyの<code class="inline-code">name</code></td><td><code class="inline-code">terraform-ec2-describe</code></td><td>IAMユーザーへ直接埋め込むinline policy名です。用途が分かる名前へ変更できる</td></tr>
-        <tr><td>Providerの<code class="inline-code">region</code></td><td><code class="inline-code">ap-northeast-1</code></td><td>Terraformが操作する既定リージョンです。IAMはグローバルサービスですが、EC2やRDSなどの操作先を決めるために指定する</td></tr>
-      </tbody>
-    </table>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>database.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>resource "aws_db_subnet_group" "wordpress" {
+  name = "terraform-wordpress-db-subnet-group"
+  subnet_ids = [
+    data.aws_subnet.private_1a.id,
+    data.aws_subnet.private_1c.id
+  ]
+}
 
-    <h3>現在のWordPress構成をapplyする場合</h3>
-    <div class="callout callout-warning">
-      <strong>⚠️ ec2:Describe*だけでは構築できない</strong>
-      <p>認証の切り替え確認だけなら上記inline policyで十分です。現在の第3章を構築する場合はEC2・VPC・Security Group・EIP・RDSなどの作成・更新・削除権限が必要です。学習環境では、上記の<code class="inline-code">aws_iam_policy_document</code>と<code class="inline-code">aws_iam_user_policy</code>を削除し、次のattachmentへ置き換える</p>
-    </div>
-    <div class="code">
-      <div class="code-header"><span>WordPress構築用の検証権限</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>resource "aws_iam_user_policy_attachment" "terraform_operator_power_user" {
-  user       = aws_iam_user.terraform_operator.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+resource "aws_db_instance" "wordpress" {
+  identifier             = "terraform-wordpress"
+  engine                 = "mysql"
+  engine_version         = "8.4"
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  storage_type           = "gp3"
+  storage_encrypted      = true
+  db_name                = "wpdb"
+  username               = "dba"
+  password               = random_password.wordpress.result
+  db_subnet_group_name   = aws_db_subnet_group.wordpress.name
+  vpc_security_group_ids = [aws_security_group.db.id]
+  publicly_accessible    = false
+  skip_final_snapshot    = true
 }</code></pre>
-    </div>
-    <p><code class="inline-code">PowerUserAccess</code>は広い権限を持つAWS managed policyであり、最小権限ではありません。学習後はCloudTrailやIAM Access Analyzerで必要な操作を確認し、対象サービス・操作・リソースを限定したカスタマー管理ポリシーへ置き換える</p>
+        </div>
 
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>EC2ロールを使うbootstrap</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>mkdir -p ~/terraform/bootstrap-iam
-cd ~/terraform/bootstrap-iam
-vi main.tf
-terraform fmt
-terraform init
-terraform validate
-terraform plan -out=tfplan
-terraform apply tfplan
-terraform output iam_user_name</code></pre>
-    </div>
+        <p>出典：<a href="https://developer.hashicorp.com/terraform/language/block/provider">HashiCorp Developer: Provider block reference</a></p>
+        <p>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create">HashiCorp Developer: Create infrastructure</a></p>
+      </section>
 
-    <div class="callout callout-warning">
-      <strong>⚠️ Access KeyはTerraform Stateへ保存される</strong>
-      <p><code class="inline-code">aws_iam_access_key</code>で作成したSecret Access KeyはTerraform Stateに保存されます。<code class="inline-code">sensitive = true</code>は通常表示を伏せますが、Stateを暗号化しません。<code class="inline-code">terraform.tfstate</code>をGitへ追加せず、アクセス制御された暗号化ストレージで管理する</p>
-    </div>
+      <section>
+        <h2 id="authentication">AWS Providerへ認証情報と権限を与える</h2>
+        <p>AWS ProviderがAPIを呼び出すには、認証情報とIAM権限の両方が必要になる。アクセスキーやIAMロールは「誰として実行するか」を決め、IAMポリシーは「何を操作できるか」を決める</p>
 
-    <h3>Terraformの出力をCSVへ保存する</h3>
-    <p>Terraformで作成したアクセスキーには、AWS Management Consoleの「Download .csv file」ボタンは表示されません。必要な場合はsensitive outputから一度だけCSVを作り、所有者だけが読める権限へ制限</p>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>bootstrapディレクトリで実行</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>cd ~/terraform/bootstrap-iam
-umask 077
+        <h3>書籍に記載される直接指定方式（非推奨）</h3>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>非推奨の例</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>provider "aws" {
+  region     = "ap-northeast-1"
+  access_key = "&lt;AWS_ACCESS_KEY_ID&gt;"
+  secret_key = "&lt;AWS_SECRET_ACCESS_KEY&gt;"
+}</code></pre>
+        </div>
 
-printf '"User name","Access key ID","Secret access key"\n"%s","%s","%s"\n' \
-  "$(terraform output -raw iam_user_name)" \
-  "$(terraform output -raw aws_access_key_id)" \
-  "$(terraform output -raw aws_secret_access_key)" \
-  &gt; ~/terraform-wordpress-operator.csv
+        <div class="callout callout-warning">
+          <strong>⚠️ .tfへアクセスキーを書かない</strong>
+          <p>この方式はProviderへ認証情報を渡す仕組みを理解しやすい一方、Git、バックアップ、画面共有、レビュー、ログなどから長期認証情報が漏えいする危険がある。実際のアクセスキーを<code class="inline-code">main.tf</code>や<code class="inline-code">terraform.tfvars</code>へ直接記述しない</p>
+        </div>
 
-chmod 600 ~/terraform-wordpress-operator.csv</code></pre>
-    </div>
+        <h3>推奨順位</h3>
+        <table>
+          <thead><tr><th>実行場所</th><th>推奨する認証方法</th><th>特徴</th></tr></thead>
+          <tbody>
+            <tr><td>EC2、ECS、Lambda</td><td>IAMロール</td><td>AWSが有効期限付きの一時認証情報を提供する。長期アクセスキーの配布が不要</td></tr>
+            <tr><td>CI/CD</td><td>OIDCなどによるAssumeRole</td><td>ジョブごとに一時認証情報を取得できる</td></tr>
+            <tr><td>人が操作する端末</td><td>IAM Identity CenterまたはAssumeRole</td><td>フェデレーションと一時認証情報を利用できる</td></tr>
+            <tr><td>ローカル検証</td><td>名前付きAWS CLIプロファイル</td><td>複数アカウント・Roleを切り替えやすい</td></tr>
+            <tr><td>短時間の互換性確認</td><td>環境変数</td><td>現在のシェルだけへ設定し、終了後に解除する</td></tr>
+            <tr><td>ロールを利用できない例外</td><td>IAMユーザーの長期アクセスキー</td><td>最小権限、保管、失効、ローテーションが必要</td></tr>
+          </tbody>
+        </table>
 
-    <h3>CSVのアクセスキーで実行する</h3>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>現在のシェルだけに設定</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>set +o history
+        <h3>EC2インスタンスプロファイル（推奨）</h3>
+        <p>Terraformを実行するEC2へIAMロールを割り当てると、AWS ProviderはIMDSから一時認証情報を自動取得する。Providerブロックにはリージョンなどの非機密設定だけを記述する</p>
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>main.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>provider "aws" {
+  region = "ap-northeast-1"
+}</code></pre>
+        </div>
+
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>認証主体を確認</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>aws sts get-caller-identity
+aws configure list
+printenv | grep '^AWS_' || true</code></pre>
+        </div>
+
+        <h3>名前付きプロファイル</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>ローカル端末</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>aws configure --profile terraform-dev
+export AWS_PROFILE="terraform-dev"
+export AWS_DEFAULT_REGION="ap-northeast-1"
+
+aws sts get-caller-identity
+aws configure list
+terraform plan</code></pre>
+        </div>
+
+        <p><code class="inline-code">AWS_PROFILE</code>を設定すると、<code class="inline-code">~/.aws/credentials</code>または<code class="inline-code">~/.aws/config</code>の名前付きプロファイルを選択できる。環境変数のアクセスキーが同時に設定されている場合は、環境変数がプロファイルより優先される</p>
+
+        <h3>環境変数（短時間の検証）</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>現在のシェルだけに設定</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>set +o history
 
 export AWS_ACCESS_KEY_ID="&lt;CSVにあるアクセスキー&gt;"
 export AWS_SECRET_ACCESS_KEY="&lt;CSVにあるシークレットアクセスキー&gt;"
@@ -486,206 +408,108 @@ export AWS_EC2_METADATA_DISABLED="true"
 
 aws sts get-caller-identity
 aws configure list
+terraform plan
 
-cd ~/chapter3
-terraform init
-terraform plan</code></pre>
-    </div>
-    <p><code class="inline-code">aws sts get-caller-identity</code>のARNが<code class="inline-code">user/terraform-wordpress-operator</code>になっていることを確認してから<code class="inline-code">terraform apply</code>を実行します。Access Key IDやSecret Access Keyを<code class="inline-code">main.tf</code>、シェル履歴、Git、画面共有、作業ログへ残さない</p>
-
-    <h3>検証後の後片付け</h3>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>環境変数を解除</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>unset AWS_ACCESS_KEY_ID
+unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY
 unset AWS_SESSION_TOKEN
 unset AWS_DEFAULT_REGION
 unset AWS_EC2_METADATA_DISABLED
-set -o history
 
-aws sts get-caller-identity</code></pre>
-    </div>
-    <p>学習が終わったら、必要に応じて<code class="inline-code">rm -f ~/terraform-wordpress-operator.csv</code>で平文CSVを削除します。IAMユーザーも不要であれば、EC2ロールを再設定して認証を戻し、<code class="inline-code">~/terraform/bootstrap-iam</code>で<code class="inline-code">terraform destroy</code>します。EC2への接続をSystems Manager Session Managerに依存している場合、SSM用ロールを外すと接続を失う可能性があるため、ロールを外さない構成を推奨する</p>
-  </section>
+set -o history</code></pre>
+        </div>
 
-  <section>
-    <h2 id="aws">第3章 AWS Provider演習</h2>
-    <p>最初にEC2の小さな構成で認証・リージョン・AMI・サブネットを確認し、その後、既存VPCをData Sourceで参照してWordPress用EC2、EIP、Security Group、RDSを作成した</p>
+        <p><code class="inline-code">AWS_EC2_METADATA_DISABLED=true</code>を指定すると、検証中にEC2のIMDSへフォールバックしない。環境変数は現在のシェルにだけ設定し、シェル初期化ファイルへ長期アクセスキーを保存しない</p>
 
-    <h3>認証の確認</h3>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>AWS CLI / instance metadata</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>aws sts get-caller-identity
-aws configure list
+        <h3>IAMポリシーでAWS操作を許可する</h3>
+        <p>認証に成功しても、実行主体へ必要なIAM権限がなければ<code class="inline-code">UnauthorizedOperation</code>や<code class="inline-code">AccessDenied</code>になる。EC2、VPC、Security Group、EIP、RDSなど、Terraformが実行するAPI操作をIAMポリシーで許可する</p>
+
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>検証用の広い権限</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>resource "aws_iam_user" "terraform_operator" {
+  name = "terraform-wordpress-operator"
+  path = "/system/"
+}
+
+resource "aws_iam_user_policy_attachment" "terraform_operator_power_user" {
+  user       = aws_iam_user.terraform_operator.name
+  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+}</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ PowerUserAccessは最小権限ではない</strong>
+          <p>AWS managed policyは検証開始時の権限付与には利用できるが、対象環境に必要な最小権限とは限らない。CloudTrailやIAM Access Analyzerで実際の操作を確認し、EC2・VPC・RDSなど必要なActionとResourceへ限定したカスタマー管理ポリシーへ移行する</p>
+        </div>
+
+        <p>AWS公式手順：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html">Security best practices in IAM</a></p>
+        <p>AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">Configuring environment variables for the AWS CLI</a></p>
+      </section>
+
+      <section>
+        <h2 id="aws-errors">AWSエラーの対処法</h2>
+        <p>エラー発生時は、Terraformの構文だけでなく、実行ディレクトリ、State、認証主体、AWSアカウント、リージョン、IAM権限を順に切り分ける</p>
+
+        <h3>最初に確認するコマンド</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>diagnostics</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>pwd
+ls -la
 printenv | grep '^AWS_' || true
-curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/</code></pre>
-    </div>
-    <p>作業EC2にはIAMインスタンスプロファイルを付け、長期アクセスキーを<code class="inline-code">main.tf</code>へ書かない構成にします。<em>UnauthorizedOperation: ec2:RunInstances</em> は、Terraformの構文ではなくIAM権限不足だった</p>
-
-    <h3>AWSで発生した代表的なエラー</h3>
-    <table>
-      <thead><tr><th>症状</th><th>原因</th><th>学び</th></tr></thead>
-      <tbody>
-        <tr><td><code class="inline-code">InvalidAMIID.NotFound</code></td><td>AMI IDとProviderのリージョンが不一致</td><td>AMIはリージョン固有です。<code class="inline-code">aws ec2 describe-images --region ...</code>で確認する</td></tr>
-        <tr><td><code class="inline-code">InvalidParameterValue</code> / subnet関連</td><td>Default VPCに利用可能なDefault Subnetがない</td><td><code class="inline-code">subnet_id</code>を明示する</td></tr>
-        <tr><td>Provider lock不一致</td><td>設定のバージョン制約を変更したがlock fileは旧選択のまま</td><td><code class="inline-code">terraform init -upgrade</code>で再選択する</td></tr>
-        <tr><td><code class="inline-code">Duplicate required providers configuration</code></td><td>同じRoot Moduleに<code class="inline-code">required_providers</code>が2か所</td><td><code class="inline-code">main.tf</code>または<code class="inline-code">terraform.tf</code>の1か所へ統合する</td></tr>
-        <tr><td>Homeで<code class="inline-code">destroy</code>しても対象なし</td><td>Stateが<code class="inline-code">~/terraform/stg</code>にあり、別ディレクトリで実行</td><td>先に<code class="inline-code">pwd</code>と<code class="inline-code">terraform state list</code>を確認する</td></tr>
-      </tbody>
-    </table>
-
-    <h3>リージョン変更で起きた置換事故</h3>
-    <div class="callout callout-warning">
-      <strong>⚠️ リージョン変更による置換</strong>
-      <p><code class="inline-code">ap-northeast-3</code>で作成済みのStateを持ったままProviderを<code class="inline-code">ap-northeast-1</code>へ変えると、SubnetやENIなどが大量の<code class="inline-code">-/+</code>になった。東京リージョンからは大阪リージョンのVPC IDが見つからず、<code class="inline-code">InvalidVpcID.NotFound</code>になり、RDSのサービス管理ENIも手動では切り離せなかった</p>
-      <p><strong>正しい考え方:</strong> 元のリージョンへ設定を戻し、元のStateで既存リソースを安全に削除または移行計画を立てます。その後、新リージョンは別ディレクトリ・別Stateで構築します。リージョン文字列だけを変更してapplyしない</p>
-    </div>
-
-    <h3>既存ネットワークを参照する構成</h3>
-    <div class="code">
-      <div class="code-header"><span>main.tf</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>provider "aws" {
-  region = "ap-northeast-1"
-}
-
-data "aws_vpc" "existing" {
-  id = "&lt;VPC_ID&gt;"
-}
-
-data "aws_subnet" "public_1a" {
-  id = "&lt;PUBLIC_SUBNET_ID&gt;"
-}
-
-resource "aws_security_group" "web" {
-  name   = "terraform-wordpress-web-sg"
-  vpc_id = data.aws_vpc.existing.id
-}
-
-resource "aws_instance" "web" {
-  ami                         = "&lt;AMI_ID_IN_THE_SAME_REGION&gt;"
-  instance_type               = "t2.micro"
-  subnet_id                   = data.aws_subnet.public_1a.id
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.web.id]
-  user_data                   = file("${path.module}/wordpress.sh")
-}</code></pre>
-    </div>
-    <p>Data Sourceで参照した既存VPC・SubnetはTerraformの作成・削除対象ではありません。Terraformが新規管理するSecurity Group、EC2、EIP、RDSなどと、手動作成済みネットワークの境界を明確にできる</p>
-  </section>
-
-  <section>
-    <h2 id="state-secrets">Output・State・パスワード</h2>
-    <p><code class="inline-code">terraform output -json</code>が<code class="inline-code">{}</code>だったのは、Root Moduleにoutput blockが定義されていなかったため</p>
-    <div class="code">
-      <div class="code-header"><span>outputs.tf</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>output "wordpress_url" {
-  value = "http://${aws_eip.wordpress.public_ip}"
-}
-
-output "rds_endpoint" {
-  value = aws_db_instance.wordpress.endpoint
-}
-
-output "rds_password" {
-  value     = random_password.wordpress.result
-  sensitive = true
-}</code></pre>
-    </div>
-    <div class="code" data-prompt="$">
-      <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-      <pre><code>terraform fmt
+aws configure list
+aws sts get-caller-identity
+terraform version
+terraform providers
 terraform validate
-terraform apply -refresh-only
-terraform output
-terraform output -raw rds_password</code></pre>
-    </div>
-    <div class="callout callout-warning"><strong>⚠️ 機密情報の扱い</strong> <code class="inline-code">sensitive = true</code>は通常表示を伏せる機能であり、暗号化やStateからの除外ではありません。State、Plan、ログ、画面共有、シェル履歴、Gitへ実パスワードを残さないようにします。このノートでも実値はすべて削除している</div>
-  </section>
+terraform state list
+terraform plan</code></pre>
+        </div>
 
-  <section>
-    <h2 id="lessons">実行ログから得た再発防止メモ</h2>
-    <ul class="check-list">
-      <li><code class="inline-code">terraform</code>だけでヘルプと利用可能なサブコマンドを確認できる</li>
-      <li><code class="inline-code">terraform fmt</code>、<code class="inline-code">validate</code>、<code class="inline-code">plan</code>は役割が異なるため、毎回すべて実行する</li>
-      <li>Providerブロックのリージョンと、AMI・VPC・Subnet・Key Pairのリージョンを揃える</li>
-      <li>Stateは作業ディレクトリに結び付くため、実行前に<code class="inline-code">pwd</code>を確認する</li>
-      <li><code class="inline-code">terraform state list</code>で現在の管理対象を確認してから、applyやdestroyを行う</li>
-      <li>ViのSwap警告が出たら、別セッションの編集有無を確認し、内容を回復または保存してから不要なSwapを削除する</li>
-      <li><code class="inline-code">timedatectl set-timezone Asia/Tokyo</code>が正しいコマンド</li>
-      <li><code class="inline-code">printenv</code>が正しく、<code class="inline-code">prinenv</code>ではない</li>
-      <li>実際の出力にパスワードが出た場合、その値は漏えい扱いでローテーションを検討する</li>
-    </ul>
-  </section>
+        <table>
+          <thead><tr><th>エラー・症状</th><th>主な原因</th><th>対処</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">No valid credential sources found</code></td><td>環境変数、Profile、IAMロールのいずれからも認証情報を取得できない</td><td><code class="inline-code">aws configure list</code>と<code class="inline-code">aws sts get-caller-identity</code>で認証元を確認</td></tr>
+            <tr><td><code class="inline-code">UnauthorizedOperation</code>／<code class="inline-code">AccessDenied</code></td><td>認証には成功したがIAM権限が不足</td><td>エラー内のAction、CloudTrail、IAM Policy Simulatorを確認し、必要な権限を追加</td></tr>
+            <tr><td><code class="inline-code">InvalidAMIID.NotFound</code></td><td>AMI IDとProviderのリージョンが不一致</td><td>対象リージョンでAMIを検索し、AMI IDを変更</td></tr>
+            <tr><td><code class="inline-code">InvalidVpcID.NotFound</code></td><td>VPC IDとProviderのリージョンまたはAWSアカウントが不一致</td><td>Caller Identity、リージョン、VPC IDを同時に確認</td></tr>
+            <tr><td><code class="inline-code">Duplicate required providers configuration</code></td><td>同じRoot Moduleに<code class="inline-code">required_providers</code>が複数存在</td><td><code class="inline-code">main.tf</code>または<code class="inline-code">terraform.tf</code>の1か所へ統合</td></tr>
+            <tr><td>Provider lock不一致</td><td>構成のversion制約と<code class="inline-code">.terraform.lock.hcl</code>の選択が不一致</td><td>制約を確認後、必要な場合だけ<code class="inline-code">terraform init -upgrade</code>を実行</td></tr>
+            <tr><td>大量の<code class="inline-code">-/+</code></td><td>リージョン、Subnet、名前などForceNew属性を変更</td><td>applyを中止し、元の設定とStateを確認。新リージョンは別Backend・別Stateで構築</td></tr>
+            <tr><td>RDS ENIを削除できない</td><td>RDSが管理するENIをSubnet削除より先に外そうとしている</td><td>RDS削除完了後にDB Subnet Group、Subnetの順で削除。ENIを手動で切り離さない</td></tr>
+            <tr><td>別ディレクトリで対象なし</td><td>異なるBackendまたはローカルStateを参照</td><td><code class="inline-code">pwd</code>、Backend設定、<code class="inline-code">terraform state list</code>を確認</td></tr>
+          </tbody>
+        </table>
 
-  <section>
-    <h2 id="checklist">apply前後の個人チェックリスト</h2>
-    <div class="example-grid">
-      <div class="example-panel">
-        <h3>apply前</h3>
-        <ul class="check-list">
-          <li><code class="inline-code">pwd</code>と対象ディレクトリ</li>
-          <li><code class="inline-code">git diff</code>と機密情報</li>
-          <li><code class="inline-code">terraform fmt</code></li>
-          <li><code class="inline-code">terraform validate</code></li>
-          <li><code class="inline-code">terraform providers</code></li>
-          <li>AWS Account・Role・Region</li>
-          <li>AMI・VPC・Subnet・Key Pair</li>
-          <li><code class="inline-code">plan</code>の<code class="inline-code">+ - ~ -/+</code></li>
-          <li>削除・置換と停止時間</li>
+        <h3>リージョンとAMIを確認</h3>
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>aws configure get region
+aws ec2 describe-vpcs --vpc-ids "&lt;VPC_ID&gt;" --region ap-northeast-1
+aws ec2 describe-subnets --subnet-ids "&lt;SUBNET_ID&gt;" --region ap-northeast-1
+aws ec2 describe-images --image-ids "&lt;AMI_ID&gt;" --region ap-northeast-1</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ リージョンだけを変更してapplyしない</strong>
+          <p>既存Stateを持ったままProviderのリージョンを変更すると、別リージョンのVPC・Subnet・AMIを参照できず、大量の削除・再作成が計画される場合がある。移行は新しいBackend・State・ディレクトリを用意し、データ移行と切り替えを別途設計する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="sources">一次資料</h2>
+        <ul class="source-list">
+          <li>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli">HashiCorp Developer: Install Terraform</a></li>
+          <li>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create">HashiCorp Developer: Create infrastructure</a></li>
+          <li>出典：<a href="https://developer.hashicorp.com/terraform/language/block/provider">HashiCorp Developer: Provider block reference</a></li>
+          <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">Terraform Registry: AWS Provider</a></li>
+          <li>AWS公式手順：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html">Security best practices in IAM</a></li>
+          <li>AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">Configuring environment variables for the AWS CLI</a></li>
         </ul>
-      </div>
-      <div class="example-panel">
-        <h3>apply後</h3>
-        <ul class="check-list">
-          <li><code class="inline-code">Apply complete!</code>の件数</li>
-          <li><code class="inline-code">terraform output</code></li>
-          <li><code class="inline-code">terraform state list</code></li>
-          <li>AWS / Docker側の実在確認</li>
-          <li>HTTPなどサービス動作確認</li>
-          <li>不要な検証環境の削除予定</li>
-          <li>Stateと機密値の安全な保管</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2 id="sources">確認に使った一次資料</h2>
-    <ul class="source-list">
-      <li>HashiCorp Developer: How Terraform works with plugins</li>
-      <li>HashiCorp Developer: Terraform CLI overview / init / plan / apply / destroy</li>
-      <li>HashiCorp Developer: Dependency Graph / depends_on</li>
-      <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">Terraform Registry: AWS Provider authentication and configuration</a></li>
-      <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user">Terraform Registry: aws_iam_user</a></li>
-      <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_access_key">Terraform Registry: aws_iam_access_key</a></li>
-      <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy">Terraform Registry: aws_iam_user_policy</a></li>
-      <li>AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">AWS CLI User Guide: Configuring environment variables</a></li>
-      <li>AWS公式手順：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html">AWS IAM User Guide: Security best practices in IAM</a></li>
-      <li>AWS公式手順：<a href="https://docs.aws.amazon.com/aws-managed-policy/latest/reference/PowerUserAccess.html">AWS Managed Policy Reference: PowerUserAccess</a></li>
-      <li>2026年8月22日のUbuntu・Terraform・Docker・AWS作業ログ</li>
-    </ul>
-    <p class="meta">最終更新: 2026年8月23日</p>
-  </section>
-</main>
-
-    <aside class="toc" aria-label="Table of contents">
-    <h2>ページ内</h2>
-      <a class="active" href="#architecture">Terraformが動く仕組み</a>
-      <a href="#installation">Ubuntuへの導入と確認</a>
-      <a href="#files">フォルダとファイルの作り方</a>
-      <a href="#commands">主要コマンド一覧（本書52ページ相当）</a>
-      <a href="#workflow">構築の流れ（本書53ページ相当）</a>
-      <a href="#plan-symbols">plan / apply結果の見方</a>
-      <a href="#docker">第2章 Docker Provider演習</a>
-      <a href="#aws-auth">AWS Providerの認証と権限</a>
-      <a href="#aws">第3章 AWS Provider演習</a>
-      <a href="#state-secrets">Output・State・パスワード</a>
-      <a href="#lessons">実行ログから得た再発防止メモ</a>
-      <a href="#checklist">apply前後の個人チェックリスト</a>
-      <a href="#sources">確認に使った一次資料</a>
-  </aside>
+        <p class="meta">最終更新: 2026年8月23日</p>
+      </section>
+    </main>
   </div>
 
-  <script src="../assets/app.js?v=20260823-toc2"></script>
+  <script src="../assets/app.js?v=20260823-ref1"></script>
 </body>
 </html>
