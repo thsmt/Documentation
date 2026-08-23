@@ -8,11 +8,17 @@ $root = Split-Path -Parent $PSScriptRoot
 $tutorialsRoot = Join-Path $root 'tutorials'
 $groups = @(
     [pscustomobject]@{
+        Label = 'Terraform'
+        Icon = '◈'
+        Pages = @(
+            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform 概要' }
+        )
+    }
+    [pscustomobject]@{
         Label = 'AWS'
         Icon = '☁︎'
         Pages = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
-            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform 概要' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'eventbridge-scheduler.html'; Label = 'EventBridge Scheduler' }

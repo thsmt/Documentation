@@ -27,9 +27,10 @@
       <div class="sidebar-heading">
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
       </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">◈</span>Terraform</p>
+      <a href="tutorials/terraform.html">Terraform 概要</a>
       <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
       <a href="tutorials/cloudformation.html">CloudFormation 運用手順集</a>
-      <a href="tutorials/terraform.html">Terraform 概要</a>
       <a href="tutorials/aws-cli.html">AWS CLI 特殊対応</a>
       <a href="tutorials/aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="tutorials/eventbridge-scheduler.html">EventBridge Scheduler</a>
@@ -65,7 +66,7 @@
       </nav>
 
       <h1>Documentation</h1>
-      <p class="lead">AWS、OS、ミドルウェア、リファレンスの構築・運用手順を分野別に整理する</p>
+      <p class="lead">Terraform、AWS、OS、ミドルウェア、リファレンスの構築・運用手順を分野別に整理する</p>
 
       <section class="template-feature" aria-label="GitHub Pages notation and template">
         <strong><a href="writing-style-guide.html">[GitHub Pages] 記法・テンプレート</a></strong>
@@ -73,15 +74,19 @@
       </section>
 
       <!-- home-groups:start -->
+      <h2 id="terraform">Terraform</h2>
+      <section class="card-grid" aria-label="Terraform">
+        <article class="card">
+          <strong><a href="tutorials/terraform.html">Terraform 概要</a></strong>
+          <p>Terraformのインストール、CLIコマンド、AWS構成ブロック、認証・権限、エラー対処を整理する</p>
+        </article>
+      </section>
+
       <h2 id="aws-cloud">AWS</h2>
       <section class="card-grid" aria-label="AWS">
         <article class="card">
           <strong><a href="tutorials/cloudformation.html">CloudFormation 運用手順集</a></strong>
           <p>デプロイ方法、変更セット、ロールバック、ドリフト検出、削除前確認などを整理する</p>
-        </article>
-        <article class="card">
-          <strong><a href="tutorials/terraform.html">Terraform 概要</a></strong>
-          <p>Terraformのインストール、CLIコマンド、AWS構成ブロック、認証・権限、エラー対処を整理する</p>
         </article>
         <article class="card">
           <strong><a href="tutorials/aws-cli.html">AWS CLI 特殊対応</a></strong>
@@ -193,7 +198,8 @@
 
     <aside class="toc" aria-label="Table of contents">
       <h2>ページ内</h2>
-      <a class="active" href="#aws-cloud">AWS</a>
+      <a class="active" href="#terraform">Terraform</a>
+      <a href="#aws-cloud">AWS</a>
       <a href="#os-server">OS／ミドルウェア</a>
       <a href="#reference">リファレンス</a>
     </aside>
