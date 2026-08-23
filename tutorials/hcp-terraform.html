@@ -103,6 +103,24 @@
           <li>初回検証ではDefault Projectへ配置</li>
         </ol>
 
+        <h3>PersonalとBusinessの違い</h3>
+        <p>PersonalとBusinessはWorkspaceの実行モードではなく、HCP Organizationを作成するときに選択するOrganization typeである。WorkspaceのRemote／Local／Agentとは別の設定であり、作成後にOrganization typeは変更できない</p>
+
+        <table>
+          <thead><tr><th>比較項目</th><th>Personal</th><th>Business</th></tr></thead>
+          <tbody>
+            <tr><td>想定用途</td><td>企業や団体に属さない個人プロジェクト、個人検証</td><td>企業、学校、団体での利用。検証目的でも組織に属する場合はこちらを選択</td></tr>
+            <tr><td>所有主体</td><td>個人を主体としてOrganizationを管理する</td><td>Organizationを事業体へ結び付け、担当者の変更後も組織として継続管理する</td></tr>
+            <tr><td>請求・税務情報</td><td>個人利用として登録する</td><td>企業・団体の所在地などを基に、事業利用の請求と税務情報を扱う</td></tr>
+            <tr><td>Workspaceの基本機能</td><td colspan="2">Organization typeだけでは決まらない。Remote State、Remote Run、VCS連携などの利用可否や上限は、HCP TerraformのFree／有料プラン、ユーザー権限、Organization設定によって決まる</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>今回の選択</strong>
+          <p>個人検証用のOrganizationであるためPersonalで問題ない。企業の業務環境を管理する場合や、個人ではなく会社・団体へ所有権と請求を結び付ける場合はBusinessを選択する</p>
+        </div>
+
         <table>
           <thead><tr><th>入力項目</th><th>指定例</th><th>注意点</th></tr></thead>
           <tbody>
@@ -246,17 +264,36 @@ HCP Terraform has been successfully initialized!</code></pre>
 
       <section>
         <h2 id="aws-credentials">Remote実行でAWS認証情報を設定</h2>
-        <p>短期検証で静的なAWSアクセスキーを使用する場合は、Workspaceの<strong>Variables</strong>でEnvironment variableを追加する。アクセスキーそのものはValueへ入力し、KeyにはAWS SDKが認識する環境変数名を指定する</p>
+        <p>Workspaceの<strong>Variables</strong>では、Terraform variableとEnvironment variableを用途に応じて選択する。どちらもPlan／Applyへ値を渡す機能だが、値を受け取る場所が異なる</p>
 
+        <h3>Terraform variableとEnvironment variableの違い</h3>
         <table>
-          <thead><tr><th>Key</th><th>Value</th><th>Sensitive</th></tr></thead>
+          <thead><tr><th>種別</th><th>用途</th><th>Keyの例</th><th><code class="inline-code">.tf</code>側の定義</th></tr></thead>
           <tbody>
-            <tr><td><code class="inline-code">AWS_ACCESS_KEY_ID</code></td><td><code class="inline-code">&lt;AWS_ACCESS_KEY_ID_VALUE&gt;</code></td><td>有効</td></tr>
-            <tr><td><code class="inline-code">AWS_SECRET_ACCESS_KEY</code></td><td><code class="inline-code">&lt;AWS_SECRET_ACCESS_KEY_VALUE&gt;</code></td><td>有効</td></tr>
-            <tr><td><code class="inline-code">AWS_SESSION_TOKEN</code></td><td><code class="inline-code">&lt;AWS_SESSION_TOKEN_VALUE&gt;</code></td><td>一時認証情報を使用する場合は有効</td></tr>
-            <tr><td><code class="inline-code">AWS_DEFAULT_REGION</code></td><td><code class="inline-code">ap-northeast-1</code></td><td>任意</td></tr>
+            <tr><td>Terraform variable</td><td>Terraformコードの入力変数へ値を渡す</td><td><code class="inline-code">aws_region</code></td><td><code class="inline-code">variable "aws_region"</code>が必要</td></tr>
+            <tr><td>Environment variable</td><td>Terraformを実行する環境へ環境変数を渡す</td><td><code class="inline-code">AWS_ACCESS_KEY_ID</code></td><td><code class="inline-code">variable</code>ブロックは不要</td></tr>
           </tbody>
         </table>
+
+        <p>Terraform variableのKeyには<code class="inline-code">var.</code>を付けず、<code class="inline-code">variable</code>ブロックの名前を指定する。通常の文字列はHCLを無効にし、List、Map、Booleanなどを式として入力する場合だけHCLを有効にする。Environment variableではHCLを使用しない</p>
+
+        <h3>AWS認証情報とリージョンを登録</h3>
+        <p>短期検証で静的なAWSアクセスキーを使用する場合は、Environment variableとして登録する。アクセスキーそのものはValueへ入力し、KeyにはAWS SDKが認識する環境変数名を指定する</p>
+
+        <table>
+          <thead><tr><th>Category</th><th>Key</th><th>Value</th><th>Sensitive</th></tr></thead>
+          <tbody>
+            <tr><td>Environment variable</td><td><code class="inline-code">AWS_ACCESS_KEY_ID</code></td><td><code class="inline-code">&lt;AWS_ACCESS_KEY_ID_VALUE&gt;</code></td><td>有効</td></tr>
+            <tr><td>Environment variable</td><td><code class="inline-code">AWS_SECRET_ACCESS_KEY</code></td><td><code class="inline-code">&lt;AWS_SECRET_ACCESS_KEY_VALUE&gt;</code></td><td>有効</td></tr>
+            <tr><td>Environment variable</td><td><code class="inline-code">AWS_SESSION_TOKEN</code></td><td><code class="inline-code">&lt;AWS_SESSION_TOKEN_VALUE&gt;</code></td><td>一時認証情報を使用する場合は有効</td></tr>
+            <tr><td>Environment variable</td><td><code class="inline-code">AWS_REGION</code></td><td><code class="inline-code">ap-northeast-1</code></td><td>無効</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>添付画像のリージョン設定</strong>
+          <p>Categoryを<strong>Environment variable</strong>、Keyを<code class="inline-code">AWS_REGION</code>、Valueを<code class="inline-code">ap-northeast-1</code>、Sensitiveを無効にする設定で正しい。Providerブロックに<code class="inline-code">region = "ap-northeast-1"</code>を直接記述している場合、Workspace側のリージョン設定は重複するため、どちらで管理するかを決めて1か所に揃える</p>
+        </div>
 
         <div class="callout callout-error">
           <strong>❌ Key欄へアクセスキーの値を入力しない</strong>
