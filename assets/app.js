@@ -67,7 +67,7 @@ const movePageTocToSidebar = () => {
   });
 
   menu.append(summary, subnav);
-  sidebar.querySelector(".sidebar-heading")?.after(menu);
+  activePageLink.after(menu);
   sourceToc.remove();
 
   if (window.location.hash && Array.from(subnav.querySelectorAll("a")).some((link) => link.hash === window.location.hash)) {

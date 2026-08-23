@@ -12,6 +12,7 @@ $groups = @(
         Icon = '☁︎'
         Pages = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
+            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform 学習ノート' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'eventbridge-scheduler.html'; Label = 'EventBridge Scheduler' }

@@ -773,6 +773,78 @@ mark {
   margin-bottom: 0;
 }
 
+.terraform-guide > section > h2 {
+  margin-top: 68px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.architecture-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin: 18px 0;
+}
+
+.architecture-flow span {
+  padding: 9px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.architecture-flow b {
+  color: var(--accent-strong);
+  font-size: 13px;
+}
+
+.return-flow {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.symbol-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 76px;
+  padding: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.symbol-card > b {
+  min-width: 42px;
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 24px;
+  text-align: center;
+}
+
+.symbol-card.create > b { color: var(--success-text); }
+.symbol-card.destroy > b { color: var(--error-text); }
+.symbol-card.update > b { color: var(--warning-text); }
+.symbol-card.replace > b { color: #bc8cff; }
+.symbol-card.read > b { color: var(--accent-strong); }
+
+.terraform-guide .example-panel > h3 {
+  margin-top: 0;
+}
+
+.terraform-guide .source-list {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .example-label {
   display: block;
   margin-bottom: 10px;
@@ -1214,5 +1286,10 @@ figure > figcaption:first-child {
   .cards,
   .card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .architecture-flow b {
+    width: 100%;
+    text-align: center;
   }
 }
