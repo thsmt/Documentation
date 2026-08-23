@@ -110,6 +110,11 @@
           <strong>ℹ️ Terraformが行う比較</strong>
           <p><code class="inline-code">plan</code>では構成ファイルの目標状態、Stateに記録された管理状態、Providerが取得した実環境を比較して変更案を作る。<code class="inline-code">apply</code>ではその変更をProvider経由でAPIへ送り、完了後の情報をStateへ反映する</p>
         </div>
+
+        <figure class="screenshot-wide">
+          <img src="../assets/img/terraform/terraform-aws-workflow.jpg" alt="Terraform CLIがAWS ProviderとAWS APIを経由してVPC、EC2、RDSを構築する流れとinit、plan、apply、outputの関係" width="1280" height="853" loading="lazy">
+          <figcaption>Terraform CLIが構成ファイルを読み、AWS ProviderとAWS APIを経由してVPC、EC2、RDSを構築する流れ。<code class="inline-code">init</code>、<code class="inline-code">plan</code>、<code class="inline-code">apply</code>からStateとOutputまでの関係を示す</figcaption>
+        </figure>
       </section>
 
       <section>
