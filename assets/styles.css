@@ -186,9 +186,9 @@ a:hover {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(210px, 260px) minmax(0, 1000px);
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1180px);
   gap: 36px;
-  width: min(1320px, calc(100% - 48px));
+  width: min(1500px, calc(100% - 48px));
   margin: 0 auto;
   padding: 56px 0 88px;
 }
@@ -200,8 +200,8 @@ main {
 }
 
 body.sidebar-collapsed .layout {
-  grid-template-columns: 44px minmax(0, 1080px);
-  width: min(1370px, calc(100% - 48px));
+  grid-template-columns: 44px minmax(0, 1260px);
+  width: min(1420px, calc(100% - 48px));
 }
 
 .layout.layout-wide {

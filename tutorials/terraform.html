@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terraform AWS運用リファレンス | Documentation</title>
+  <title>Terraform 概要 | Documentation</title>
   <meta name="description" content="Terraformのインストール、CLIコマンド、AWS Providerとresourceブロック、IAM認証・権限、AWSエラー対処を整理した運用リファレンス">
   <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref2">
 </head>
@@ -30,7 +30,7 @@
       </div>
       <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
       <a href="cloudformation.html">CloudFormation 運用手順集</a>
-      <a class="active" href="terraform.html">Terraform AWS運用リファレンス</a>
+      <a class="active" href="terraform.html">Terraform 概要</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
       <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
       <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
@@ -62,7 +62,7 @@
       </nav>
 
       <p class="eyebrow">Terraform / AWS</p>
-      <h1>Terraform AWS運用リファレンス</h1>
+      <h1>Terraform 概要</h1>
       <p class="lead">Terraformの仕組み、実行環境へのインストール、構成ファイルと生成ファイル、AWS Providerの認証、AWSリソースの記述、エラー対処を整理する</p>
 
       <section>
@@ -111,9 +111,8 @@
           <p><code class="inline-code">plan</code>では構成ファイルの目標状態、Stateに記録された管理状態、Providerが取得した実環境を比較して変更案を作る。<code class="inline-code">apply</code>ではその変更をProvider経由でAPIへ送り、完了後の情報をStateへ反映する</p>
         </div>
 
-        <figure class="screenshot-wide">
+        <figure>
           <img src="../assets/img/terraform/terraform-aws-workflow.jpg" alt="Terraform CLIがAWS ProviderとAWS APIを経由してVPC、EC2、RDSを構築する流れとinit、plan、apply、outputの関係" width="1280" height="853" loading="lazy">
-          <figcaption>Terraform CLIが構成ファイルを読み、AWS ProviderとAWS APIを経由してVPC、EC2、RDSを構築する流れ。<code class="inline-code">init</code>、<code class="inline-code">plan</code>、<code class="inline-code">apply</code>からStateとOutputまでの関係を示す</figcaption>
         </figure>
       </section>
 
