@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terraform AWS運用リファレンス | Documentation</title>
   <meta name="description" content="Terraformのインストール、CLIコマンド、AWS Providerとresourceブロック、IAM認証・権限、AWSエラー対処を整理した運用リファレンス">
-  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref1">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref2">
 </head>
 <body>
   <header class="site-header">
@@ -23,7 +23,7 @@
     </div>
   </header>
 
-  <div class="layout">
+  <div class="layout layout-wide">
     <aside id="site-sidebar" class="sidebar" aria-label="Page list">
       <div class="sidebar-heading">
         <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
@@ -69,19 +69,42 @@
         <h2 id="overview">Terraformとは</h2>
         <p>Terraformは、サーバー、ネットワーク、データベース、IAMなどのインフラ構成をコードで定義し、作成・変更・削除するInfrastructure as Code（IaC）ツールである。HCLで「どのような状態にしたいか」を宣言し、Terraformがリソース間の依存関係と実行順序を判断する</p>
 
-        <div class="architecture-flow" aria-label="Terraformの処理の流れ">
-          <span>構成ファイル（HCL）</span><b>→</b><span>Terraform Core</span><b>→ RPC →</b><span>AWS Provider</span><b>→ AWS API →</b><span>AWSリソース</span>
+        <div class="terraform-process" aria-label="Terraformの処理の流れ">
+          <article class="terraform-process-card">
+            <span class="terraform-process-step">STEP 1</span>
+            <h3>構成ファイル（HCL）</h3>
+            <p><code class="inline-code">resource</code>、<code class="inline-code">data</code>、<code class="inline-code">provider</code>などのブロックで目標の構成を定義する</p>
+          </article>
+
+          <div class="terraform-process-arrow" aria-hidden="true"><strong>→</strong><small>読み込み</small></div>
+
+          <article class="terraform-process-card">
+            <span class="terraform-process-step">STEP 2</span>
+            <h3>Terraform Core</h3>
+            <p>同じディレクトリにある構成を読み、Stateと実環境を照合して依存関係と変更内容を計算する</p>
+          </article>
+
+          <div class="terraform-process-arrow" aria-hidden="true"><strong>→</strong><small>RPC</small></div>
+
+          <article class="terraform-process-card">
+            <span class="terraform-process-step">STEP 3</span>
+            <h3>AWS Provider</h3>
+            <p>Terraform CoreとAWS APIを接続するプラグイン。AWS固有のリソースと作成・参照・更新・削除処理を実装する</p>
+          </article>
+
+          <div class="terraform-process-arrow" aria-hidden="true"><strong>→</strong><small>AWS API</small></div>
+
+          <article class="terraform-process-card">
+            <span class="terraform-process-step">STEP 4</span>
+            <h3>AWSリソース</h3>
+            <p>VPC、Subnet、Security Group、EC2、EIP、RDSなど、ProviderがAPI経由で作成・変更・削除する実際のインフラ</p>
+          </article>
         </div>
 
-        <table>
-          <thead><tr><th>構成要素</th><th>役割</th></tr></thead>
-          <tbody>
-            <tr><td>構成ファイル</td><td><code class="inline-code">resource</code>、<code class="inline-code">data</code>、<code class="inline-code">provider</code>などのブロックで目標の構成を定義する</td></tr>
-            <tr><td>Terraform Core</td><td>同じディレクトリにある構成を読み、Stateと実環境を照合して依存関係と変更内容を計算する</td></tr>
-            <tr><td>Provider</td><td>Terraform CoreとAWSなどのAPIを接続するプラグイン。サービス固有のリソースと操作を実装する</td></tr>
-            <tr><td>State</td><td>Terraformのリソースアドレスと実際のリソースID・属性を対応付ける</td></tr>
-          </tbody>
-        </table>
+        <div class="terraform-state-card">
+          <strong>State ─ Terraform Coreが読み書きする管理記録</strong>
+          <p>Terraformのリソースアドレスと実際のリソースID・属性を対応付ける。CoreはStateと実環境を照合し、apply完了後の情報をStateへ反映する</p>
+        </div>
 
         <div class="callout">
           <strong>ℹ️ Terraformが行う比較</strong>
@@ -130,7 +153,6 @@ terraform -install-autocomplete
 exec "$SHELL"</code></pre>
         </div>
 
-        <p class="meta">HashiCorp公式のコマンドは<code class="inline-code">terraform -install-autocomplete</code>であり、<code class="inline-code">terraform -install--autocomplete</code>ではない</p>
         <p>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli">HashiCorp Developer: Install Terraform</a></p>
       </section>
 
@@ -243,7 +265,7 @@ exec "$SHELL"</code></pre>
 }</code></pre>
         </div>
 
-        <div class="callout callout-warning">
+        <div class="callout callout-error">
           <strong>⚠️ required_providersはRoot Module内で1か所</strong>
           <p><code class="inline-code">main.tf</code>と<code class="inline-code">terraform.tf</code>の両方に<code class="inline-code">required_providers</code>を定義すると、<em>Duplicate required providers configuration</em>になる。ファイル名ではなく、同じディレクトリにあるすべての<code class="inline-code">*.tf</code>が1つのRoot Moduleとして読み込まれる</p>
         </div>

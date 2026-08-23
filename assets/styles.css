@@ -204,6 +204,16 @@ body.sidebar-collapsed .layout {
   width: min(1370px, calc(100% - 48px));
 }
 
+.layout.layout-wide {
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1180px);
+  width: min(1500px, calc(100% - 48px));
+}
+
+body.sidebar-collapsed .layout.layout-wide {
+  grid-template-columns: 44px minmax(0, 1260px);
+  width: min(1420px, calc(100% - 48px));
+}
+
 body.sidebar-collapsed .sidebar {
   width: 44px;
   overflow: hidden;
@@ -800,6 +810,79 @@ mark {
   font-size: 13px;
 }
 
+.terraform-process {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr) 48px minmax(0, 1fr) 58px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+  margin: 24px 0 18px;
+}
+
+.terraform-process-card {
+  min-width: 0;
+  padding: 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  border-radius: 8px;
+}
+
+.terraform-process-step {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.terraform-process-card h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.terraform-process-card p,
+.terraform-state-card p {
+  margin: 0;
+}
+
+.terraform-process-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--accent-strong);
+  text-align: center;
+}
+
+.terraform-process-arrow strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.terraform-process-arrow small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.terraform-state-card {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  background: var(--notice-bg);
+  border: 1px solid var(--notice-line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+}
+
+.terraform-state-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent-strong);
+}
+
 .return-flow {
   color: var(--muted);
   font-size: 13px;
@@ -1219,6 +1302,20 @@ figure > figcaption:first-child {
   font-size: 16px;
 }
 
+@media (max-width: 1200px) {
+  .terraform-process {
+    grid-template-columns: 1fr;
+  }
+
+  .terraform-process-arrow {
+    min-height: 42px;
+  }
+
+  .terraform-process-arrow strong {
+    transform: rotate(90deg);
+  }
+}
+
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
@@ -1227,6 +1324,12 @@ figure > figcaption:first-child {
   body.sidebar-collapsed .layout {
     grid-template-columns: 1fr;
     width: min(1420px, calc(100% - 48px));
+  }
+
+  .layout.layout-wide,
+  body.sidebar-collapsed .layout.layout-wide {
+    grid-template-columns: 1fr;
+    width: min(100% - 48px, 1180px);
   }
 
   .sidebar,
