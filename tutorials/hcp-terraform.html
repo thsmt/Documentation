@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HCP Terraform | Documentation</title>
+  <meta name="description" content="HCP TerraformのOrganization、Workspace、CLIログイン、State移行、実行モード、AWS認証情報、アバター変更を整理した運用手順">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref2">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../">
+      <img src="../assets/icon.jpg" alt="Documentation icon">
+      <span>Documentation</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button>
+      <nav class="nav" aria-label="Global navigation">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a>
+        <a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout layout-wide">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
+      </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">◈</span>Terraform</p>
+      <a href="terraform.html">Terraform 概要</a>
+      <a class="active" href="hcp-terraform.html">HCP Terraform</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">⚙︎</span>OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="storage.html">ストレージ管理</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-ssl-termination.html">Apache SSL終端（自己署名証明書）</a>
+      <a href="redis.html">Redis（KVS）</a>
+      <a href="nfs.html">NFS</a>
+      <a href="samba.html">Samba</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">▤</span>リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+
+    <main class="content terraform-guide">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a>
+        <span>トピック</span>
+      </nav>
+
+      <p class="eyebrow">Terraform / HCP</p>
+      <h1>HCP Terraform</h1>
+      <p class="lead">OrganizationとWorkspaceを作成し、Terraform CLIからHCP Terraformへ接続してStateを移行する手順、実行モード、AWS認証情報、アバター変更を整理する</p>
+
+      <section>
+        <h2 id="structure">HCP Terraformの構成</h2>
+        <p>HCP TerraformではOrganizationの配下にProjectとWorkspaceを作成する。WorkspaceはTerraform構成、State、実行履歴、変数、実行モードを管理する単位である。CLI-driven workflowでは、ローカルのTerraform CLIとWorkspaceを<code class="inline-code">cloud</code>ブロックで関連付ける</p>
+
+        <table>
+          <thead><tr><th>構成要素</th><th>役割</th></tr></thead>
+          <tbody>
+            <tr><td>Organization</td><td>Project、Workspace、ユーザー、設定をまとめる最上位の管理単位</td></tr>
+            <tr><td>Project</td><td>複数のWorkspaceを用途や環境で分類する単位。初回検証ではDefault Projectを利用できる</td></tr>
+            <tr><td>Workspace</td><td>State、Variable、Run、実行モード、Terraformバージョンを管理する単位</td></tr>
+            <tr><td>User token</td><td>Terraform CLIをHCP Terraformのユーザーとして認証するトークン</td></tr>
+            <tr><td><code class="inline-code">cloud</code>ブロック</td><td>Root ModuleとOrganization／Workspaceを関連付ける設定</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ トークンと認証情報をログへ残さない</strong>
+          <p>HCP Terraformのユーザートークン、AWSアクセスキー、シークレットアクセスキーはパスワードと同様に扱う。ターミナルログ、スクリーンショット、Git、チャットへ値を掲載しない。露出した場合は値を伏字にするだけでなく、元のトークンやアクセスキーを失効して再発行する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="organization">OrganizationとWorkspaceの作成</h2>
+        <ol>
+          <li>HCP Terraformへログインし、Organizations画面で<strong>Create organization</strong>を選択</li>
+          <li>個人検証の場合は<strong>Personal</strong>を選択</li>
+          <li>一意のOrganization名と通知先メールアドレスを入力してOrganizationを作成</li>
+          <li>Organizationを開き、<strong>Workspaces</strong>から新しいWorkspaceを作成</li>
+          <li>CLI-driven workflowを選択し、Workspace名を入力</li>
+          <li>初回検証ではDefault Projectへ配置</li>
+        </ol>
+
+        <table>
+          <thead><tr><th>入力項目</th><th>指定例</th><th>注意点</th></tr></thead>
+          <tbody>
+            <tr><td>Organization type</td><td>Personal</td><td>個人用途の検証に使用する。作成後は種類を変更できない</td></tr>
+            <tr><td>Organization name</td><td><code class="inline-code">&lt;HCP_ORGANIZATION_NAME&gt;</code></td><td>HCP Terraform全体で一意の名前にする</td></tr>
+            <tr><td>Workspace name</td><td><code class="inline-code">&lt;HCP_WORKSPACE_NAME&gt;</code></td><td><code class="inline-code">cloud</code>ブロックの名前と一致させる</td></tr>
+            <tr><td>Terraform version</td><td>CLIと同じ系列</td><td>Remote実行ではWorkspace側のTerraformバージョンが使用される</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 id="login">Terraform CLIからログイン</h2>
+        <p><code class="inline-code">terraform login</code>を実行すると、HCP TerraformのToken作成画面がブラウザーで開く。ユーザートークンには識別しやすい説明と必要な有効期限を指定し、生成直後に一度だけ表示される値をTerraform CLIの入力欄へ貼り付ける</p>
+
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform login</code></pre>
+        </div>
+
+        <ol>
+          <li><code class="inline-code">terraform login</code>の確認で<code class="inline-code">yes</code>を入力</li>
+          <li>HCP TerraformのTokens画面で<strong>Create an API token</strong>を選択</li>
+          <li>DescriptionとExpirationを指定してトークンを生成</li>
+          <li>生成されたトークンをコピーし、ターミナルの<strong>Token for app.terraform.io</strong>へ貼り付け</li>
+          <li><strong>Welcome to HCP Terraform!</strong>の表示を確認</li>
+        </ol>
+
+        <p>認証情報は通常、実行ユーザーの<code class="inline-code">~/.terraform.d/credentials.tfrc.json</code>へ保存される。このファイルをGitへ登録したり、内容をログへ出力したりしない</p>
+
+        <details class="example-details execution-example">
+          <summary><span class="execution-example-label">実行例：</span>terraform loginの成功</summary>
+          <div class="code" data-prompt="">
+            <div class="code-header"><span>redacted log</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>$ terraform login
+Terraform will request an API token for app.terraform.io using your browser.
+
+Do you want to proceed?
+  Enter a value: yes
+
+Token for app.terraform.io:
+  Enter a value: &lt;HCP_USER_TOKEN&gt;
+
+Retrieved token for user &lt;HCP_USER_NAME&gt;
+Welcome to HCP Terraform!</code></pre>
+          </div>
+        </details>
+
+        <div class="callout callout-error">
+          <strong>❌ Token is invalid: unauthorized</strong>
+          <p>確認プロンプトにはトークンではなく<code class="inline-code">yes</code>を入力する。トークンは<strong>Token for app.terraform.io</strong>の入力欄へ貼り付ける。失敗する場合は、期限切れ、コピー漏れ、別アカウントのトークン、削除済みトークンを確認し、新しいトークンを発行する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="cloud-block">cloudブロックの追加</h2>
+        <p>既存の<code class="inline-code">terraform</code>ブロックへ<code class="inline-code">cloud</code>ブロックを追加する。<code class="inline-code">required_providers</code>を別の<code class="inline-code">terraform</code>ブロックに重複して定義せず、Root Module内で統合する</p>
+
+        <div class="code" data-prompt="">
+          <div class="code-header"><span>terraform.tf</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform {
+  required_version = "&gt;= 1.5.0"
+
+  cloud {
+    organization = "&lt;HCP_ORGANIZATION_NAME&gt;"
+
+    workspaces {
+      name = "&lt;HCP_WORKSPACE_NAME&gt;"
+    }
+  }
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~&gt; 6.0"
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="callout callout-error">
+          <strong>❌ required_providersはRoot Module内で1か所</strong>
+          <p><code class="inline-code">main.tf</code>と<code class="inline-code">terraform.tf</code>の両方に<code class="inline-code">required_providers</code>を定義すると、<code class="inline-code">Duplicate required providers configuration</code>になる。ファイルは分けられるが、設定は1つの<code class="inline-code">required_providers</code>へ統合する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="state-migration">Workspaceの初期化とState移行</h2>
+        <p><code class="inline-code">cloud</code>ブロックを追加したディレクトリで<code class="inline-code">terraform init</code>を実行する。既存のLocal Stateがある場合は、移行確認の内容とOrganization／Workspaceを確認してから<code class="inline-code">yes</code>を入力する</p>
+
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform fmt
+terraform init
+terraform state list
+terraform plan</code></pre>
+        </div>
+
+        <details class="example-details execution-example">
+          <summary><span class="execution-example-label">実行例：</span>Local StateをHCP Terraformへ移行</summary>
+          <div class="code" data-prompt="">
+            <div class="code-header"><span>redacted log</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>$ terraform init
+Initializing HCP Terraform...
+
+Do you wish to proceed?
+  Enter a value: yes
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v6.61.0
+
+HCP Terraform has been successfully initialized!</code></pre>
+          </div>
+        </details>
+
+        <div class="callout">
+          <strong>ℹ️ 移行後のState</strong>
+          <p>State移行後はHCP Terraformが正式な保存先になる。ローカルの<code class="inline-code">terraform.tfstate</code>が空または最小構成になっても、Workspaceの<strong>States</strong>でState versionと管理リソースを確認できれば異常ではない。移行前に作成された<code class="inline-code">terraform.tfstate.backup</code>も機密情報として保護する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="execution-mode">実行モードの選択</h2>
+        <p>Workspaceの<strong>Settings → General → Execution mode</strong>で、PlanとApplyを実行する場所を選択する。実行場所によってAWS認証情報の取得元が変わる</p>
+
+        <table>
+          <thead><tr><th>実行モード</th><th>Plan／Applyの実行場所</th><th>AWS認証情報</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>Remote</td><td>HCP Terraformの実行環境</td><td>Workspace VariablesまたはDynamic Provider Credentials</td><td>HCP Terraform上でRun、ログ、承認を一元管理する</td></tr>
+            <tr><td>Local</td><td>Terraform CLIを実行したEC2、VM、端末</td><td>ローカル環境変数、AWS Profile、EC2 IAMロールなど</td><td>Plan／Applyは手元で実行し、StateのみHCP Terraformで共有する</td></tr>
+            <tr><td>Agent</td><td>自社ネットワーク内のTerraform Agent</td><td>Agent実行環境で利用可能な認証方法</td><td>閉域環境やHCPから直接到達できない対象を操作する</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ Remote実行はEC2の環境を引き継がない</strong>
+          <p>EC2へSSH接続したシェルで設定した<code class="inline-code">export AWS_ACCESS_KEY_ID=...</code>やEC2 Instance Profileは、HCP TerraformのRemote実行環境へ引き継がれない。Remote実行ではWorkspace側へAWS認証方法を設定する</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="aws-credentials">Remote実行でAWS認証情報を設定</h2>
+        <p>短期検証で静的なAWSアクセスキーを使用する場合は、Workspaceの<strong>Variables</strong>でEnvironment variableを追加する。アクセスキーそのものはValueへ入力し、KeyにはAWS SDKが認識する環境変数名を指定する</p>
+
+        <table>
+          <thead><tr><th>Key</th><th>Value</th><th>Sensitive</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">AWS_ACCESS_KEY_ID</code></td><td><code class="inline-code">&lt;AWS_ACCESS_KEY_ID_VALUE&gt;</code></td><td>有効</td></tr>
+            <tr><td><code class="inline-code">AWS_SECRET_ACCESS_KEY</code></td><td><code class="inline-code">&lt;AWS_SECRET_ACCESS_KEY_VALUE&gt;</code></td><td>有効</td></tr>
+            <tr><td><code class="inline-code">AWS_SESSION_TOKEN</code></td><td><code class="inline-code">&lt;AWS_SESSION_TOKEN_VALUE&gt;</code></td><td>一時認証情報を使用する場合は有効</td></tr>
+            <tr><td><code class="inline-code">AWS_DEFAULT_REGION</code></td><td><code class="inline-code">ap-northeast-1</code></td><td>任意</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-error">
+          <strong>❌ Key欄へアクセスキーの値を入力しない</strong>
+          <p>Keyには<code class="inline-code">AWS_ACCESS_KEY_ID</code>、Valueには<code class="inline-code">AKIA...</code>などの実際の値を入力する。シークレットアクセスキーも同様にKeyとValueを分け、Sensitiveを有効にする</p>
+        </div>
+
+        <p>継続運用では、長期アクセスキーをWorkspaceへ保存せず、HCP Terraformの<strong>Dynamic Provider Credentials</strong>とAWS IAMのOIDC連携を使用する。Workspaceごとに許可するIAMロールを分け、短時間の認証情報をRunごとに発行する構成が適している</p>
+
+        <details class="example-details execution-example">
+          <summary><span class="execution-example-label">実行例：</span>Remote実行でAWS認証情報を取得できない</summary>
+          <div class="code" data-prompt="">
+            <div class="code-header"><span>redacted log</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>$ terraform plan
+Running plan in HCP Terraform.
+
+Planning failed. Terraform encountered an error while generating this plan.
+
+Error: No valid credential sources found
+
+Error: failed to refresh cached credentials, no EC2 IMDS role found</code></pre>
+          </div>
+          <p>Remote実行環境にはEC2のInstance Metadata Serviceがないため、Workspace VariablesまたはDynamic Provider Credentialsを設定する。Local実行へ切り替える場合は、実行元で<code class="inline-code">aws sts get-caller-identity</code>を確認する</p>
+        </details>
+      </section>
+
+      <section>
+        <h2 id="verification">HCP Terraformで確認する項目</h2>
+        <table>
+          <thead><tr><th>画面</th><th>確認内容</th></tr></thead>
+          <tbody>
+            <tr><td>Overview</td><td>Workspace名、Terraformバージョン、Execution mode、Resource数、最新更新時刻</td></tr>
+            <tr><td>Runs</td><td>Plan／Applyの結果、実行者、差分、エラー、承認状態</td></tr>
+            <tr><td>States</td><td>State version、管理リソース、Output、更新者、更新日時</td></tr>
+            <tr><td>Variables</td><td>Terraform variableとEnvironment variableの分類、Sensitive設定、Variable Set</td></tr>
+            <tr><td>Settings</td><td>Execution mode、Terraform version、Auto apply、Workspace削除設定</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>Local executionの確認</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>terraform workspace show
+terraform state list
+terraform plan</code></pre>
+        </div>
+      </section>
+
+      <section>
+        <h2 id="avatar">HCP Terraformのアバター変更</h2>
+        <p>HCP TerraformのユーザーアバターはGravatarから取得される。HCP TerraformのProfileに登録されているメールアドレスと、Gravatarへ登録するメールアドレスを一致させる</p>
+
+        <ol>
+          <li>Gravatarのアバター管理画面を表示</li>
+          <li>HCP TerraformのProfile画面に表示されているメールアドレスでログインまたは新規登録</li>
+          <li>メールアドレスの確認メールを承認</li>
+          <li>Gravatar管理画面で対象メールアドレスを選択</li>
+          <li><strong>Upload image</strong>から使用するJPEGまたはPNGファイルを選択</li>
+          <li>必要に応じて表示範囲を調整して保存</li>
+          <li>アップロードした画像を対象メールアドレスのアクティブなアバターに設定</li>
+          <li>Ratingは<strong>G</strong>に設定</li>
+          <li>HCP Terraformへ戻って<kbd>Ctrl</kbd> + <kbd>F5</kbd>で更新</li>
+        </ol>
+
+        <div class="callout">
+          <strong>ℹ️ 反映されない場合</strong>
+          <p>HCP TerraformとGravatarのメールアドレスが完全に一致していること、画像が対象メールアドレスのアクティブなアバターになっていること、RatingがGであることを確認する。反映には少し時間がかかる場合がある</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../assets/app.js?v=20260823-ref1"></script>
+</body>
+</html>

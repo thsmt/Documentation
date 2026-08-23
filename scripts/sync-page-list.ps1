@@ -12,6 +12,7 @@ $groups = @(
         Icon = '◈'
         Pages = @(
             [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform 概要' }
+            [pscustomobject]@{ File = 'hcp-terraform.html'; Label = 'HCP Terraform' }
         )
     }
     [pscustomobject]@{
