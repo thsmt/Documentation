@@ -157,7 +157,7 @@ exec "$SHELL"</code></pre>
       </section>
 
       <section>
-        <h2 id="files">デプロイに必要なファイルと生成されるファイル</h2>
+        <h2 id="files">Terraformの構成ファイルと生成ファイル</h2>
         <p>Terraformは、実行ディレクトリ直下にあるすべての<code class="inline-code">.tf</code>ファイルを1つのRoot Moduleとして読み込む。処理順はファイル名や記述順ではなく、ブロック間の参照関係から決まる。小規模な検証では<code class="inline-code">main.tf</code>だけでもよいが、実務では役割別に分けると管理しやすい</p>
 
         <h3>デプロイ前に用意するファイル</h3>
@@ -266,7 +266,7 @@ exec "$SHELL"</code></pre>
         </div>
 
         <div class="callout callout-error">
-          <strong>⚠️ required_providersはRoot Module内で1か所</strong>
+          <strong>❌ required_providersはRoot Module内で1か所</strong>
           <p><code class="inline-code">main.tf</code>と<code class="inline-code">terraform.tf</code>の両方に<code class="inline-code">required_providers</code>を定義すると、<em>Duplicate required providers configuration</em>になる。ファイル名ではなく、同じディレクトリにあるすべての<code class="inline-code">*.tf</code>が1つのRoot Moduleとして読み込まれる</p>
         </div>
 
@@ -394,15 +394,32 @@ resource "aws_db_instance" "wordpress" {
 }</code></pre>
         </div>
 
-        <p>出典：<a href="https://developer.hashicorp.com/terraform/language/block/provider">HashiCorp Developer: Provider block reference</a></p>
-        <p>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create">HashiCorp Developer: Create infrastructure</a></p>
       </section>
 
       <section>
         <h2 id="authentication">AWS Providerへの認証情報の付与</h2>
         <p>AWS ProviderがAPIを呼び出すには、認証情報とIAM権限の両方が必要になる。アクセスキーやIAMロールは「誰として実行するか」を決め、IAMポリシーは「何を操作できるか」を決める</p>
 
-        <h3>書籍に記載される直接指定方式（非推奨）</h3>
+        <h3>認証方法の比較</h3>
+        <table>
+          <thead><tr><th>番号</th><th>認証方法</th><th>主な利用場所</th><th>評価</th><th>要点</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>IAMロール</td><td>EC2、ECS、Lambda</td><td>推奨</td><td>AWSが有効期限付きの一時認証情報を提供する。長期アクセスキーの配布が不要</td></tr>
+            <tr><td>2</td><td>OIDCなどによるAssumeRole</td><td>CI/CD</td><td>推奨</td><td>ジョブごとに一時認証情報を取得できる</td></tr>
+            <tr><td>3</td><td>IAM Identity CenterまたはAssumeRole</td><td>人が操作する端末</td><td>推奨</td><td>フェデレーションと一時認証情報を利用できる</td></tr>
+            <tr><td>4</td><td>名前付きAWS CLIプロファイル</td><td>ローカル検証</td><td>条件付きで推奨</td><td>複数のAWSアカウントやRoleを切り替えやすい</td></tr>
+            <tr><td>5</td><td>環境変数</td><td>短時間の動作確認</td><td>一時利用のみ</td><td>現在のシェルだけへ設定し、作業後に解除する</td></tr>
+            <tr><td>6</td><td>IAMユーザーの長期アクセスキー</td><td>Roleを利用できない例外</td><td>原則非推奨</td><td>保管、失効、ローテーションの運用が必要</td></tr>
+            <tr><td>7</td><td>Providerブロックへの直接記述</td><td>利用しない</td><td>非推奨</td><td>構成ファイルやバージョン管理から認証情報が漏えいする危険がある</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-info">
+          <strong>認証方式を選ぶ基準</strong>
+          <p>有効期限付きの一時認証情報を取得できる方式を優先する。切り替えやエラー調査では、環境変数、名前付きプロファイル、IAMロールを同時に混在させず、<code class="inline-code">aws sts get-caller-identity</code>で実行主体を確認する。実際の認証情報はTerraform構成やバージョン管理へ保存しない</p>
+        </div>
+
+        <h3>Providerブロックへの直接指定（非推奨）</h3>
         <div class="code" data-prompt="">
           <div class="code-header"><span>非推奨の例</span><button class="copy" type="button">Copy</button></div>
           <pre><code>provider "aws" {
@@ -416,19 +433,6 @@ resource "aws_db_instance" "wordpress" {
           <strong>⚠️ .tfへアクセスキーを書かない</strong>
           <p>この方式はProviderへ認証情報を渡す仕組みを理解しやすい一方、Git、バックアップ、画面共有、レビュー、ログなどから長期認証情報が漏えいする危険がある。実際のアクセスキーを<code class="inline-code">main.tf</code>や<code class="inline-code">terraform.tfvars</code>へ直接記述しない</p>
         </div>
-
-        <h3>推奨順位</h3>
-        <table>
-          <thead><tr><th>実行場所</th><th>推奨する認証方法</th><th>特徴</th></tr></thead>
-          <tbody>
-            <tr><td>EC2、ECS、Lambda</td><td>IAMロール</td><td>AWSが有効期限付きの一時認証情報を提供する。長期アクセスキーの配布が不要</td></tr>
-            <tr><td>CI/CD</td><td>OIDCなどによるAssumeRole</td><td>ジョブごとに一時認証情報を取得できる</td></tr>
-            <tr><td>人が操作する端末</td><td>IAM Identity CenterまたはAssumeRole</td><td>フェデレーションと一時認証情報を利用できる</td></tr>
-            <tr><td>ローカル検証</td><td>名前付きAWS CLIプロファイル</td><td>複数アカウント・Roleを切り替えやすい</td></tr>
-            <tr><td>短時間の互換性確認</td><td>環境変数</td><td>現在のシェルだけへ設定し、終了後に解除する</td></tr>
-            <tr><td>ロールを利用できない例外</td><td>IAMユーザーの長期アクセスキー</td><td>最小権限、保管、失効、ローテーションが必要</td></tr>
-          </tbody>
-        </table>
 
         <h3>EC2インスタンスプロファイル（推奨）</h3>
         <p>Terraformを実行するEC2へIAMロールを割り当てると、AWS ProviderはIMDSから一時認証情報を自動取得する。Providerブロックにはリージョンなどの非機密設定だけを記述する</p>
@@ -501,33 +505,11 @@ resource "aws_iam_user_policy_attachment" "terraform_operator_power_user" {
 }</code></pre>
         </div>
 
-        <div class="callout callout-warning">
-          <strong>⚠️ PowerUserAccessは最小権限ではない</strong>
-          <p>AWS managed policyは検証開始時の権限付与には利用できるが、対象環境に必要な最小権限とは限らない。CloudTrailやIAM Access Analyzerで実際の操作を確認し、EC2・VPC・RDSなど必要なActionとResourceへ限定したカスタマー管理ポリシーへ移行する</p>
-        </div>
-
-        <p>AWS公式手順：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html">Security best practices in IAM</a></p>
-        <p>AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">Configuring environment variables for the AWS CLI</a></p>
       </section>
 
       <section>
         <h2 id="aws-errors">AWSエラーの対処法</h2>
         <p>エラー発生時は、Terraformの構文だけでなく、実行ディレクトリ、State、認証主体、AWSアカウント、リージョン、IAM権限を順に切り分ける</p>
-
-        <h3>最初に確認するコマンド</h3>
-        <div class="code" data-prompt="$">
-          <div class="code-header"><span>diagnostics</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>pwd
-ls -la
-printenv | grep '^AWS_' || true
-aws configure list
-aws sts get-caller-identity
-terraform version
-terraform providers
-terraform validate
-terraform state list
-terraform plan</code></pre>
-        </div>
 
         <table>
           <thead><tr><th>エラー・症状</th><th>主な原因</th><th>対処</th></tr></thead>
