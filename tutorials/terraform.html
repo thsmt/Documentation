@@ -63,16 +63,36 @@
 
       <p class="eyebrow">Terraform / AWS</p>
       <h1>Terraform AWS運用リファレンス</h1>
-      <p class="lead">TerraformをUbuntuへインストールし、AWS ProviderでAWSリソースを管理するためのコマンド、構成ブロック、認証・権限、エラー対処を整理する</p>
+      <p class="lead">Terraformの仕組み、実行環境へのインストール、構成ファイルと生成ファイル、AWS Providerの認証、AWSリソースの記述、エラー対処を整理する</p>
 
-      <div class="callout">
-        <strong>ℹ️ 基本の実行順序</strong>
-        <p><code class="inline-code">terraform fmt → init → validate → plan → apply</code>の順に実行し、適用後は<code class="inline-code">output</code>、<code class="inline-code">state list</code>、AWS側の実リソースを確認する</p>
-      </div>
+      <section>
+        <h2 id="overview">Terraformとは</h2>
+        <p>Terraformは、サーバー、ネットワーク、データベース、IAMなどのインフラ構成をコードで定義し、作成・変更・削除するInfrastructure as Code（IaC）ツールである。HCLで「どのような状態にしたいか」を宣言し、Terraformがリソース間の依存関係と実行順序を判断する</p>
+
+        <div class="architecture-flow" aria-label="Terraformの処理の流れ">
+          <span>構成ファイル（HCL）</span><b>→</b><span>Terraform Core</span><b>→ RPC →</b><span>AWS Provider</span><b>→ AWS API →</b><span>AWSリソース</span>
+        </div>
+
+        <table>
+          <thead><tr><th>構成要素</th><th>役割</th></tr></thead>
+          <tbody>
+            <tr><td>構成ファイル</td><td><code class="inline-code">resource</code>、<code class="inline-code">data</code>、<code class="inline-code">provider</code>などのブロックで目標の構成を定義する</td></tr>
+            <tr><td>Terraform Core</td><td>同じディレクトリにある構成を読み、Stateと実環境を照合して依存関係と変更内容を計算する</td></tr>
+            <tr><td>Provider</td><td>Terraform CoreとAWSなどのAPIを接続するプラグイン。サービス固有のリソースと操作を実装する</td></tr>
+            <tr><td>State</td><td>Terraformのリソースアドレスと実際のリソースID・属性を対応付ける</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>ℹ️ Terraformが行う比較</strong>
+          <p><code class="inline-code">plan</code>では構成ファイルの目標状態、Stateに記録された管理状態、Providerが取得した実環境を比較して変更案を作る。<code class="inline-code">apply</code>ではその変更をProvider経由でAPIへ送り、完了後の情報をStateへ反映する</p>
+        </div>
+      </section>
 
       <section>
         <h2 id="installation">Terraformのインストール</h2>
-        <p>Ubuntu／Debianでは、HashiCorpのGPGキーと公式APTリポジトリを登録してTerraform CLIをインストールする</p>
+        <p>Terraform CLIは、<code class="inline-code">terraform</code>コマンドを実行する環境へインストールする。管理用のVMやEC2からAWSを操作する場合は、そのVMやEC2へのインストールが必要である。Terraformが作成する対象サーバーへTerraform自体をインストールする必要はない</p>
+        <p>Ubuntu／DebianのVMを実行環境にする場合は、HashiCorpのGPGキーと公式APTリポジトリを登録してTerraform CLIをインストールする。CI/CDやHCP Terraformでリモート実行する場合は、Terraformを実行するRunner側の環境とバージョンを管理する</p>
 
         <div class="code" data-prompt="$">
           <div class="code-header"><span>Ubuntu / Debian</span><button class="copy" type="button">Copy</button></div>
@@ -115,6 +135,43 @@ exec "$SHELL"</code></pre>
       </section>
 
       <section>
+        <h2 id="files">デプロイに必要なファイルと生成されるファイル</h2>
+        <p>Terraformは、実行ディレクトリ直下にあるすべての<code class="inline-code">.tf</code>ファイルを1つのRoot Moduleとして読み込む。処理順はファイル名や記述順ではなく、ブロック間の参照関係から決まる。小規模な検証では<code class="inline-code">main.tf</code>だけでもよいが、実務では役割別に分けると管理しやすい</p>
+
+        <h3>デプロイ前に用意するファイル</h3>
+        <table>
+          <thead><tr><th>ファイル</th><th>役割</th><th>Git管理</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">terraform.tf</code></td><td>Terraform本体とProviderのバージョン制約、Providerの取得元を定義</td><td>含める</td></tr>
+            <tr><td><code class="inline-code">providers.tf</code></td><td>AWSリージョン、Alias、共通タグなどProviderの設定を定義。アクセスキーは直接記述しない</td><td>含める</td></tr>
+            <tr><td><code class="inline-code">main.tf</code></td><td><code class="inline-code">resource</code>、<code class="inline-code">data</code>、<code class="inline-code">module</code>など、管理するインフラ本体を定義</td><td>含める</td></tr>
+            <tr><td><code class="inline-code">variables.tf</code></td><td>入力変数の型、説明、既定値、検証条件を定義</td><td>含める</td></tr>
+            <tr><td><code class="inline-code">terraform.tfvars</code>／<code class="inline-code">*.auto.tfvars</code></td><td>環境ごとの変数値を設定。パスワードやアクセスキーを含む場合はGitへ登録しない</td><td>機密値を含まない場合のみ</td></tr>
+            <tr><td><code class="inline-code">outputs.tf</code></td><td>作成後に参照するIPアドレス、DNS名、IDなどの出力を定義</td><td>含める</td></tr>
+            <tr><td><code class="inline-code">backend.tf</code></td><td>Stateの保存先とロック方式を定義。S3などのRemote Backendを利用する場合に作成</td><td>含める。ただし認証情報は書かない</td></tr>
+            <tr><td><code class="inline-code">wordpress.sh</code>など</td><td><code class="inline-code">file()</code>や<code class="inline-code">templatefile()</code>から参照するUser Data・テンプレート。参照している場合はデプロイに必要</td><td>原則として含める</td></tr>
+          </tbody>
+        </table>
+
+        <h3>コマンド実行で生成・更新されるファイル</h3>
+        <table>
+          <thead><tr><th>ファイル・ディレクトリ</th><th>生成タイミング</th><th>役割と取扱い</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline-code">.terraform/</code></td><td><code class="inline-code">terraform init</code></td><td>Provider、Module、Backend情報を保持する作業用ディレクトリ。自動生成されるためGitへ登録しない</td></tr>
+            <tr><td><code class="inline-code">.terraform.lock.hcl</code></td><td><code class="inline-code">terraform init</code></td><td>選択されたProviderのバージョンとハッシュを固定する。チームやCIで同じProviderを利用するためGitへ登録する</td></tr>
+            <tr><td><code class="inline-code">tfplan</code>などの保存済みPlan</td><td><code class="inline-code">terraform plan -out=tfplan</code></td><td><code class="inline-code">-out</code>を指定した場合だけ生成される。構成・変数・機密値を含み得るためGitへ登録せず、適用後は不要なファイルを削除する</td></tr>
+            <tr><td><code class="inline-code">terraform.tfstate</code></td><td>Local Backendで<code class="inline-code">terraform apply</code></td><td>管理対象の現在状態を記録する重要ファイル。機密値を含み得るためGitへ登録しない。Remote Backendでは通常ローカルに保存しない</td></tr>
+            <tr><td><code class="inline-code">terraform.tfstate.backup</code></td><td>Local State更新時</td><td>更新前のStateを保持するバックアップ。Stateと同様に機密情報として扱い、Gitへ登録しない</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>ℹ️ planとapplyで生成されるもの</strong>
+          <p>通常の<code class="inline-code">terraform plan</code>は結果を画面に表示するだけでPlanファイルを作らない。<code class="inline-code">-out</code>を指定した場合だけ保存済みPlanが作られる。<code class="inline-code">apply</code>はAWSリソースを変更し、Local BackendではStateを作成または更新するが、<code class="inline-code">main.tf</code>などの構成ファイルは自動生成しない</p>
+        </div>
+      </section>
+
+      <section>
         <h2 id="commands">Terraform CLIコマンドリファレンス</h2>
         <table class="command-table">
           <thead><tr><th>コマンド</th><th>用途</th><th>運用上の確認点</th></tr></thead>
@@ -138,21 +195,6 @@ exec "$SHELL"</code></pre>
             <tr><td><code class="inline-code">terraform destroy</code></td><td>管理対象を削除</td><td>同じBackend、State、AWSアカウント、リージョンで実行</td></tr>
           </tbody>
         </table>
-
-        <h3>日常の実行例</h3>
-        <div class="code" data-prompt="$">
-          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>pwd
-terraform fmt
-terraform init
-terraform validate
-terraform providers
-terraform plan -out=tfplan
-terraform show tfplan
-terraform apply tfplan
-terraform output
-terraform state list</code></pre>
-        </div>
 
         <h3>Planの記号</h3>
         <table>
@@ -335,7 +377,7 @@ resource "aws_db_instance" "wordpress" {
       </section>
 
       <section>
-        <h2 id="authentication">AWS Providerへ認証情報と権限を与える</h2>
+        <h2 id="authentication">AWS Providerへの認証情報の付与</h2>
         <p>AWS ProviderがAPIを呼び出すには、認証情報とIAM権限の両方が必要になる。アクセスキーやIAMロールは「誰として実行するか」を決め、IAMポリシーは「何を操作できるか」を決める</p>
 
         <h3>書籍に記載される直接指定方式（非推奨）</h3>
@@ -480,32 +522,6 @@ terraform plan</code></pre>
           </tbody>
         </table>
 
-        <h3>リージョンとAMIを確認</h3>
-        <div class="code" data-prompt="$">
-          <div class="code-header"><span>AWS CLI</span><button class="copy" type="button">Copy</button></div>
-          <pre><code>aws configure get region
-aws ec2 describe-vpcs --vpc-ids "&lt;VPC_ID&gt;" --region ap-northeast-1
-aws ec2 describe-subnets --subnet-ids "&lt;SUBNET_ID&gt;" --region ap-northeast-1
-aws ec2 describe-images --image-ids "&lt;AMI_ID&gt;" --region ap-northeast-1</code></pre>
-        </div>
-
-        <div class="callout callout-warning">
-          <strong>⚠️ リージョンだけを変更してapplyしない</strong>
-          <p>既存Stateを持ったままProviderのリージョンを変更すると、別リージョンのVPC・Subnet・AMIを参照できず、大量の削除・再作成が計画される場合がある。移行は新しいBackend・State・ディレクトリを用意し、データ移行と切り替えを別途設計する</p>
-        </div>
-      </section>
-
-      <section>
-        <h2 id="sources">一次資料</h2>
-        <ul class="source-list">
-          <li>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli">HashiCorp Developer: Install Terraform</a></li>
-          <li>出典：<a href="https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create">HashiCorp Developer: Create infrastructure</a></li>
-          <li>出典：<a href="https://developer.hashicorp.com/terraform/language/block/provider">HashiCorp Developer: Provider block reference</a></li>
-          <li>出典：<a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">Terraform Registry: AWS Provider</a></li>
-          <li>AWS公式手順：<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html">Security best practices in IAM</a></li>
-          <li>AWS公式手順：<a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html">Configuring environment variables for the AWS CLI</a></li>
-        </ul>
-        <p class="meta">最終更新: 2026年8月23日</p>
       </section>
     </main>
   </div>
