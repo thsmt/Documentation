@@ -33,8 +33,12 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = 'Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
             [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
+            [pscustomobject]@{ File = 'storage.html'; Label = 'ストレージ管理' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
             [pscustomobject]@{ File = 'apache-self-signed-ssl-termination.html'; Label = 'Apache SSL終端（自己署名証明書）' }
+            [pscustomobject]@{ File = 'redis.html'; Label = 'Redis（KVS）' }
+            [pscustomobject]@{ File = 'nfs.html'; Label = 'NFS' }
+            [pscustomobject]@{ File = 'samba.html'; Label = 'Samba' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'postgresql.html'; Label = 'PostgreSQL' }
         )

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ストレージ管理 | Documentation</title>
+  <meta name="description" content="RHEL 9におけるXFS、LVM、iSCSI、Device Mapper Multipathの構築・運用手順">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions"><button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button><nav class="nav" aria-label="Global navigation"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a><a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a></nav></div>
+  </header>
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
+      </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="terraform.html">Terraform 概要</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">⚙︎</span>OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a class="active" href="storage.html">ストレージ管理</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-ssl-termination.html">Apache SSL終端（自己署名証明書）</a>
+      <a href="redis.html">Redis（KVS）</a>
+      <a href="nfs.html">NFS</a>
+      <a href="samba.html">Samba</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">▤</span>リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>OS／ミドルウェア</span></nav>
+      <h1>ストレージ管理</h1>
+      <div class="page-summary"><strong>⚡ このページの要約</strong><p class="lead">RHEL 9におけるブロックデバイス、GPT、XFS、LVMの構築と保守手順を整理する<br>iSCSIとDevice Mapper Multipathを含め、変更前確認から障害切り分けまでをまとめる</p></div>
+
+      <h2 id="inventory">1. デバイスと利用状況の確認</h2>
+      <p>デバイス名は再起動や接続順で変わる場合があるため、作業対象を容量、モデル、シリアル、WWN、マウント先で特定する</p>
+      <p class="procedure-step"><strong>1.1 ブロックデバイスの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div><pre><code>lsblk -e 7 -o NAME,PATH,SIZE,TYPE,FSTYPE,FSVER,LABEL,UUID,MOUNTPOINTS,MODEL,SERIAL,WWN</code></pre></div>
+      <p class="procedure-step"><strong>1.2 ファイルシステムとLVMの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>findmnt --real
+df -hT
+blkid
+pvs -o+devices
+vgs
+lvs -a -o+devices,segtype</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ 作業対象の特定</strong><p><code>&lt;DEVICE&gt;</code>と<code>&lt;PARTITION&gt;</code>は実機の確認結果へ置き換える。OSディスクや使用中デバイスへパーティション作成、フォーマット、PV作成を実行しない</p></div>
+
+      <h2 id="partition-xfs">2. GPTパーティションとXFSの作成</h2>
+      <p>新規データディスクへGPTパーティションとXFSを作成し、UUIDで永続マウントする</p>
+      <p class="procedure-step"><strong>2.1 使用中でないことの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lsblk -f &lt;DEVICE&gt;
+findmnt --source &lt;DEVICE&gt;</code></pre></div>
+      <p class="procedure-step"><strong>2.2 GPTとパーティションの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>parted &lt;DEVICE&gt; --script mklabel gpt
+parted &lt;DEVICE&gt; --script mkpart primary xfs 1MiB 100%
+partprobe &lt;DEVICE&gt;</code></pre></div>
+      <p class="procedure-step"><strong>2.3 XFSの作成と一時マウント</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>mkfs.xfs -L &lt;FILESYSTEM_LABEL&gt; &lt;PARTITION&gt;
+install -d -m 0755 &lt;MOUNT_POINT&gt;
+mount &lt;PARTITION&gt; &lt;MOUNT_POINT&gt;
+blkid &lt;PARTITION&gt;</code></pre></div>
+      <p class="procedure-step"><strong>2.4 <code>/etc/fstab</code>のバックアップと編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/fstab /etc/fstab.$(date +%Y%m%d)
+vi /etc/fstab</code></pre></div>
+      <div class="code"><div class="code-header"><span>fstab</span><button class="copy" type="button">Copy</button></div><pre><code>UUID=&lt;FILESYSTEM_UUID&gt;  &lt;MOUNT_POINT&gt;  xfs  defaults,nofail  0  0</code></pre></div>
+      <p class="procedure-step"><strong>2.5 永続マウント設定の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>umount &lt;MOUNT_POINT&gt;
+systemctl daemon-reload
+mount -a
+findmnt &lt;MOUNT_POINT&gt;
+findmnt --verify --verbose</code></pre></div>
+
+      <h2 id="xfs-operations">3. XFSの拡張・バックアップ・修復</h2>
+      <p>XFSはオンライン拡張に対応するが縮小には対応しない。縮小が必要な場合は新しい小容量ファイルシステムを作成してデータを移行する</p>
+      <p class="procedure-step"><strong>3.1 デバイス拡張後のXFS拡張</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>xfs_growfs &lt;MOUNT_POINT&gt;
+df -hT &lt;MOUNT_POINT&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.2 バックアップツールのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install xfsdump</code></pre></div>
+      <p class="procedure-step"><strong>3.3 バックアップの取得と復元</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>xfsdump -l 0 -L &lt;DUMP_LABEL&gt; -M &lt;MEDIA_LABEL&gt; -f &lt;BACKUP_FILE&gt; &lt;MOUNT_POINT&gt;
+xfsrestore -f &lt;BACKUP_FILE&gt; &lt;RESTORE_DIRECTORY&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.4 ログ再生後のアンマウントと検査</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>umount &lt;MOUNT_POINT&gt;
+mount &lt;PARTITION&gt; &lt;MOUNT_POINT&gt;
+umount &lt;MOUNT_POINT&gt;
+xfs_repair -n &lt;PARTITION&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.5 バックアップ取得後の修復</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>xfs_metadump &lt;PARTITION&gt; &lt;METADUMP_FILE&gt;
+xfs_repair &lt;PARTITION&gt;</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ 修復前の保全</strong><p><code>xfs_repair</code>はファイルシステムを変更する。可能な限りスナップショットまたはブロックレベルバックアップを取得し、最初に<code>-n</code>で検査する</p></div>
+
+      <h2 id="lvm">4. LVMの作成と拡張</h2>
+      <p>PV、VG、LVを分離して管理し、ファイルシステムの停止時間を抑えて容量を拡張する</p>
+      <p class="procedure-step"><strong>4.1 PVとVGの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>pvcreate &lt;LVM_DEVICE&gt;
+vgcreate &lt;VG_NAME&gt; &lt;LVM_DEVICE&gt;</code></pre></div>
+      <p class="procedure-step"><strong>4.2 LVとXFSの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvcreate -L &lt;LV_SIZE&gt; -n &lt;LV_NAME&gt; &lt;VG_NAME&gt;
+mkfs.xfs /dev/&lt;VG_NAME&gt;/&lt;LV_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>4.3 LVとXFSの同時拡張</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvextend --resizefs -L +&lt;ADDITIONAL_SIZE&gt; /dev/&lt;VG_NAME&gt;/&lt;LV_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>4.4 LVMメタデータバックアップの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>vgcfgbackup &lt;VG_NAME&gt;
+ls -l /etc/lvm/backup/&lt;VG_NAME&gt;</code></pre></div>
+
+      <h2 id="lvm-advanced">5. スナップショット・シンプロビジョニング・RAID</h2>
+      <p>スナップショットは短期的な整合点であり、別媒体へ退避するバックアップの代替にはしない</p>
+      <p class="procedure-step"><strong>5.1 COWスナップショットの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvcreate --snapshot -L &lt;SNAPSHOT_SIZE&gt; -n &lt;SNAPSHOT_NAME&gt; /dev/&lt;VG_NAME&gt;/&lt;LV_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>5.2 シンプールとシンLVの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvcreate --type thin-pool -L &lt;POOL_SIZE&gt; -n &lt;THIN_POOL&gt; &lt;VG_NAME&gt;
+lvcreate --type thin -V &lt;VIRTUAL_SIZE&gt; -T &lt;VG_NAME&gt;/&lt;THIN_POOL&gt; -n &lt;THIN_LV&gt;</code></pre></div>
+      <p class="procedure-step"><strong>5.3 LVM RAID1の作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvcreate --type raid1 -m 1 -L &lt;LV_SIZE&gt; -n &lt;LV_NAME&gt; &lt;VG_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>5.4 使用率と同期状態の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvs -a -o lv_name,origin,segtype,data_percent,metadata_percent,copy_percent</code></pre></div>
+      <div class="callout"><strong>ℹ️ 容量監視</strong><p>シンプールとスナップショットは領域枯渇でI/O障害を起こす可能性がある。<code>data_percent</code>と<code>metadata_percent</code>を監視し、閾値到達前に拡張する</p></div>
+
+      <h2 id="vdo">6. LVM-VDOによる重複排除と圧縮</h2>
+      <p>VDOは物理容量より大きい仮想容量を提示するため、実データ使用量を継続監視し、物理領域の枯渇を防止する</p>
+      <p class="procedure-step"><strong>6.1 VDOパッケージのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install lvm2 kmod-kvdo vdo</code></pre></div>
+      <p class="procedure-step"><strong>6.2 LVM-VDOの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvcreate --type vdo --name &lt;VDO_LV_NAME&gt; --vdopool &lt;VDO_POOL_NAME&gt; --size &lt;PHYSICAL_POOL_SIZE&gt; --virtualsize &lt;VIRTUAL_SIZE&gt; &lt;VG_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>6.3 XFSの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>mkfs.xfs -K /dev/&lt;VG_NAME&gt;/&lt;VDO_LV_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>6.4 VDO使用率の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>lvs -o lv_name,vg_name,segtype,lv_size,data_percent
+vdostats --human-readable</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ オーバープロビジョニング</strong><p>仮想容量ではなくVDOプールの物理使用率を監視する。重複排除率や圧縮率を前提に容量設計せず、低減効果がない状態でも枯渇しない運用閾値を定義する</p></div>
+
+      <h2 id="iscsi">7. iSCSIの構成</h2>
+      <p>ターゲット側でLUNと接続元ACLを設定し、イニシエーター側で検出・ログインする</p>
+      <p class="procedure-step"><strong>7.1 ターゲットのインストールと起動</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>target root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install targetcli
+systemctl enable --now target</code></pre></div>
+      <p class="procedure-step"><strong>7.2 バックストア・IQN・LUN・ACLの設定</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>targetcli</span><button class="copy" type="button">Copy</button></div><pre><code>targetcli
+/backstores/block create &lt;BACKSTORE_NAME&gt; &lt;BLOCK_DEVICE&gt;
+/iscsi create &lt;TARGET_IQN&gt;
+/iscsi/&lt;TARGET_IQN&gt;/tpg1/luns create /backstores/block/&lt;BACKSTORE_NAME&gt;
+/iscsi/&lt;TARGET_IQN&gt;/tpg1/acls create &lt;INITIATOR_IQN&gt;
+saveconfig
+exit</code></pre></div>
+      <p class="procedure-step"><strong>7.3 iSCSIポートの許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>target root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --add-service=iscsi-target
+firewall-cmd --reload</code></pre></div>
+      <p class="procedure-step"><strong>7.4 イニシエーターのインストールと接続</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>initiator root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install iscsi-initiator-utils
+cat /etc/iscsi/initiatorname.iscsi
+iscsiadm -m discovery -t sendtargets -p &lt;TARGET_ADDRESS&gt;
+iscsiadm -m node -T &lt;TARGET_IQN&gt; -p &lt;TARGET_ADDRESS&gt; --login
+iscsiadm -m session</code></pre></div>
+
+      <h2 id="multipath">8. Device Mapper Multipathの構成</h2>
+      <p>同じLUNへの複数経路を単一デバイスへ統合し、経路障害時の継続性を確保する</p>
+      <p class="procedure-step"><strong>8.1 パッケージのインストールと有効化</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install device-mapper-multipath
+mpathconf --enable
+systemctl enable --now multipathd</code></pre></div>
+      <p class="procedure-step"><strong>8.2 経路とマルチパスデバイスの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>multipath -ll
+multipathd show paths
+multipathd show maps</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ 単一経路での書き込み禁止</strong><p>マルチパス化したLUNは<code>/dev/mapper/&lt;MULTIPATH_NAME&gt;</code>を使用する。配下の個別<code>/dev/sdX</code>へファイルシステムを作成しない</p></div>
+
+      <h2 id="operations">9. 運用確認</h2>
+      <table><thead><tr><th>確認対象</th><th>確認方法</th></tr></thead><tbody><tr><td>容量</td><td><code>df -hT</code>、<code>lvs</code>、シンプール使用率を監視</td></tr><tr><td>マウント</td><td><code>findmnt --verify</code>と<code>mount -a</code>で永続設定を確認</td></tr><tr><td>I/Oエラー</td><td><code>journalctl -k</code>とストレージ装置側イベントを確認</td></tr><tr><td>iSCSI</td><td><code>iscsiadm -m session</code>でセッションを確認</td></tr><tr><td>Multipath</td><td><code>multipath -ll</code>で全経路の状態を確認</td></tr><tr><td>復元性</td><td>バックアップから別領域への復元を定期確認</td></tr></tbody></table>
+      <p class="procedure-step"><strong>9.1 カーネルログにおけるI/Oエラーの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>journalctl -k -p warning..alert --since today</code></pre></div>
+    </main>
+    <aside class="toc" aria-label="Table of contents"><h2>ページ内</h2><a class="active" href="#inventory">1. デバイスと利用状況の確認</a><a href="#partition-xfs">2. GPTパーティションとXFSの作成</a><a href="#xfs-operations">3. XFSの拡張・バックアップ・修復</a><a href="#lvm">4. LVMの作成と拡張</a><a href="#lvm-advanced">5. スナップショット・シンプロビジョニング・RAID</a><a href="#vdo">6. LVM-VDOによる重複排除と圧縮</a><a href="#iscsi">7. iSCSIの構成</a><a href="#multipath">8. Device Mapper Multipathの構成</a><a href="#operations">9. 運用確認</a></aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

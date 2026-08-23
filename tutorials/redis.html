@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redis（KVS） | Documentation</title>
+  <meta name="description" content="RHEL 9におけるRedisの構築、認証、永続化、レプリケーション、Sentinelの運用手順">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions"><button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button><nav class="nav" aria-label="Global navigation"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a><a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a></nav></div>
+  </header>
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
+      </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="terraform.html">Terraform 概要</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">⚙︎</span>OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="storage.html">ストレージ管理</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-ssl-termination.html">Apache SSL終端（自己署名証明書）</a>
+      <a class="active" href="redis.html">Redis（KVS）</a>
+      <a href="nfs.html">NFS</a>
+      <a href="samba.html">Samba</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">▤</span>リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>OS／ミドルウェア</span></nav>
+      <h1>Redis（KVS）</h1>
+      <div class="page-summary"><strong>⚡ このページの要約</strong><p class="lead">RHEL 9へRedisを導入し、待受、認証、データ永続化、バックアップを構成する<br>レプリケーションとSentinelによる監視・自動フェイルオーバーの基本手順をまとめる</p></div>
+
+      <h2 id="design">1. 構成パラメータの確認</h2>
+      <p>Redisを外部へ公開する場合は、待受アドレス、接続元、認証、暗号化、容量上限、永続化方式を事前に定義する</p>
+      <table><thead><tr><th>項目</th><th>パラメータ</th></tr></thead><tbody><tr><td>待受アドレス</td><td><code>&lt;REDIS_LISTEN_ADDRESS&gt;</code></td></tr><tr><td>Redisポート</td><td><code>6379/TCP</code></td></tr><tr><td>Sentinelポート</td><td><code>26379/TCP</code></td></tr><tr><td>許可する接続元</td><td><code>&lt;REDIS_CLIENT_CIDR&gt;</code></td></tr><tr><td>認証情報</td><td>設定管理システムまたは権限制限済みファイルで管理</td></tr><tr><td>永続化</td><td>RDB、AOF、または両方</td></tr></tbody></table>
+      <div class="callout callout-warning"><strong>⚠️ インターネット公開禁止</strong><p>Redisの6379/TCPとSentinelの26379/TCPを不特定の接続元へ公開しない。Security Group、firewalld、Redis ACLを重ねて制御する</p></div>
+
+      <h2 id="install">2. インストールと起動</h2>
+      <p class="procedure-step"><strong>2.1 パッケージ情報の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf info redis</code></pre></div>
+      <p class="procedure-step"><strong>2.2 Redisのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install redis</code></pre></div>
+      <p class="procedure-step"><strong>2.3 バージョンの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-server --version
+rpm -q redis</code></pre></div>
+      <p class="procedure-step"><strong>2.4 サービスの有効化</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now redis</code></pre></div>
+
+      <h2 id="configuration">3. 待受・認証・メモリ設定</h2>
+      <p>標準設定をバックアップし、環境固有の値だけを変更する。パスワードやACLパスワードはページ、チケット、シェル履歴へ記録しない</p>
+      <p class="procedure-step"><strong>3.1 設定ファイルのバックアップ</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/redis/redis.conf /etc/redis/redis.conf.$(date +%Y%m%d)</code></pre></div>
+      <p class="procedure-step"><strong>3.2 設定ファイルの編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/redis/redis.conf</code></pre></div>
+      <div class="code"><div class="code-header"><span>redis.conf</span><button class="copy" type="button">Copy</button></div><pre><code>bind 127.0.0.1 &lt;REDIS_LISTEN_ADDRESS&gt;
+protected-mode yes
+port 6379
+supervised systemd
+maxmemory &lt;MAX_MEMORY&gt;
+maxmemory-policy allkeys-lru
+
+user default off
+user &lt;REDIS_USER&gt; on &gt;&lt;REDIS_PASSWORD&gt; ~* +@all
+user &lt;REPLICATION_USER&gt; on &gt;&lt;REPLICATION_PASSWORD&gt; +psync +replconf +ping
+user &lt;SENTINEL_REDIS_USER&gt; on &gt;&lt;SENTINEL_REDIS_PASSWORD&gt; resetchannels &amp;__sentinel__:hello +multi +slaveof +ping +exec +subscribe +config|rewrite +role +publish +info +client|setname +client|kill +script|kill</code></pre></div>
+      <p>アプリケーションの用途に応じ、<code>~*</code>のキーパターンと<code>+@all</code>のコマンド権限を必要最小限へ絞る</p>
+      <p class="procedure-step"><strong>3.3 SELinuxコンテキストと設定差分の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -v /etc/redis/redis.conf
+diff -u /etc/redis/redis.conf.$(date +%Y%m%d) /etc/redis/redis.conf</code></pre></div>
+      <p class="procedure-step"><strong>3.4 設定反映と状態確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl restart redis
+systemctl status redis --no-pager
+ss -lntp | grep ':6379'</code></pre></div>
+
+      <h2 id="network">4. 接続元の制限</h2>
+      <p>firewalldが有効な環境では、接続元を限定したrich ruleでRedisポートを許可する</p>
+      <p class="procedure-step"><strong>4.1 firewalldの状態確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl is-active firewalld</code></pre></div>
+      <p class="procedure-step"><strong>4.2 接続元を限定した許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="&lt;REDIS_CLIENT_CIDR&gt;" port port="6379" protocol="tcp" accept'
+firewall-cmd --reload
+firewall-cmd --list-rich-rules</code></pre></div>
+
+      <h2 id="client">5. 接続とデータ操作</h2>
+      <p><code>--askpass</code>を使用して認証情報を対話入力し、プロセス一覧とシェル履歴への露出を避ける</p>
+      <p class="procedure-step"><strong>5.1 PINGによる接続確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass PING</code></pre></div>
+      <p class="procedure-step"><strong>5.2 キーの登録・取得・削除</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass SET &lt;KEY&gt; &lt;VALUE&gt;
+redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass GET &lt;KEY&gt;
+redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass DEL &lt;KEY&gt;</code></pre></div>
+      <p class="procedure-step"><strong>5.3 サーバー情報の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass INFO server
+redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass INFO memory</code></pre></div>
+
+      <h2 id="persistence">6. 永続化とバックアップ</h2>
+      <p>RDBは時点スナップショット、AOFは書き込み操作の追記を行う。復旧目標とI/O特性に応じて選択する</p>
+      <p class="procedure-step"><strong>6.1 永続化設定の編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/redis/redis.conf</code></pre></div>
+      <div class="code"><div class="code-header"><span>redis.conf</span><button class="copy" type="button">Copy</button></div><pre><code>save 3600 1
+save 300 100
+save 60 10000
+appendonly yes
+appendfsync everysec</code></pre></div>
+      <p class="procedure-step"><strong>6.2 バックグラウンド保存の実行</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass BGSAVE
+redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass LASTSAVE</code></pre></div>
+      <p class="procedure-step"><strong>6.3 データディレクトリの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli --user &lt;REDIS_USER&gt; --askpass CONFIG GET dir
+redis-cli --user &lt;REDIS_USER&gt; --askpass CONFIG GET dbfilename
+ls -la /var/lib/redis</code></pre></div>
+      <div class="callout callout-warning"><strong>⚠️ バックアップ整合性</strong><p>データファイルをコピーする前に<code>BGSAVE</code>の完了を確認する。復元手順は別環境で検証し、RDBまたはAOFの保管先をRedisサーバーと分離する</p></div>
+
+      <h2 id="replication">7. レプリケーションの構成</h2>
+      <p>ReplicaはPrimaryからデータを複製する。書き込み先の自動切り替えにはSentinelまたはアプリケーション側の対応が必要になる</p>
+      <p class="procedure-step"><strong>7.1 Replica設定の追加</strong></p>
+      <div class="code"><div class="code-header"><span>replica redis.conf</span><button class="copy" type="button">Copy</button></div><pre><code>replicaof &lt;PRIMARY_ADDRESS&gt; 6379
+masteruser &lt;REPLICATION_USER&gt;
+masterauth &lt;REPLICATION_PASSWORD&gt;
+replica-read-only yes</code></pre></div>
+      <p class="procedure-step"><strong>7.2 Replicaサービスの再起動</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>replica root</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl restart redis</code></pre></div>
+      <p class="procedure-step"><strong>7.3 レプリケーション状態の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;REDIS_SERVER&gt; --user &lt;REDIS_USER&gt; --askpass INFO replication</code></pre></div>
+
+      <h2 id="sentinel">8. Sentinelの構成</h2>
+      <p>Sentinelを3台以上の奇数台で構成し、Primary監視とクォーラム判定を分散する</p>
+      <p class="procedure-step"><strong>8.1 Sentinel設定ファイルのバックアップと編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>sentinel root</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/redis/sentinel.conf /etc/redis/sentinel.conf.$(date +%Y%m%d)
+vi /etc/redis/sentinel.conf</code></pre></div>
+      <div class="code"><div class="code-header"><span>sentinel.conf</span><button class="copy" type="button">Copy</button></div><pre><code>bind 127.0.0.1 &lt;SENTINEL_LISTEN_ADDRESS&gt;
+protected-mode yes
+port 26379
+requirepass &lt;SENTINEL_PASSWORD&gt;
+sentinel monitor &lt;MASTER_NAME&gt; &lt;PRIMARY_ADDRESS&gt; 6379 2
+sentinel auth-user &lt;MASTER_NAME&gt; &lt;SENTINEL_REDIS_USER&gt;
+sentinel auth-pass &lt;MASTER_NAME&gt; &lt;SENTINEL_REDIS_PASSWORD&gt;
+sentinel down-after-milliseconds &lt;MASTER_NAME&gt; 5000
+sentinel failover-timeout &lt;MASTER_NAME&gt; 60000</code></pre></div>
+      <p class="procedure-step"><strong>8.2 Sentinelの有効化</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>sentinel root</span><button class="copy" type="button">Copy</button></div><pre><code>restorecon -v /etc/redis/sentinel.conf
+systemctl enable --now redis-sentinel</code></pre></div>
+      <p class="procedure-step"><strong>8.3 Sentinel接続元の許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>sentinel root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="&lt;SENTINEL_PEER_CIDR&gt;" port port="26379" protocol="tcp" accept'
+firewall-cmd --reload</code></pre></div>
+      <p class="procedure-step"><strong>8.4 Sentinel状態の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>redis-cli -h &lt;SENTINEL_SERVER&gt; -p 26379 --askpass SENTINEL master &lt;MASTER_NAME&gt;
+redis-cli -h &lt;SENTINEL_SERVER&gt; -p 26379 --askpass SENTINEL replicas &lt;MASTER_NAME&gt;</code></pre></div>
+
+      <h2 id="operations">9. 運用確認</h2>
+      <table><thead><tr><th>確認対象</th><th>確認方法</th></tr></thead><tbody><tr><td>サービス</td><td><code>systemctl status redis redis-sentinel</code></td></tr><tr><td>待受</td><td><code>ss -lntp</code>で6379と26379を確認</td></tr><tr><td>メモリ</td><td><code>INFO memory</code>とエビクション件数を監視</td></tr><tr><td>永続化</td><td><code>INFO persistence</code>でRDBとAOFの状態を確認</td></tr><tr><td>複製</td><td><code>INFO replication</code>でrole、link、offsetを確認</td></tr><tr><td>ログ</td><td><code>journalctl -u redis -u redis-sentinel</code>を確認</td></tr></tbody></table>
+      <p class="procedure-step"><strong>9.1 警告以上のログ確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>journalctl -u redis -u redis-sentinel -p warning..alert --since today</code></pre></div>
+    </main>
+    <aside class="toc" aria-label="Table of contents"><h2>ページ内</h2><a class="active" href="#design">1. 構成パラメータの確認</a><a href="#install">2. インストールと起動</a><a href="#configuration">3. 待受・認証・メモリ設定</a><a href="#network">4. 接続元の制限</a><a href="#client">5. 接続とデータ操作</a><a href="#persistence">6. 永続化とバックアップ</a><a href="#replication">7. レプリケーションの構成</a><a href="#sentinel">8. Sentinelの構成</a><a href="#operations">9. 運用確認</a></aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
