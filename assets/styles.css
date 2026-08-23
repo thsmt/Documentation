@@ -1155,6 +1155,39 @@ pre {
   color: #ff9900;
 }
 
+/* Terraform guides use the Terraform brand family instead of AWS orange. */
+.terraform-guide {
+  --terraform-code-ui: #b98eff;
+  --terraform-code-value: #c4a7ff;
+  --terraform-code-line: rgba(132, 79, 186, 0.72);
+}
+
+:root[data-theme="light"] .terraform-guide {
+  --terraform-code-ui: #6f42c1;
+  --terraform-code-line: rgba(111, 66, 193, 0.55);
+}
+
+.terraform-guide .code {
+  border-color: var(--terraform-code-line);
+}
+
+.terraform-guide .code-header {
+  border-bottom-color: var(--terraform-code-line);
+}
+
+.terraform-guide .code-header > span,
+.terraform-guide .copy {
+  color: var(--terraform-code-ui);
+}
+
+.terraform-guide .copy {
+  border-color: var(--terraform-code-line);
+}
+
+.terraform-guide .code .user-value {
+  color: var(--terraform-code-value);
+}
+
 code {
   font-family: Consolas, "SFMono-Regular", Menlo, monospace;
   font-size: 14px;
