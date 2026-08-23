@@ -1327,7 +1327,29 @@ figure.screenshot-compact {
   max-width: 480px;
 }
 
+.figure-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+  margin: 18px 0 24px;
+}
+
+.figure-grid figure {
+  margin: 0;
+}
+
+.figure-grid-compact figure img {
+  max-height: 680px;
+  object-fit: contain;
+  background: var(--surface);
+}
+
 @media (max-width: 800px) {
+  .figure-grid {
+    grid-template-columns: 1fr;
+  }
+
   figure.screenshot-wide,
   figure.screenshot-medium,
   figure.screenshot-compact {

@@ -69,7 +69,7 @@
 
       <p class="eyebrow">Terraform / HCP</p>
       <h1>HCP Terraform</h1>
-      <p class="lead">OrganizationとWorkspaceを作成し、Terraform CLIからHCP Terraformへ接続してStateを移行する手順、実行モード、AWS認証情報、アバター変更を整理する</p>
+      <p class="lead">OrganizationとWorkspaceを作成し、Terraform CLIからHCP Terraformへ接続してStateを移行する手順、GitHubとのVCS連携、Remote実行のAWS認証情報、Runの承認、アバター変更を整理する</p>
 
       <section>
         <h2 id="structure">HCP Terraformの構成</h2>
@@ -269,6 +269,137 @@ HCP Terraform has been successfully initialized!</code></pre>
       </section>
 
       <section>
+        <h2 id="github-repository">GitHubリポジトリへTerraform構成を登録</h2>
+        <p>VCS-driven workflowでは、HCP TerraformがGitHubリポジトリからTerraform構成を取得する。Gitの初期化はホームディレクトリではなく、<code class="inline-code">main.tf</code>などを配置したプロジェクトディレクトリで実行する</p>
+
+        <ol>
+          <li>GitHubでTerraform構成専用のリポジトリを作成</li>
+          <li>公開範囲を選択し、<strong>Add .gitignore</strong>でTerraformを指定</li>
+          <li>プロジェクトディレクトリでGitを初期化し、リモートリポジトリを登録</li>
+          <li><code class="inline-code">main.tf</code>、<code class="inline-code">.terraform.lock.hcl</code>、<code class="inline-code">.gitignore</code>をコミット</li>
+          <li><code class="inline-code">main</code>ブランチをPushし、GitHub上でファイルを確認</li>
+        </ol>
+
+        <figure>
+          <figcaption>Terraform用のGitHubリポジトリを作成し、Terraform向けの<code class="inline-code">.gitignore</code>を追加する</figcaption>
+          <img src="../assets/img/hcp-terraform/12-github-repository-create.png" alt="GitHubの新規リポジトリ作成画面でTerraformのgitignoreを選択した状態" width="1715" height="870" loading="lazy">
+        </figure>
+
+        <div class="code" data-prompt="$">
+          <div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div>
+          <pre><code>cd ~/aws-infra
+git init -b main
+git remote add origin https://github.com/&lt;GITHUB_USER&gt;/&lt;REPOSITORY_NAME&gt;.git
+git fetch origin
+git branch --set-upstream-to=origin/main main
+git pull --rebase
+
+terraform fmt
+terraform init
+terraform validate
+
+git add main.tf .terraform.lock.hcl .gitignore
+git commit -m "Update Terraform configuration"
+git push</code></pre>
+        </div>
+
+        <div class="callout callout-error">
+          <strong>❌ ホームディレクトリでgit initを実行しない</strong>
+          <p><code class="inline-code">/home/ubuntu</code>で実行すると、<code class="inline-code">chapter3</code>や<code class="inline-code">envtest</code>などホーム配下全体が1つのリポジトリに含まれる。誤って作成した<code class="inline-code">~/.git</code>は、必要なファイルを退避して対象を確認したうえで削除し、<code class="inline-code">~/aws-infra</code>で初期化し直す</p>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>⚠️ Gitへ登録するファイルを分ける</strong>
+          <p><code class="inline-code">.terraform.lock.hcl</code>はProviderの選択を固定するため登録する。Provider本体を保存する<code class="inline-code">.terraform/</code>、認証情報、<code class="inline-code">terraform.tfstate</code>、Planファイルは登録しない</p>
+        </div>
+
+        <h3>HTTPS認証でFine-grained PATを使用する場合</h3>
+        <p>GitHubはGit操作でアカウントのパスワードを受け付けない。HTTPSの認証プロンプトでは、UsernameへGitHubユーザー名、PasswordへPersonal Access Tokenを入力する。対象リポジトリを限定し、Repository permissionsの<strong>Contents</strong>を<strong>Read and write</strong>、必須の<strong>Metadata</strong>を<strong>Read-only</strong>にする</p>
+
+        <figure>
+          <figcaption>Fine-grained PATは対象リポジトリを限定し、ContentsへRead and writeを許可する</figcaption>
+          <img src="../assets/img/hcp-terraform/13-github-pat-permissions.png" alt="GitHubのFine-grained PAT作成画面で対象リポジトリとContentsのRead and write権限を設定した状態" width="1715" height="1304" loading="lazy">
+        </figure>
+
+        <div class="callout callout-error">
+          <strong>❌ Write access to repository not granted</strong>
+          <p>PATのRepository accessに対象リポジトリが含まれていることと、ContentsがRead and writeになっていることを確認する。PATをリモートURL、コマンド、シェル履歴、スクリーンショットへ埋め込まない。表示されたPATは再表示できないため、安全な保管先へ保存し、露出したPATは失効する</p>
+        </div>
+
+        <h3>新しいディレクトリではterraform initを実行</h3>
+        <p><code class="inline-code">.terraform.lock.hcl</code>をコピーしても、Provider本体を保存する<code class="inline-code">.terraform/providers</code>は自動的にコピーされない。新しい作業ディレクトリでは、Validateより先にInitを実行する</p>
+
+        <details class="example-details execution-example">
+          <summary><span class="execution-example-label">実行例：</span>Providerがローカルキャッシュにない</summary>
+          <div class="code" data-prompt="">
+            <div class="code-header"><span>diagnostics</span><button class="copy" type="button">Copy</button></div>
+            <pre><code>$ terraform validate
+Error: registry.terraform.io/hashicorp/aws: there is no package for
+registry.terraform.io/hashicorp/aws 6.61.0 cached in .terraform/providers</code></pre>
+          </div>
+          <p><code class="inline-code">terraform init</code>でlock fileに記録されたProviderを取得してから、<code class="inline-code">terraform validate</code>を再実行する。Backendや<code class="inline-code">cloud</code>設定の切り替えを明示する必要がある場合は<code class="inline-code">terraform init -reconfigure</code>を使用する</p>
+        </details>
+      </section>
+
+      <section>
+        <h2 id="vcs-integration">WorkspaceとGitHubをVCS連携</h2>
+        <p>Workspaceの<strong>Settings → Version control</strong>からGitHubを接続する。VCS連携後は対象ブランチへのPushを契機にHCP Terraformが構成を取得し、Remote Runを開始する</p>
+
+        <ol>
+          <li><strong>Connect to version control</strong>を選択</li>
+          <li><strong>Version control workflow</strong>を選択</li>
+          <li>Providerで<strong>GitHub.com</strong>を選択</li>
+          <li>GitHub側でTerraform CloudのOAuth認可を承認</li>
+          <li>GitHub Appを対象リポジトリだけへインストール</li>
+          <li>対象リポジトリとブランチを選択</li>
+          <li>Working directory、Auto-apply、VCS triggerを確認して保存</li>
+        </ol>
+
+        <figure>
+          <figcaption>GitHubへのPushでRunを開始する場合はVersion control workflowを選択する</figcaption>
+          <img src="../assets/img/hcp-terraform/14-vcs-workflow-select.png" alt="HCP TerraformのVersion control workflow、CLI-Driven Workflow、API-Driven Workflowの選択画面" width="1715" height="498" loading="lazy">
+        </figure>
+
+        <figure>
+          <figcaption>Version control providerとしてGitHub.comを選択する</figcaption>
+          <img src="../assets/img/hcp-terraform/15-vcs-provider-github.png" alt="HCP TerraformのVersion control設定でGitHub.comを選択する画面" width="1717" height="613" loading="lazy">
+        </figure>
+
+        <div class="figure-grid figure-grid-compact">
+          <figure>
+            <figcaption>GitHubでTerraform CloudからのOAuth要求を認可する</figcaption>
+            <img src="../assets/img/hcp-terraform/16-vcs-github-oauth.png" alt="GitHubでTerraform CloudのOAuthアクセスをAuthorizeする画面" width="993" height="882" loading="lazy">
+          </figure>
+          <figure>
+            <figcaption>GitHub AppをTerraform構成のリポジトリへインストールする</figcaption>
+            <img src="../assets/img/hcp-terraform/17-vcs-github-app-install.png" alt="GitHub AppのTerraform Cloudを選択したリポジトリへインストールする画面" width="1054" height="1080" loading="lazy">
+          </figure>
+        </div>
+
+        <div class="callout callout-error">
+          <strong>❌ Failed to install GitHub App</strong>
+          <p><strong>Please disable pop-up blocker and try again</strong>と表示された場合は、<code class="inline-code">app.terraform.io</code>から開かれるGitHubのポップアップをブラウザーで許可してから接続をやり直す。認可後にHCP Terraformへ戻らない場合は、ブロックされたウィンドウがないか確認する</p>
+        </div>
+
+        <table>
+          <thead><tr><th>設定</th><th>今回の指定</th><th>判断基準</th></tr></thead>
+          <tbody>
+            <tr><td>Terraform working directory</td><td>空欄</td><td>Root Moduleがリポジトリ直下にあるため。サブディレクトリに置く場合は相対パスを指定</td></tr>
+            <tr><td>Auto-apply</td><td>無効</td><td>Planを確認し、手動承認後にApplyする</td></tr>
+            <tr><td>VCS trigger type</td><td>Branch-based</td><td>通常のブランチ更新でRunを開始する</td></tr>
+            <tr><td>VCS branch</td><td>Default branch</td><td>GitHubの既定ブランチである<code class="inline-code">main</code>を使用する</td></tr>
+            <tr><td>Automatic run triggering</td><td>Root Moduleが直下ならAlways trigger runs</td><td>Monorepoで対象パスを限定する場合だけPatternsまたはPrefixesを使用</td></tr>
+            <tr><td>Automatic speculative plans</td><td>有効</td><td>Pull Requestの変更をApplyせずにPlanで確認する</td></tr>
+          </tbody>
+        </table>
+
+        <figure>
+          <figcaption>接続後は対象リポジトリ、Working directory、Auto-apply、ブランチ、Runのトリガー条件を確認する</figcaption>
+          <img src="../assets/img/hcp-terraform/18-vcs-settings-connected.png" alt="HCP Terraform WorkspaceとGitHubリポジトリを接続したVersion control設定画面" width="1716" height="1304" loading="lazy">
+        </figure>
+      </section>
+
+      <section>
         <h2 id="execution-mode">実行モードの選択</h2>
         <p>Workspaceの<strong>Settings → General → Execution mode</strong>で、PlanとApplyを実行する場所を選択する。実行場所によってAWS認証情報の取得元が変わる</p>
 
@@ -330,6 +461,22 @@ HCP Terraform has been successfully initialized!</code></pre>
           <p>Keyには<code class="inline-code">AWS_ACCESS_KEY_ID</code>、Valueには<code class="inline-code">AKIA...</code>などの実際の値を入力する。シークレットアクセスキーも同様にKeyとValueを分け、Sensitiveを有効にする</p>
         </div>
 
+        <div class="figure-grid figure-grid-compact">
+          <figure>
+            <figcaption>アクセスキーはKeyへ環境変数名、Valueへ実際の値を入力する</figcaption>
+            <img src="../assets/img/hcp-terraform/19-aws-access-key-variable.png" alt="AWS_ACCESS_KEY_IDをEnvironment variableとしてSensitiveを有効にして登録する画面" width="540" height="561" loading="lazy">
+          </figure>
+          <figure>
+            <figcaption>シークレットアクセスキーも別のEnvironment variableとして登録する</figcaption>
+            <img src="../assets/img/hcp-terraform/20-aws-secret-key-variable.png" alt="AWS_SECRET_ACCESS_KEYをEnvironment variableとしてSensitiveを有効にして登録する画面" width="540" height="561" loading="lazy">
+          </figure>
+        </div>
+
+        <figure>
+          <figcaption>Variables一覧で2つのKeyが別々に登録され、ValueがSensitiveとして非表示になっていることを確認する</figcaption>
+          <img src="../assets/img/hcp-terraform/21-aws-credential-variables.png" alt="AWS_ACCESS_KEY_IDとAWS_SECRET_ACCESS_KEYが別々のEnvironment variableとして登録されたWorkspace Variables一覧" width="1718" height="823" loading="lazy">
+        </figure>
+
         <p>継続運用では、長期アクセスキーをWorkspaceへ保存せず、HCP Terraformの<strong>Dynamic Provider Credentials</strong>とAWS IAMのOIDC連携を使用する。Workspaceごとに許可するIAMロールを分け、短時間の認証情報をRunごとに発行する構成が適している</p>
 
         <details class="example-details execution-example">
@@ -350,6 +497,35 @@ Error: failed to refresh cached credentials, no EC2 IMDS role found</code></pre>
       </section>
 
       <section>
+        <h2 id="vcs-run">PushからPlan、Applyまでの流れ</h2>
+        <p>VCS連携後に<code class="inline-code">main</code>ブランチへPushすると、HCP Terraformが対象コミットを取得してPlanを実行する。Auto-applyを無効にした場合は、Planの差分を確認してから<strong>Confirm &amp; apply</strong>を選択する</p>
+
+        <ol>
+          <li>ローカルで<code class="inline-code">terraform fmt</code>と<code class="inline-code">terraform validate</code>を実行</li>
+          <li>変更をコミットしてGitHubの<code class="inline-code">main</code>へPush</li>
+          <li>HCP TerraformのRun detailsで対象Commit、Branch、Repositoryを確認</li>
+          <li>Planの追加・変更・削除件数とリソース単位の差分を確認</li>
+          <li><strong>Confirm &amp; apply</strong>を選択</li>
+          <li>Apply finishedとState versionの作成を確認</li>
+        </ol>
+
+        <figure>
+          <figcaption>Auto-applyを無効にすると、Plan完了後に差分を確認してApplyを承認できる</figcaption>
+          <img src="../assets/img/hcp-terraform/22-vcs-plan-confirm.png" alt="HCP TerraformのVCS Runで1件の変更を確認しConfirm and applyを選択できる画面" width="1716" height="1304" loading="lazy">
+        </figure>
+
+        <figure>
+          <figcaption>Apply完了後は変更件数、更新対象、State versionを確認する</figcaption>
+          <img src="../assets/img/hcp-terraform/23-vcs-apply-complete.png" alt="HCP TerraformのVCS RunでApplyが完了しIAMユーザーの更新とState versionが表示された画面" width="1716" height="1304" loading="lazy">
+        </figure>
+
+        <div class="callout">
+          <strong>ℹ️ No changesの場合</strong>
+          <p>実行対象のCommitが最新かをRun detailsで確認する。ローカルで編集しただけではHCP Terraformへ反映されない。変更をコミットして対象ブランチへPushし、新しいCommit IDを使ったRunが開始されたことを確認する</p>
+        </div>
+      </section>
+
+      <section>
         <h2 id="verification">HCP Terraformで確認する項目</h2>
         <table>
           <thead><tr><th>画面</th><th>確認内容</th></tr></thead>
@@ -358,7 +534,7 @@ Error: failed to refresh cached credentials, no EC2 IMDS role found</code></pre>
             <tr><td>Runs</td><td>Plan／Applyの結果、実行者、差分、エラー、承認状態</td></tr>
             <tr><td>States</td><td>State version、管理リソース、Output、更新者、更新日時</td></tr>
             <tr><td>Variables</td><td>Terraform variableとEnvironment variableの分類、Sensitive設定、Variable Set</td></tr>
-            <tr><td>Settings</td><td>Execution mode、Terraform version、Auto apply、Workspace削除設定</td></tr>
+            <tr><td>Settings</td><td>Execution mode、Terraform version、Auto apply、VCS連携、Workspace削除設定</td></tr>
           </tbody>
         </table>
 
@@ -399,6 +575,6 @@ terraform plan</code></pre>
     </main>
   </div>
 
-  <script src="../assets/app.js?v=20260823-ref1"></script>
+  <script src="../assets/app.js?v=20260824-ch5"></script>
 </body>
 </html>
