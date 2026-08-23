@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HCP Terraform | Documentation</title>
-  <meta name="description" content="HCP TerraformのOrganization、Workspace、CLIログイン、State移行、実行モード、AWS認証情報、アバター変更を整理した運用手順">
+  <title>HCP Terraform（Terraform Cloud） | Documentation</title>
+  <meta name="description" content="HCP Terraform（Terraform Cloud）のOrganization、Workspace、CLIログイン、State移行、実行モード、AWS認証情報、アバター変更を整理した運用手順">
   <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref4">
 </head>
 <body>
@@ -30,7 +30,7 @@
       </div>
       <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">◈</span>Terraform</p>
       <a href="terraform.html">Terraform 概要</a>
-      <a class="active" href="hcp-terraform.html">HCP Terraform</a>
+      <a class="active" href="hcp-terraform.html">HCP Terraform（Terraform Cloud）</a>
       <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
       <a href="cloudformation.html">CloudFormation 運用手順集</a>
       <a href="aws-cli.html">AWS CLI 特殊対応</a>
@@ -68,7 +68,7 @@
       </nav>
 
       <p class="eyebrow">Terraform / HCP</p>
-      <h1>HCP Terraform</h1>
+      <h1>HCP Terraform（Terraform Cloud）</h1>
       <p class="lead">OrganizationとWorkspaceを作成し、Terraform CLIからHCP Terraformへ接続してStateを移行する手順、GitHubとのVCS連携、Remote実行のAWS認証情報、Runの承認、アバター変更を整理する</p>
 
       <section>
@@ -365,7 +365,7 @@ registry.terraform.io/hashicorp/aws 6.61.0 cached in .terraform/providers</code>
           <img src="../assets/img/hcp-terraform/15-vcs-provider-github.png" alt="HCP TerraformのVersion control設定でGitHub.comを選択する画面" width="1717" height="613" loading="lazy">
         </figure>
 
-        <div class="figure-grid figure-grid-compact">
+        <div class="figure-grid figure-grid-compact figure-grid-equal">
           <figure>
             <figcaption>GitHubでTerraform CloudからのOAuth要求を認可する</figcaption>
             <img src="../assets/img/hcp-terraform/16-vcs-github-oauth.png" alt="GitHubでTerraform CloudのOAuthアクセスをAuthorizeする画面" width="993" height="882" loading="lazy">

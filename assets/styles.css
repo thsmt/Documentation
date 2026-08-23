@@ -1345,9 +1345,30 @@ figure.screenshot-compact {
   background: var(--surface);
 }
 
+/* Keep mixed portrait and landscape screenshots aligned without cropping. */
+.figure-grid-equal {
+  align-items: stretch;
+}
+
+.figure-grid-equal figure {
+  display: flex;
+  flex-direction: column;
+}
+
+.figure-grid-equal figure img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: auto;
+  object-fit: contain;
+}
+
 @media (max-width: 800px) {
   .figure-grid {
     grid-template-columns: 1fr;
+  }
+
+  .figure-grid-equal figure img {
+    aspect-ratio: auto;
   }
 
   figure.screenshot-wide,
