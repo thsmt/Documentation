@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HCP Terraform | Documentation</title>
   <meta name="description" content="HCP TerraformのOrganization、Workspace、CLIログイン、State移行、実行モード、AWS認証情報、アバター変更を整理した運用手順">
-  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref2">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260823-ref3">
 </head>
 <body>
   <header class="site-header">
@@ -103,6 +103,21 @@
           <li>初回検証ではDefault Projectへ配置</li>
         </ol>
 
+        <figure>
+          <figcaption>初回はOrganizations画面からOrganizationの作成を開始する</figcaption>
+          <img src="../assets/img/hcp-terraform/01-organization-start.png" alt="HCP TerraformのOrganizations画面に表示されたCreate your first organizationボタン" width="1715" height="1304" loading="lazy">
+        </figure>
+
+        <figure>
+          <figcaption>作成後のOrganizations一覧でOrganization名と種類を確認する</figcaption>
+          <img src="../assets/img/hcp-terraform/05-organization-list.png" alt="作成済みのPersonal Organizationが表示されたHCP TerraformのOrganizations一覧" width="1717" height="510" loading="lazy">
+        </figure>
+
+        <figure>
+          <figcaption>Organization配下のWorkspaces一覧でWorkspace名とProjectを確認する</figcaption>
+          <img src="../assets/img/hcp-terraform/06-workspace-list.png" alt="aws-infra WorkspaceとDefault Projectが表示されたHCP TerraformのWorkspaces一覧" width="1717" height="510" loading="lazy">
+        </figure>
+
         <h3>PersonalとBusinessの違い</h3>
         <p>PersonalとBusinessはWorkspaceの実行モードではなく、HCP Organizationを作成するときに選択するOrganization typeである。WorkspaceのRemote／Local／Agentとは別の設定であり、作成後にOrganization typeは変更できない</p>
 
@@ -148,6 +163,16 @@
           <li>生成されたトークンをコピーし、ターミナルの<strong>Token for app.terraform.io</strong>へ貼り付け</li>
           <li><strong>Welcome to HCP Terraform!</strong>の表示を確認</li>
         </ol>
+
+        <figure>
+          <figcaption>User tokenのDescriptionと有効期限を指定してトークンを生成する</figcaption>
+          <img src="../assets/img/hcp-terraform/02-user-token-create.png" alt="HCP TerraformのCreating a user token画面でDescriptionとExpirationを指定した状態" width="1718" height="1304" loading="lazy">
+        </figure>
+
+        <figure>
+          <figcaption>生成直後に一度だけ表示されるトークンをコピーする。画像内の値は非表示にしている</figcaption>
+          <img src="../assets/img/hcp-terraform/03-user-token-created-redacted.png" alt="生成されたユーザートークンの値を黒く非表示にしたHCP TerraformのTokens画面" width="1718" height="1304" loading="lazy">
+        </figure>
 
         <p>認証情報は通常、実行ユーザーの<code class="inline-code">~/.terraform.d/credentials.tfrc.json</code>へ保存される。このファイルをGitへ登録したり、内容をログへ出力したりしない</p>
 
@@ -256,6 +281,11 @@ HCP Terraform has been successfully initialized!</code></pre>
           </tbody>
         </table>
 
+        <figure>
+          <figcaption>WorkspaceのGeneral settingsでRemote、Local、Agentの実行モードを選択する</figcaption>
+          <img src="../assets/img/hcp-terraform/07-execution-mode.png" alt="HCP Terraform WorkspaceのGeneral settingsに表示されたExecution modeの選択肢" width="1716" height="713" loading="lazy">
+        </figure>
+
         <div class="callout callout-warning">
           <strong>⚠️ Remote実行はEC2の環境を引き継がない</strong>
           <p>EC2へSSH接続したシェルで設定した<code class="inline-code">export AWS_ACCESS_KEY_ID=...</code>やEC2 Instance Profileは、HCP TerraformのRemote実行環境へ引き継がれない。Remote実行ではWorkspace側へAWS認証方法を設定する</p>
@@ -355,6 +385,11 @@ terraform plan</code></pre>
           <li>Ratingは<strong>G</strong>に設定</li>
           <li>HCP Terraformへ戻って<kbd>Ctrl</kbd> + <kbd>F5</kbd>で更新</li>
         </ol>
+
+        <figure>
+          <figcaption>Gravatarへ初めて登録する場合は、プロフィールの作成後にアバター画像を設定する</figcaption>
+          <img src="../assets/img/hcp-terraform/04-gravatar-onboarding.png" alt="Gravatarの初回プロフィール作成画面" width="1718" height="1304" loading="lazy">
+        </figure>
 
         <div class="callout">
           <strong>ℹ️ 反映されない場合</strong>

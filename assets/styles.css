@@ -459,8 +459,8 @@ li {
   border-radius: 6px;
 }
 
-.notice strong,
-.callout strong {
+.notice > strong,
+.callout > strong {
   display: block;
   margin-bottom: 4px;
   color: var(--accent-strong);
@@ -476,8 +476,8 @@ li {
   border-color: var(--warning-line);
 }
 
-.callout-warning strong,
-.notice-warning strong {
+.callout-warning > strong,
+.notice-warning > strong {
   color: var(--warning-text);
 }
 
@@ -487,8 +487,8 @@ li {
   border-color: var(--success-line);
 }
 
-.callout-success strong,
-.notice-success strong {
+.callout-success > strong,
+.notice-success > strong {
   color: var(--success-text);
 }
 
@@ -498,9 +498,36 @@ li {
   border-color: var(--error-line);
 }
 
-.callout-error strong,
-.notice-error strong {
+.callout-error > strong,
+.notice-error > strong {
   color: var(--error-text);
+}
+
+.terraform-guide .callout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.terraform-guide .callout > strong,
+.terraform-guide .callout > p {
+  min-width: 0;
+  margin: 0;
+}
+
+.terraform-guide .callout > strong {
+  line-height: 1.6;
+}
+
+.terraform-guide .callout > p {
+  line-height: 1.9;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.terraform-guide .callout code.inline-code {
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .tab-group {
