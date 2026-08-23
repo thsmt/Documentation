@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NFS | Documentation</title>
+  <meta name="description" content="RHEL 9におけるNFSv4サーバー、クライアント、ACL、Kerberos保護の構築・運用手順">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions"><button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button><nav class="nav" aria-label="Global navigation"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a><a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a></nav></div>
+  </header>
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
+      </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="terraform.html">Terraform AWS運用リファレンス</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">⚙︎</span>OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="storage.html">ストレージ管理</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-ssl-termination.html">Apache SSL終端（自己署名証明書）</a>
+      <a href="redis.html">Redis（KVS）</a>
+      <a class="active" href="nfs.html">NFS</a>
+      <a href="samba.html">Samba</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">▤</span>リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>OS／ミドルウェア</span></nav>
+      <h1>NFS</h1>
+      <div class="page-summary"><strong>⚡ このページの要約</strong><p class="lead">RHEL 9でNFSv4共有を構築し、接続元を限定したエクスポートと永続マウントを設定する<br>ACL、autofs、NFSv3互換、Kerberos保護を含む運用ポイントを整理する</p></div>
+
+      <h2 id="design">1. 構成パラメータの確認</h2>
+      <p>NFSv4.2を優先し、サーバーとクライアントでUID・GIDを一致させる。Kerberosを使用しない構成では、ホスト名解決と接続元制限を必須とする</p>
+      <table><thead><tr><th>項目</th><th>パラメータ</th></tr></thead><tbody><tr><td>NFSサーバー</td><td><code>&lt;NFS_SERVER_FQDN&gt;</code></td></tr><tr><td>エクスポート先</td><td><code>/srv/nfs/&lt;SHARE_NAME&gt;</code></td></tr><tr><td>許可する接続元</td><td><code>&lt;NFS_CLIENT_CIDR&gt;</code></td></tr><tr><td>クライアント側マウント先</td><td><code>&lt;MOUNT_POINT&gt;</code></td></tr><tr><td>推奨プロトコル</td><td>NFSv4.2</td></tr></tbody></table>
+      <div class="callout callout-warning"><strong>⚠️ IDマッピング</strong><p>NFSのアクセス権は数値UID・GIDの一致に依存する。ローカルアカウントを個別作成する場合も、サーバーと全クライアントで同じUID・GIDを割り当てる</p></div>
+
+      <h2 id="server-install">2. NFSサーバーのインストール</h2>
+      <p class="procedure-step"><strong>2.1 パッケージのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install nfs-utils</code></pre></div>
+      <p class="procedure-step"><strong>2.2 NFSv4優先設定の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>server shell</span><button class="copy" type="button">Copy</button></div><pre><code>nfsconf --get nfsd vers4
+nfsconf --get nfsd vers3</code></pre></div>
+      <p class="procedure-step"><strong>2.3 サービスの有効化</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now nfs-server</code></pre></div>
+
+      <h2 id="export">3. NFS共有の作成</h2>
+      <p><code>root_squash</code>を維持し、クライアントのrootをサーバー側rootとして扱わない</p>
+      <p class="procedure-step"><strong>3.1 共有ディレクトリの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -o &lt;OWNER_USER&gt; -g &lt;OWNER_GROUP&gt; -m 2770 /srv/nfs/&lt;SHARE_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.2 エクスポート設定のバックアップ</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/exports /etc/exports.$(date +%Y%m%d)</code></pre></div>
+      <p class="procedure-step"><strong>3.3 エクスポート設定の編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/exports</code></pre></div>
+      <div class="code"><div class="code-header"><span>exports</span><button class="copy" type="button">Copy</button></div><pre><code>/srv/nfs/&lt;SHARE_NAME&gt;  &lt;NFS_CLIENT_CIDR&gt;(rw,sync,root_squash,no_subtree_check)</code></pre></div>
+      <p class="procedure-step"><strong>3.4 エクスポート設定の反映と確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>exportfs -rav
+exportfs -v</code></pre></div>
+
+      <h2 id="network">4. NFSv4の通信許可</h2>
+      <p>NFSv4のみを使用する構成では主に2049/TCPを使用する。クラウド側ファイアウォールでも同じ接続元へ限定する</p>
+      <p class="procedure-step"><strong>4.1 firewalldの有効ゾーン確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --get-active-zones</code></pre></div>
+      <p class="procedure-step"><strong>4.2 NFSサービスの許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;NFS_CLIENT_CIDR&gt;" service name="nfs" accept'
+firewall-cmd --reload
+firewall-cmd --zone=&lt;ACTIVE_ZONE&gt; --list-rich-rules</code></pre></div>
+      <p class="procedure-step"><strong>4.3 待受ポートの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>server shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lnt | grep ':2049'</code></pre></div>
+
+      <h2 id="client">5. NFSクライアントの設定</h2>
+      <p class="procedure-step"><strong>5.1 クライアントパッケージのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install nfs-utils</code></pre></div>
+      <p class="procedure-step"><strong>5.2 名前解決とポート疎通の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>getent ahosts &lt;NFS_SERVER_FQDN&gt;
+nc -vz &lt;NFS_SERVER_FQDN&gt; 2049</code></pre></div>
+      <p class="procedure-step"><strong>5.3 NFSv4.2による一時マウント</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0755 &lt;MOUNT_POINT&gt;
+mount -t nfs -o nfsvers=4.2 &lt;NFS_SERVER_FQDN&gt;:/srv/nfs/&lt;SHARE_NAME&gt; &lt;MOUNT_POINT&gt;
+findmnt &lt;MOUNT_POINT&gt;</code></pre></div>
+      <p class="procedure-step"><strong>5.4 永続マウント設定の追加</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/fstab /etc/fstab.$(date +%Y%m%d)
+vi /etc/fstab</code></pre></div>
+      <div class="code"><div class="code-header"><span>fstab</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;NFS_SERVER_FQDN&gt;:/srv/nfs/&lt;SHARE_NAME&gt;  &lt;MOUNT_POINT&gt;  nfs  nfsvers=4.2,_netdev,nofail,x-systemd.automount  0  0</code></pre></div>
+      <p class="procedure-step"><strong>5.5 永続マウント設定の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>umount &lt;MOUNT_POINT&gt;
+systemctl daemon-reload
+mount -a
+findmnt --verify --verbose
+ls &lt;MOUNT_POINT&gt;</code></pre></div>
+
+      <h2 id="autofs">6. autofsによるオンデマンドマウント</h2>
+      <p>アクセス時だけマウントし、長時間未使用のNFS接続を自動解除する</p>
+      <p class="procedure-step"><strong>6.1 autofsのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install autofs</code></pre></div>
+      <p class="procedure-step"><strong>6.2 マスターマップの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/auto.master.d/nfs.autofs</code></pre></div>
+      <div class="code"><div class="code-header"><span>auto.master</span><button class="copy" type="button">Copy</button></div><pre><code>/mnt/nfs  /etc/auto.nfs  --timeout=300</code></pre></div>
+      <p class="procedure-step"><strong>6.3 間接マップの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/auto.nfs</code></pre></div>
+      <div class="code"><div class="code-header"><span>auto.nfs</span><button class="copy" type="button">Copy</button></div><pre><code>&lt;SHARE_NAME&gt;  -fstype=nfs4,nfsvers=4.2  &lt;NFS_SERVER_FQDN&gt;:/srv/nfs/&lt;SHARE_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>6.4 autofsの有効化と確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>automount -m
+systemctl enable --now autofs
+ls /mnt/nfs/&lt;SHARE_NAME&gt;</code></pre></div>
+
+      <h2 id="acl">7. ACLの設定</h2>
+      <p>NFSv4 ACLを使用する場合は、サーバーとクライアントへ操作ツールを導入する</p>
+      <p class="procedure-step"><strong>7.1 NFSv4 ACLツールのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install nfs4-acl-tools</code></pre></div>
+      <p class="procedure-step"><strong>7.2 ACLの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>user shell</span><button class="copy" type="button">Copy</button></div><pre><code>nfs4_getfacl &lt;MOUNT_POINT&gt;/&lt;FILE_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>7.3 ユーザーACLの追加</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>root shell</span><button class="copy" type="button">Copy</button></div><pre><code>nfs4_setfacl -a 'A::&lt;USER_NAME&gt;:rwaDxtTnNcCy' &lt;MOUNT_POINT&gt;/&lt;FILE_NAME&gt;</code></pre></div>
+
+      <h2 id="kerberos">8. Kerberosで保護するNFSv4</h2>
+      <p>IdMまたはKerberos環境でNFSサービスプリンシパルとkeytabを配布し、完全修飾ドメイン名と時刻同期を使用する</p>
+      <table><thead><tr><th>セキュリティ方式</th><th>保護内容</th></tr></thead><tbody><tr><td><code>krb5</code></td><td>認証</td></tr><tr><td><code>krb5i</code></td><td>認証と完全性</td></tr><tr><td><code>krb5p</code></td><td>認証、完全性、通信内容の暗号化</td></tr></tbody></table>
+      <p class="procedure-step"><strong>8.1 サービスプリンシパルとkeytabの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>klist -k /etc/krb5.keytab | grep 'nfs/&lt;NFS_SERVER_FQDN&gt;'</code></pre></div>
+      <p class="procedure-step"><strong>8.2 Kerberos保護エクスポートの設定</strong></p>
+      <div class="code"><div class="code-header"><span>exports</span><button class="copy" type="button">Copy</button></div><pre><code>/srv/nfs/&lt;SHARE_NAME&gt;  &lt;NFS_CLIENT_CIDR&gt;(rw,sync,root_squash,no_subtree_check,sec=krb5p)</code></pre></div>
+      <p class="procedure-step"><strong>8.3 Kerberos保護マウントの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>mount -t nfs4 -o sec=krb5p &lt;NFS_SERVER_FQDN&gt;:/srv/nfs/&lt;SHARE_NAME&gt; &lt;MOUNT_POINT&gt;
+nfsstat -m</code></pre></div>
+
+      <h2 id="nfs3">9. NFSv3互換を有効にする場合</h2>
+      <p>NFSv3クライアントが存在する場合だけrpcbindとmountdを許可し、使用ポートを固定してファイアウォール管理する</p>
+      <p class="procedure-step"><strong>9.1 NFSv3関連サービスの許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-service=rpc-bind
+firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-service=mountd
+firewall-cmd --reload</code></pre></div>
+      <p class="procedure-step"><strong>9.2 エクスポート一覧の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>showmount -e &lt;NFS_SERVER_FQDN&gt;</code></pre></div>
+
+      <h2 id="operations">10. 運用確認</h2>
+      <table><thead><tr><th>確認対象</th><th>確認方法</th></tr></thead><tbody><tr><td>サービス</td><td><code>systemctl status nfs-server</code></td></tr><tr><td>エクスポート</td><td><code>exportfs -v</code></td></tr><tr><td>マウント方式</td><td><code>nfsstat -m</code></td></tr><tr><td>クライアント接続</td><td><code>ss -tn sport = :2049</code></td></tr><tr><td>権限</td><td>所有者、数値UID・GID、ACLを確認</td></tr><tr><td>ログ</td><td><code>journalctl -u nfs-server</code>とカーネルログを確認</td></tr></tbody></table>
+      <p class="procedure-step"><strong>10.1 サーバー状態とログの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl status nfs-server --no-pager
+journalctl -u nfs-server -p warning..alert --since today</code></pre></div>
+    </main>
+    <aside class="toc" aria-label="Table of contents"><h2>ページ内</h2><a class="active" href="#design">1. 構成パラメータの確認</a><a href="#server-install">2. NFSサーバーのインストール</a><a href="#export">3. NFS共有の作成</a><a href="#network">4. NFSv4の通信許可</a><a href="#client">5. NFSクライアントの設定</a><a href="#autofs">6. autofsによるオンデマンドマウント</a><a href="#acl">7. ACLの設定</a><a href="#kerberos">8. Kerberosで保護するNFSv4</a><a href="#nfs3">9. NFSv3互換を有効にする場合</a><a href="#operations">10. 運用確認</a></aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

@@ -12,7 +12,7 @@ $groups = @(
         Icon = '☁︎'
         Pages = @(
             [pscustomobject]@{ File = 'cloudformation.html'; Label = 'CloudFormation 運用手順集' }
-            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform 学習ノート' }
+            [pscustomobject]@{ File = 'terraform.html'; Label = 'Terraform AWS運用リファレンス' }
             [pscustomobject]@{ File = 'aws-cli.html'; Label = 'AWS CLI 特殊対応' }
             [pscustomobject]@{ File = 'aws-cli-reference.html'; Label = 'AWS CLI コマンドリファレンス' }
             [pscustomobject]@{ File = 'eventbridge-scheduler.html'; Label = 'EventBridge Scheduler' }
@@ -33,8 +33,12 @@ $groups = @(
             [pscustomobject]@{ File = 'windows-server-2022.html'; Label = 'Windows Server 2022' }
             [pscustomobject]@{ File = 'windows-server-2025.html'; Label = 'Windows Server 2025' }
             [pscustomobject]@{ File = 'windows-server-2016-upgrade.html'; Label = 'Windows Server 2016 インプレースアップグレード' }
+            [pscustomobject]@{ File = 'storage.html'; Label = 'ストレージ管理' }
             [pscustomobject]@{ File = 'apache.html'; Label = 'Apache' }
             [pscustomobject]@{ File = 'apache-self-signed-ssl-termination.html'; Label = 'Apache SSL終端（自己署名証明書）' }
+            [pscustomobject]@{ File = 'redis.html'; Label = 'Redis（KVS）' }
+            [pscustomobject]@{ File = 'nfs.html'; Label = 'NFS' }
+            [pscustomobject]@{ File = 'samba.html'; Label = 'Samba' }
             [pscustomobject]@{ File = 'mariadb.html'; Label = 'MariaDB' }
             [pscustomobject]@{ File = 'postgresql.html'; Label = 'PostgreSQL' }
         )

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Samba | Documentation</title>
+  <meta name="description" content="RHEL 9におけるSamba共有、ユーザー、SELinux、SMBクライアントの構築・運用手順">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/icon.jpg" alt="Documentation icon"><span>Documentation</span></a>
+    <div class="header-actions"><button class="icon-button theme-toggle" type="button" title="テーマを切り替え" aria-label="テーマを切り替え">☀</button><nav class="nav" aria-label="Global navigation"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><a href="https://github.com/thsmt"><span class="nav-icon" aria-hidden="true">▦</span>Repositories</a><a href="https://github.com/thsmt/Documentation"><span class="nav-icon" aria-hidden="true">◆</span>GitHub</a></nav></div>
+  </header>
+  <div class="layout">
+    <aside id="site-sidebar" class="sidebar" aria-label="Page list">
+      <div class="sidebar-heading">
+        <button class="icon-button sidebar-toggle sidebar-toggle-inline" type="button" aria-controls="site-sidebar" aria-expanded="true" title="ナビゲーションを閉じる" aria-label="ナビゲーションを閉じる">☰</button>
+      </div>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">☁︎</span>AWS</p>
+      <a href="cloudformation.html">CloudFormation 運用手順集</a>
+      <a href="terraform.html">Terraform AWS運用リファレンス</a>
+      <a href="aws-cli.html">AWS CLI 特殊対応</a>
+      <a href="aws-cli-reference.html">AWS CLI コマンドリファレンス</a>
+      <a href="eventbridge-scheduler.html">EventBridge Scheduler</a>
+      <a href="amazon-workspaces.html">Amazon WorkSpaces</a>
+      <a href="amazon-ses.html">Amazon SES SMTPリレー</a>
+      <a href="amazon-ses-monitoring.html">Amazon SES 配信監視</a>
+      <a href="amazon-rds-blue-green.html">Amazon RDS Blue/Green Deployments</a>
+      <a href="apache-acm-certificate-update.html">証明書更新（ACMエクスポート）</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">⚙︎</span>OS／ミドルウェア</p>
+      <a href="rhel9.html">Red Hat Enterprise Linux 9</a>
+      <a href="rhel10.html">Red Hat Enterprise Linux 10</a>
+      <a href="amazon-linux-2023.html">Amazon Linux 2023</a>
+      <a href="windows-server-2022.html">Windows Server 2022</a>
+      <a href="windows-server-2025.html">Windows Server 2025</a>
+      <a href="windows-server-2016-upgrade.html">Windows Server 2016 インプレースアップグレード</a>
+      <a href="storage.html">ストレージ管理</a>
+      <a href="apache.html">Apache</a>
+      <a href="apache-self-signed-ssl-termination.html">Apache SSL終端（自己署名証明書）</a>
+      <a href="redis.html">Redis（KVS）</a>
+      <a href="nfs.html">NFS</a>
+      <a class="active" href="samba.html">Samba</a>
+      <a href="mariadb.html">MariaDB</a>
+      <a href="postgresql.html">PostgreSQL</a>
+      <p class="sidebar-group"><span class="sidebar-group-icon" aria-hidden="true">▤</span>リファレンス</p>
+      <a href="troubleshooting.html">障害切り分けチェックリスト</a>
+      <a href="eol.html">EOL / ライフサイクル一覧表</a>
+    </aside>
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../"><span class="nav-icon" aria-hidden="true">⌂</span>Home</a><span>OS／ミドルウェア</span></nav>
+      <h1>Samba</h1>
+      <div class="page-summary"><strong>⚡ このページの要約</strong><p class="lead">RHEL 9へSambaを導入し、認証ユーザーだけが利用できるSMB共有を構成する<br>SELinux、firewalld、Linuxクライアント、Windows ACL、障害切り分けを整理する</p></div>
+
+      <h2 id="design">1. 構成パラメータの確認</h2>
+      <p>SMB2.1以降を使用し、SMB1、ゲストアクセス、不要なプリンター共有を無効にする</p>
+      <table><thead><tr><th>項目</th><th>パラメータ</th></tr></thead><tbody><tr><td>サーバー名</td><td><code>&lt;SAMBA_SERVER_FQDN&gt;</code></td></tr><tr><td>共有名</td><td><code>&lt;SHARE_NAME&gt;</code></td></tr><tr><td>共有パス</td><td><code>/srv/samba/&lt;SHARE_NAME&gt;</code></td></tr><tr><td>アクセスグループ</td><td><code>&lt;SAMBA_GROUP&gt;</code></td></tr><tr><td>許可する接続元</td><td><code>&lt;SMB_CLIENT_CIDR&gt;</code></td></tr><tr><td>最小プロトコル</td><td><code>SMB2_10</code></td></tr></tbody></table>
+      <div class="callout callout-warning"><strong>⚠️ SMB1の禁止</strong><p>SMB1は古い認証・暗号方式と攻撃面を持つため有効化しない。対応できないクライアントは更新または分離する</p></div>
+
+      <h2 id="install">2. インストールと起動</h2>
+      <p class="procedure-step"><strong>2.1 パッケージのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install samba samba-client policycoreutils-python-utils</code></pre></div>
+      <p class="procedure-step"><strong>2.2 バージョンの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>server shell</span><button class="copy" type="button">Copy</button></div><pre><code>smbd --version
+rpm -q samba samba-client</code></pre></div>
+      <p class="procedure-step"><strong>2.3 サービスの有効化</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>systemctl enable --now smb</code></pre></div>
+      <p><code>nmb</code>はNetBIOS名前解決を必要とする旧式クライアント向けであり、DNSで名前解決できる構成では起動しない</p>
+
+      <h2 id="users">3. Sambaユーザーとグループの作成</h2>
+      <p>Sambaユーザーは対応するLinuxユーザーを必要とする。ファイル共有専用ユーザーには対話ログインを許可しない</p>
+      <p class="procedure-step"><strong>3.1 共有グループの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>groupadd &lt;SAMBA_GROUP&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.2 Linuxユーザーの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>useradd -M -s /sbin/nologin -G &lt;SAMBA_GROUP&gt; &lt;SAMBA_USER&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.3 Sambaユーザーの登録</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>smbpasswd -a &lt;SAMBA_USER&gt;</code></pre></div>
+      <p class="procedure-step"><strong>3.4 登録ユーザーの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>pdbedit -L</code></pre></div>
+      <div class="callout"><strong>ℹ️ 認証情報の入力</strong><p><code>smbpasswd</code>のプロンプトへパスワードを対話入力し、コマンド引数、シェル履歴、構築記録へ残さない</p></div>
+
+      <h2 id="share">4. 共有ディレクトリの作成</h2>
+      <p>共有グループへ所有権を与え、setgidで新規ファイルのグループを統一する</p>
+      <p class="procedure-step"><strong>4.1 共有ディレクトリの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -o root -g &lt;SAMBA_GROUP&gt; -m 2770 /srv/samba/&lt;SHARE_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>4.2 SELinuxファイルコンテキストの設定</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>semanage fcontext -a -t samba_share_t '/srv/samba(/.*)?'
+restorecon -Rv /srv/samba</code></pre></div>
+      <p class="procedure-step"><strong>4.3 所有権とSELinuxコンテキストの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>server shell</span><button class="copy" type="button">Copy</button></div><pre><code>ls -ldZ /srv/samba/&lt;SHARE_NAME&gt;</code></pre></div>
+
+      <h2 id="configuration">5. Samba設定</h2>
+      <p>自動再読み込み前に構文を検証できるよう、作業用コピーを編集してから正規ファイルへ反映する</p>
+      <p class="procedure-step"><strong>5.1 作業用設定ファイルの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>cp -pi /etc/samba/smb.conf /etc/samba/smb.conf.$(date +%Y%m%d)
+cp -p /etc/samba/smb.conf /etc/samba/smb.conf.new</code></pre></div>
+      <p class="procedure-step"><strong>5.2 設定ファイルの編集</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>vi /etc/samba/smb.conf.new</code></pre></div>
+      <div class="code"><div class="code-header"><span>smb.conf</span><button class="copy" type="button">Copy</button></div><pre><code>[global]
+    workgroup = &lt;WORKGROUP&gt;
+    security = user
+    map to guest = Never
+    server min protocol = SMB2_10
+    load printers = no
+    printing = bsd
+    printcap name = /dev/null
+    disable spoolss = yes
+    log file = /var/log/samba/log.%m
+    max log size = 1000
+
+[&lt;SHARE_NAME&gt;]
+    path = /srv/samba/&lt;SHARE_NAME&gt;
+    browseable = yes
+    read only = no
+    guest ok = no
+    valid users = @&lt;SAMBA_GROUP&gt;
+    force group = &lt;SAMBA_GROUP&gt;
+    create mask = 0660
+    directory mask = 2770
+    inherit acls = yes</code></pre></div>
+      <p class="procedure-step"><strong>5.3 設定構文の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>testparm -s /etc/samba/smb.conf.new</code></pre></div>
+      <p class="procedure-step"><strong>5.4 正規設定への反映と再読み込み</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>mv /etc/samba/smb.conf.new /etc/samba/smb.conf
+restorecon -v /etc/samba/smb.conf
+smbcontrol all reload-config
+systemctl status smb --no-pager</code></pre></div>
+
+      <h2 id="network">6. SMB通信の許可</h2>
+      <p>firewalldとクラウド側ファイアウォールでTCP 445を信頼済み接続元だけに許可する</p>
+      <p class="procedure-step"><strong>6.1 firewalldの有効ゾーン確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --get-active-zones</code></pre></div>
+      <p class="procedure-step"><strong>6.2 接続元を限定したSMB許可</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>firewall-cmd --permanent --zone=&lt;ACTIVE_ZONE&gt; --add-rich-rule='rule family="ipv4" source address="&lt;SMB_CLIENT_CIDR&gt;" port port="445" protocol="tcp" accept'
+firewall-cmd --reload
+firewall-cmd --zone=&lt;ACTIVE_ZONE&gt; --list-rich-rules</code></pre></div>
+      <p class="procedure-step"><strong>6.3 待受ポートの確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>server shell</span><button class="copy" type="button">Copy</button></div><pre><code>ss -lntp | grep ':445'</code></pre></div>
+
+      <h2 id="client">7. Linuxクライアントからの接続</h2>
+      <p class="procedure-step"><strong>7.1 クライアントパッケージのインストール</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>dnf install samba-client cifs-utils</code></pre></div>
+      <p class="procedure-step"><strong>7.2 共有一覧の確認</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>smbclient -L //&lt;SAMBA_SERVER_FQDN&gt; -U &lt;SAMBA_USER&gt;</code></pre></div>
+      <p class="procedure-step"><strong>7.3 対話クライアントによる接続</strong></p>
+      <div class="code" data-prompt="$"><div class="code-header"><span>client shell</span><button class="copy" type="button">Copy</button></div><pre><code>smbclient //&lt;SAMBA_SERVER_FQDN&gt;/&lt;SHARE_NAME&gt; -U &lt;SAMBA_USER&gt;</code></pre></div>
+      <p class="procedure-step"><strong>7.4 認証情報ファイルの作成</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0700 /etc/samba/credentials
+vi /etc/samba/credentials/&lt;SHARE_NAME&gt;</code></pre></div>
+      <div class="code"><div class="code-header"><span>credentials</span><button class="copy" type="button">Copy</button></div><pre><code>username=&lt;SAMBA_USER&gt;
+password=&lt;SAMBA_PASSWORD&gt;</code></pre></div>
+      <p class="procedure-step"><strong>7.5 認証情報ファイルの権限制限</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>chown root:root /etc/samba/credentials/&lt;SHARE_NAME&gt;
+chmod 600 /etc/samba/credentials/&lt;SHARE_NAME&gt;
+restorecon -v /etc/samba/credentials/&lt;SHARE_NAME&gt;</code></pre></div>
+      <p class="procedure-step"><strong>7.6 CIFS共有の一時マウント</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>client root</span><button class="copy" type="button">Copy</button></div><pre><code>install -d -m 0755 &lt;MOUNT_POINT&gt;
+mount -t cifs //&lt;SAMBA_SERVER_FQDN&gt;/&lt;SHARE_NAME&gt; &lt;MOUNT_POINT&gt; -o credentials=/etc/samba/credentials/&lt;SHARE_NAME&gt;,vers=3.1.1,uid=&lt;LOCAL_UID&gt;,gid=&lt;LOCAL_GID&gt;,file_mode=0660,dir_mode=0770</code></pre></div>
+      <p class="procedure-step"><strong>7.7 永続マウント設定の追加</strong></p>
+      <div class="code"><div class="code-header"><span>fstab</span><button class="copy" type="button">Copy</button></div><pre><code>//&lt;SAMBA_SERVER_FQDN&gt;/&lt;SHARE_NAME&gt;  &lt;MOUNT_POINT&gt;  cifs  credentials=/etc/samba/credentials/&lt;SHARE_NAME&gt;,vers=3.1.1,_netdev,nofail,x-systemd.automount,uid=&lt;LOCAL_UID&gt;,gid=&lt;LOCAL_GID&gt;,file_mode=0660,dir_mode=0770  0  0</code></pre></div>
+
+      <h2 id="windows-acl">8. Windows ACLを使用する場合</h2>
+      <p>拡張属性を利用できるXFSを使用し、共有定義へWindows ACL用VFSモジュールを追加する。導入前に既存POSIX権限との運用方式を統一する</p>
+      <p class="procedure-step"><strong>8.1 共有定義へのACL設定追加</strong></p>
+      <div class="code"><div class="code-header"><span>smb.conf</span><button class="copy" type="button">Copy</button></div><pre><code>[&lt;SHARE_NAME&gt;]
+    vfs objects = acl_xattr
+    map acl inherit = yes
+    store dos attributes = yes</code></pre></div>
+      <p class="procedure-step"><strong>8.2 設定構文と拡張属性の確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>testparm -s
+getfattr -d -m - /srv/samba/&lt;SHARE_NAME&gt;</code></pre></div>
+
+      <h2 id="operations">9. 運用確認と障害切り分け</h2>
+      <table><thead><tr><th>確認対象</th><th>確認方法</th></tr></thead><tbody><tr><td>サービス</td><td><code>systemctl status smb</code></td></tr><tr><td>設定</td><td><code>testparm -s</code></td></tr><tr><td>接続</td><td><code>smbstatus</code></td></tr><tr><td>ユーザー</td><td><code>pdbedit -L</code></td></tr><tr><td>待受</td><td><code>ss -lntp</code>で445/TCPを確認</td></tr><tr><td>ログ</td><td><code>journalctl -u smb</code>と<code>/var/log/samba/</code>を確認</td></tr><tr><td>SELinux</td><td><code>ausearch -m AVC</code>で拒否を確認</td></tr></tbody></table>
+      <p class="procedure-step"><strong>9.1 接続セッションの確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>smbstatus</code></pre></div>
+      <p class="procedure-step"><strong>9.2 警告以上のログ確認</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>journalctl -u smb -p warning..alert --since today
+ausearch -m AVC -ts recent</code></pre></div>
+      <p class="procedure-step"><strong>9.3 一時的なログレベル変更</strong></p>
+      <div class="code" data-prompt="#"><div class="code-header"><span>server root</span><button class="copy" type="button">Copy</button></div><pre><code>smbcontrol all debug &lt;LOG_LEVEL&gt;
+smbcontrol all debug 1</code></pre></div>
+    </main>
+    <aside class="toc" aria-label="Table of contents"><h2>ページ内</h2><a class="active" href="#design">1. 構成パラメータの確認</a><a href="#install">2. インストールと起動</a><a href="#users">3. Sambaユーザーとグループの作成</a><a href="#share">4. 共有ディレクトリの作成</a><a href="#configuration">5. Samba設定</a><a href="#network">6. SMB通信の許可</a><a href="#client">7. Linuxクライアントからの接続</a><a href="#windows-acl">8. Windows ACLを使用する場合</a><a href="#operations">9. 運用確認と障害切り分け</a></aside>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
