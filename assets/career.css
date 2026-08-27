@@ -205,6 +205,30 @@ a:hover { text-decoration: underline; }
   font-size: 10px;
 }
 
+.summary-facts {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+}
+
+.summary-facts div {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.summary-facts dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.summary-facts dd {
+  margin: 0;
+  color: var(--text);
+}
+
 .summary-history article > p {
   margin: 0;
   padding: 12px 14px;
@@ -338,10 +362,8 @@ td p {
   font-weight: 700;
 }
 
-.credentials-table th:nth-child(1),
-.credentials-table th:nth-child(3) { width: 12%; }
-.credentials-table th:nth-child(2),
-.credentials-table th:nth-child(4) { width: 38%; }
+.credentials-table th:nth-child(1) { width: 16%; }
+.credentials-table th:nth-child(2) { width: 84%; }
 
 .external-links {
   display: grid;
