@@ -261,7 +261,7 @@ td p {
 
 .recognition-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0;
   margin: 0 0 38px;
   padding: 0;
@@ -271,9 +271,23 @@ td p {
 }
 
 .recognition-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 14px 16px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+}
+
+.recognition-source {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recognition-source a {
+  font-weight: 700;
 }
 
 .credentials-table th:nth-child(1),
@@ -283,26 +297,59 @@ td p {
 
 .external-links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
 }
 
-.external-links p {
+.external-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
   margin: 0;
-  padding: 14px 16px;
+  padding: 10px 16px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-}
-
-.external-links a {
-  font-weight: 700;
-}
-
-.external-links span {
-  display: block;
-  margin-top: 4px;
   color: var(--muted);
+  font-size: 12px;
+}
+
+.external-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 0;
+  color: var(--ink);
+}
+
+.external-item:hover {
+  background: var(--subtle-bg);
+  text-decoration: none;
+}
+
+.external-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.external-item .documentation-mark {
+  border-radius: 3px;
+}
+
+.external-copy strong {
+  display: block;
+  color: var(--link);
+  font-size: 14px;
+}
+
+.external-copy small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .page-footer {
@@ -386,8 +433,7 @@ td p {
     content: "案件一覧は横方向にスクロールできます";
   }
 
-  .recognition-list { grid-template-columns: 1fr; }
-  .external-links { grid-template-columns: 1fr; }
+  .recognition-list li { align-items: flex-start; flex-direction: column; gap: 4px; }
   .page-footer { width: min(100% - 28px, 760px); }
 }
 
