@@ -166,6 +166,54 @@ a:hover { text-decoration: underline; }
   margin: 0 4px 12px;
 }
 
+.summary-history {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.summary-history article {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.summary-company {
+  padding: 12px 14px;
+  background: var(--subtle-bg);
+}
+
+.summary-company time,
+.summary-company strong,
+.summary-company small {
+  display: block;
+}
+
+.summary-company time {
+  color: var(--heading);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summary-company strong {
+  margin-top: 3px;
+}
+
+.summary-company small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.summary-history article > p {
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.summary-history article > p span {
+  display: block;
+}
+
 .section-note {
   color: var(--muted);
   font-size: 12px;
@@ -375,6 +423,8 @@ td p {
   .profile-summary div { grid-template-columns: 112px minmax(0, 1fr); }
   .resume-section { scroll-margin-top: 106px; margin-top: 32px; }
   .resume-section h2 { font-size: 18px; }
+  .summary-history article { grid-template-columns: 1fr; }
+  .summary-company { border-bottom: 1px solid var(--line); }
 
   .company-history,
   .skills-table,
