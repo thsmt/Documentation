@@ -191,25 +191,26 @@ a:hover { text-decoration: underline; }
 
 .summary-company time {
   color: var(--heading);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .summary-company strong {
   margin-top: 3px;
+  font-size: 15px;
 }
 
 .summary-company small {
   margin-top: 4px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .summary-facts {
   margin: 0;
   padding: 12px 14px;
   border-left: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .summary-facts div {
