@@ -77,6 +77,10 @@ foreach ($file in $files) {
     }
 
     foreach ($match in $externalAnchorPattern.Matches($mainMatch.Value)) {
+        if ($match.Value -match '\bclass="[^"]*\bexternal-item\b[^"]*"') {
+            continue
+        }
+
         $prefix = $mainMatch.Value.Substring(0, $match.Index)
         if ($prefix -notmatch '(AWS公式手順：|出典：)\s*$') {
             $lineNumber = 1 + ([regex]::Matches(
