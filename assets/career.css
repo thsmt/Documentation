@@ -63,9 +63,9 @@ a:hover { text-decoration: underline; }
 }
 
 .resume {
-  width: min(1320px, calc(100% - 48px));
+  width: min(1560px, calc(100% - 32px));
   margin: 32px auto 72px;
-  padding: 48px 54px 72px;
+  padding: 48px 40px 72px;
   background: var(--paper);
   border: 1px solid #d5dde3;
   box-shadow: 0 3px 16px rgba(31, 49, 64, 0.08);
@@ -227,7 +227,7 @@ td p {
 .skills-table th:nth-child(3) { width: 13%; }
 .skills-table th:nth-child(4) { width: 40%; }
 
-.projects-table { min-width: 1120px; }
+.projects-table { min-width: 1280px; }
 .projects-table th:nth-child(1) { width: 10%; }
 .projects-table th:nth-child(2) { width: 18%; }
 .projects-table th:nth-child(3) { width: 29%; }
@@ -236,6 +236,20 @@ td p {
 
 .projects-table .company-start td {
   border-top: 3px solid var(--line-strong);
+}
+
+.env-group {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.env-group:last-child { margin-bottom: 0; }
+
+.env-group b {
+  display: inline-block;
+  min-width: 92px;
+  margin-right: 6px;
+  color: #173d59;
 }
 
 .achievements-table th {
@@ -268,26 +282,33 @@ td p {
 .credentials-table th:nth-child(4) { width: 38%; }
 
 .external-links {
-  border-top: 1px solid var(--line);
-}
-
-.external-links p {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
-  gap: 16px;
-  margin: 0;
-  padding: 12px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
 }
 
-.external-links span { color: var(--muted); }
+.external-links p {
+  margin: 0;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.external-links a {
+  font-weight: 700;
+}
+
+.external-links span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
 
 .page-footer {
   display: flex;
   justify-content: space-between;
-  width: min(1320px, calc(100% - 48px));
+  width: min(1560px, calc(100% - 32px));
   margin: -48px auto 32px;
   color: var(--muted);
   font-size: 11px;
@@ -366,7 +387,7 @@ td p {
   }
 
   .recognition-list { grid-template-columns: 1fr; }
-  .external-links p { grid-template-columns: 1fr; gap: 2px; }
+  .external-links { grid-template-columns: 1fr; }
   .page-footer { width: min(100% - 28px, 760px); }
 }
 
