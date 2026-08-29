@@ -65,7 +65,7 @@ a:hover { text-decoration: underline; }
 .resume {
   width: min(1560px, calc(100% - 32px));
   margin: 32px auto 72px;
-  padding: 48px 40px 72px;
+  padding: 48px 32px 72px;
   background: var(--paper);
   border: 1px solid #d5dde3;
   box-shadow: 0 3px 16px rgba(31, 49, 64, 0.08);
@@ -317,13 +317,10 @@ td p {
 .skills-table th:nth-child(2) { width: 43%; }
 .skills-table th:nth-child(3) { width: 35%; }
 
-.projects-table { min-width: 1160px; }
-.projects-table th:nth-child(1) { width: 12%; }
-.projects-table th:nth-child(2),
-.projects-table td:nth-child(2) { display: none; }
-.projects-table th:nth-child(3) { width: 34%; }
-.projects-table th:nth-child(4) { width: 32%; }
-.projects-table th:nth-child(5) { width: 22%; }
+.projects-table { min-width: 1040px; }
+.projects-table th:nth-child(1) { width: 39%; }
+.projects-table th:nth-child(2) { width: 36%; }
+.projects-table th:nth-child(3) { width: 25%; }
 
 .projects-table .project-company-row th {
   display: table-cell;
@@ -335,10 +332,12 @@ td p {
   text-align: left;
 }
 
-.projects-table .project-company-row small {
-  margin-left: 8px;
+.projects-table .project-company-row time {
+  display: inline-block;
+  margin-left: 12px;
   color: var(--muted);
-  font-weight: 400;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .project-visuals {
