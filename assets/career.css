@@ -317,26 +317,28 @@ td p {
 .skills-table th:nth-child(2) { width: 43%; }
 .skills-table th:nth-child(3) { width: 35%; }
 
-.projects-table { min-width: 1040px; }
-.projects-table th:nth-child(1) { width: 39%; }
-.projects-table th:nth-child(2) { width: 36%; }
-.projects-table th:nth-child(3) { width: 25%; }
+.projects-table { min-width: 1160px; }
+.projects-table th:nth-child(1) { width: 15%; }
+.projects-table th:nth-child(2) { width: 34%; }
+.projects-table th:nth-child(3) { width: 31%; }
+.projects-table th:nth-child(4) { width: 20%; }
 
-.projects-table .project-company-row th {
-  display: table-cell;
-  width: auto;
-  padding: 8px 12px;
-  border-top: 3px solid var(--line-strong);
-  background: var(--heading-bg);
+.project-company {
+  vertical-align: top;
+  background: var(--subtle-bg);
   color: var(--heading);
-  text-align: left;
+  overflow-wrap: anywhere;
 }
 
-.projects-table .project-company-row time {
-  display: inline-block;
-  margin-left: 12px;
+.project-company strong,
+.project-company time {
+  display: block;
+}
+
+.project-company time {
+  margin-top: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -470,6 +472,10 @@ td p {
 
 .credentials-table th:nth-child(1) { width: 16%; }
 .credentials-table th:nth-child(2) { width: 84%; }
+
+.resume-section h2.external-heading {
+  margin-top: 38px;
+}
 
 .external-links {
   display: grid;
