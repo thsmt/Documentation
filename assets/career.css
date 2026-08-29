@@ -502,7 +502,7 @@ td p {
 
 .page-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: min(1560px, calc(100% - 32px));
   margin: -48px auto 32px;
   color: var(--muted);
