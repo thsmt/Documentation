@@ -171,6 +171,25 @@ a:hover { text-decoration: underline; }
   border-left: 1px solid var(--line);
 }
 
+.summary-history-header {
+  display: grid;
+  grid-template-columns: 300px 280px minmax(0, 1fr);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--heading-bg);
+  color: #173d59;
+  font-weight: 750;
+  text-align: center;
+}
+
+.summary-history-header span {
+  padding: 10px 12px;
+}
+
+.summary-history-header span + span {
+  border-left: 1px solid var(--line);
+}
+
 .summary-history article {
   display: grid;
   grid-template-columns: 300px 280px minmax(0, 1fr);
@@ -216,7 +235,7 @@ a:hover { text-decoration: underline; }
 
 .summary-facts div {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 6px;
   margin-top: 4px;
 }
@@ -312,6 +331,10 @@ td p {
 .projects-table th:nth-child(1) { width: 15%; }
 .projects-table th:nth-child(2) { width: 37%; }
 .projects-table th:nth-child(3) { width: 48%; }
+
+.project-table-wrap {
+  margin-top: 24px;
+}
 
 .project-company {
   vertical-align: top;
@@ -540,6 +563,7 @@ td p {
   .profile-summary div { grid-template-columns: 112px minmax(0, 1fr); }
   .resume-section { scroll-margin-top: 106px; margin-top: 32px; }
   .resume-section h2 { font-size: 18px; }
+  .summary-history-header { display: none; }
   .summary-history article { grid-template-columns: 1fr; }
   .summary-company { border-bottom: 1px solid var(--line); }
   .summary-facts { border-bottom: 1px solid var(--line); border-left: 0; }
