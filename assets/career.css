@@ -190,13 +190,13 @@ a:hover { text-decoration: underline; }
 }
 
 .summary-company time {
-  color: var(--heading);
+  margin-bottom: 4px;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
 
 .summary-company strong {
-  margin-top: 3px;
   font-size: 15px;
 }
 
@@ -242,10 +242,6 @@ a:hover { text-decoration: underline; }
   grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
   padding: 5px 0;
-}
-
-.summary-work div + div {
-  border-top: 1px solid var(--line);
 }
 
 .summary-work dt {
@@ -308,20 +304,14 @@ td p {
   margin: 5px 0 0;
 }
 
-.company-history th:nth-child(1) { width: 15%; }
-.company-history th:nth-child(2) { width: 25%; }
-.company-history th:nth-child(3) { width: 18%; }
-.company-history th:nth-child(4) { width: 42%; }
-
-.skills-table th:nth-child(1) { width: 22%; }
-.skills-table th:nth-child(2) { width: 43%; }
-.skills-table th:nth-child(3) { width: 35%; }
+.skills-table th:nth-child(1) { width: 15%; }
+.skills-table th:nth-child(2) { width: 49%; }
+.skills-table th:nth-child(3) { width: 36%; }
 
 .projects-table { min-width: 1160px; }
 .projects-table th:nth-child(1) { width: 15%; }
-.projects-table th:nth-child(2) { width: 34%; }
-.projects-table th:nth-child(3) { width: 31%; }
-.projects-table th:nth-child(4) { width: 20%; }
+.projects-table th:nth-child(2) { width: 37%; }
+.projects-table th:nth-child(3) { width: 48%; }
 
 .project-company {
   vertical-align: top;
@@ -338,8 +328,8 @@ td p {
 .project-company time {
   margin-top: 8px;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .project-visuals {
@@ -347,23 +337,16 @@ td p {
 }
 
 .project-visuals-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 20px;
+  display: block;
   margin-bottom: 12px;
 }
 
-.project-visuals-heading h3,
 .project-visuals-heading p {
-  margin: 0;
-}
-
-.project-visuals-heading p {
+  margin: 0 4px;
   max-width: 560px;
   color: var(--muted);
   font-size: 11px;
-  text-align: right;
+  text-align: left;
 }
 
 .project-visuals-grid {
@@ -562,25 +545,18 @@ td p {
   .summary-facts { border-bottom: 1px solid var(--line); border-left: 0; }
   .summary-work { border-left: 0; }
   .summary-work div { grid-template-columns: 76px minmax(0, 1fr); }
-  .project-visuals-heading { display: block; }
-  .project-visuals-heading p { margin-top: 6px; text-align: left; }
+  .project-visuals-heading p { margin-top: 6px; }
   .project-visuals-grid { grid-template-columns: 1fr; }
 
-  .company-history,
   .skills-table,
   .achievements-table,
   .credentials-table {
     table-layout: auto;
   }
 
-  .company-history thead,
   .skills-table thead,
   .achievements-table thead { display: none; }
 
-  .company-history,
-  .company-history tbody,
-  .company-history tr,
-  .company-history td,
   .skills-table,
   .skills-table tbody,
   .skills-table tr,
@@ -589,13 +565,11 @@ td p {
     width: 100%;
   }
 
-  .company-history tr,
   .skills-table tr {
     margin-bottom: 14px;
     border: 1px solid var(--line);
   }
 
-  .company-history td,
   .skills-table td {
     display: grid;
     grid-template-columns: 112px minmax(0, 1fr);
@@ -605,10 +579,8 @@ td p {
     background: #ffffff !important;
   }
 
-  .company-history td:last-child,
   .skills-table td:last-child { border-bottom: 0; }
 
-  .company-history td::before,
   .skills-table td::before {
     color: #173d59;
     font-weight: 700;
