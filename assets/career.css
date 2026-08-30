@@ -173,7 +173,7 @@ a:hover { text-decoration: underline; }
 
 .summary-history-header {
   display: grid;
-  grid-template-columns: 300px 280px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   background: var(--heading-bg);
@@ -192,7 +192,7 @@ a:hover { text-decoration: underline; }
 
 .summary-history article {
   display: grid;
-  grid-template-columns: 300px 280px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -226,9 +226,8 @@ a:hover { text-decoration: underline; }
 }
 
 .summary-facts {
-  margin: 0;
-  padding: 12px 14px;
-  border-left: 1px solid var(--line);
+  margin: 12px 0 0;
+  padding: 0;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -566,7 +565,7 @@ td p {
   .summary-history-header { display: none; }
   .summary-history article { grid-template-columns: 1fr; }
   .summary-company { border-bottom: 1px solid var(--line); }
-  .summary-facts { border-bottom: 1px solid var(--line); border-left: 0; }
+  .summary-facts { border: 0; }
   .summary-work { border-left: 0; }
   .summary-work div { grid-template-columns: 76px minmax(0, 1fr); }
   .project-visuals-heading p { margin-top: 6px; }
