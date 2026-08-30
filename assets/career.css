@@ -144,6 +144,8 @@ a:hover { text-decoration: underline; }
   margin-top: 42px;
 }
 
+.summary-anchor { scroll-margin-top: 72px; }
+
 .resume-section h2 {
   margin: 0 0 18px;
   padding: 8px 12px;
@@ -594,6 +596,7 @@ td p {
   .profile-summary { grid-template-columns: 1fr; }
   .profile-summary div { grid-template-columns: 112px minmax(0, 1fr); }
   .resume-section { scroll-margin-top: 106px; margin-top: 32px; }
+  .summary-anchor { scroll-margin-top: 106px; }
   .resume-section h2 { font-size: 18px; }
   .summary-history-header { display: none; }
   .summary-history article { grid-template-columns: 1fr; }
