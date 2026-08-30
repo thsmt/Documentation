@@ -257,9 +257,29 @@ a:hover { text-decoration: underline; }
 
 .summary-work div {
   display: grid;
-  grid-template-columns: 82px minmax(0, 1fr);
+  grid-template-columns: 110px minmax(0, 1fr);
   gap: 10px;
   padding: 5px 0;
+}
+
+.summary-work .summary-block {
+  display: block;
+}
+
+.summary-block dt {
+  margin-bottom: 4px;
+}
+
+.summary-project-title {
+  margin-bottom: 10px !important;
+  font-size: 14px;
+}
+
+.summary-block-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--heading);
+  font-weight: 700;
 }
 
 .summary-work dt {
@@ -567,7 +587,7 @@ td p {
   .summary-company { border-bottom: 1px solid var(--line); }
   .summary-facts { border: 0; }
   .summary-work { border-left: 0; }
-  .summary-work div { grid-template-columns: 76px minmax(0, 1fr); }
+  .summary-work div { grid-template-columns: 104px minmax(0, 1fr); }
   .project-visuals-heading p { margin-top: 6px; }
   .project-visuals-grid { grid-template-columns: 1fr; }
 
