@@ -291,6 +291,19 @@ a:hover { text-decoration: underline; }
   margin: 0;
 }
 
+.summary-task-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.summary-task-list li {
+  margin: 0 0 3px;
+}
+
+.summary-task-list li:last-child {
+  margin-bottom: 0;
+}
+
 .section-note {
   color: var(--muted);
   font-size: 12px;
