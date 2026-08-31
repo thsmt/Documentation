@@ -361,34 +361,6 @@ td p {
 .skills-table th:nth-child(2) { width: 49%; }
 .skills-table th:nth-child(3) { width: 36%; }
 
-.projects-table { min-width: 1160px; }
-.projects-table th:nth-child(1) { width: 15%; }
-.projects-table th:nth-child(2) { width: 37%; }
-.projects-table th:nth-child(3) { width: 48%; }
-
-.project-table-wrap {
-  margin-top: 24px;
-}
-
-.project-company {
-  vertical-align: top;
-  background: var(--subtle-bg);
-  color: var(--heading);
-  overflow-wrap: anywhere;
-}
-
-.project-company strong,
-.project-company time {
-  display: block;
-}
-
-.project-company time {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 700;
-}
-
 .project-visuals {
   margin-top: 24px;
 }
@@ -472,11 +444,56 @@ td p {
   color: #173d59;
 }
 
-.achievements-table th {
-  width: 18%;
-  background: var(--heading-bg);
+.achievements-table thead th {
+  text-align: left;
+}
+
+.achievements-table thead th:first-child,
+.achievements-table tbody th {
+  width: 16%;
+}
+
+.achievements-table tbody th {
+  background: var(--subtle-bg);
   color: #173d59;
   text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.achievement-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.achievement-list li {
+  margin-bottom: 5px;
+}
+
+.achievement-list li:last-child {
+  margin-bottom: 0;
+}
+
+.achievement-list strong {
+  display: inline;
+  color: #173d59;
+}
+
+.achievement-project-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 24px;
+  margin: 5px 0 0;
+  padding-left: 18px;
+}
+
+.achievement-project-list li {
+  margin: 0;
+}
+
+.achievement-project-list small {
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .recognition-list {
@@ -613,8 +630,25 @@ td p {
     table-layout: auto;
   }
 
-  .skills-table thead,
-  .achievements-table thead { display: none; }
+  .skills-table thead { display: none; }
+
+  .achievements-table thead th:first-child,
+  .achievements-table tbody th {
+    width: 31%;
+  }
+
+  .achievements-table tbody th {
+    white-space: normal;
+  }
+
+  .achievement-project-list {
+    grid-template-columns: 1fr;
+  }
+
+  .achievements-table th,
+  .achievements-table td {
+    padding: 9px 8px;
+  }
 
   .skills-table,
   .skills-table tbody,
@@ -646,14 +680,6 @@ td p {
     content: attr(data-label);
   }
 
-  .project-table-wrap::after {
-    display: block;
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 10px;
-    content: "案件一覧は横方向にスクロールできます";
-  }
-
   .recognition-list li { align-items: flex-start; flex-direction: column; gap: 4px; }
   .page-footer { width: min(100% - 28px, 760px); }
 }
@@ -668,5 +694,4 @@ td p {
   table { font-size: 8pt; }
   tr { break-inside: avoid; }
   .table-wrap { overflow: visible; }
-  .projects-table { min-width: 0; }
 }
